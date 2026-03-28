@@ -11,9 +11,20 @@ source("src/plot_model_bias.R")
 source("src/plot_stimulus_bias.R")
 source("src/plot_position_bias.R")
 source("src/plot_word_sensitivity.R")
+source("src/validity_gates.R")
+source("src/inference.R")
+source("src/stimulus_covariates.R")
+source("src/next_steps_utils.R")
 
-df <- load_results(c(get_data_path("local_eval.csv"), get_data_path("remote_all_fixed.csv"))) |> add_model_size()
+df <- build_canonical_dataset() |> add_model_size()
+validity_df <- compute_model_validity(df)
+df_valid <- filter_valid_models(df, validity_df)
+df_cov <- join_stimulus_covariates(df)
 fig_dir <- get_figures_dir()
+data_dir <- get_data_dir()
+
+readr::write_csv(validity_df, file.path(data_dir, "model_validity_summary.csv"))
+readr::write_csv(df, file.path(data_dir, "canonical_combined_eval.csv"))
 ```
 
 ## Validation
@@ -28,6 +39,28 @@ For each model, we check whether responses are driven by image content or by pos
 p <- plot_position_bias_main(df)
 ggsave(file.path(fig_dir, "C_position_bias_validation.png"), p, width = 8, height = 5, dpi = 300)
 p
+```
+
+### Validity Gate Summary
+
+We classify each model as **valid**, **borderline**, or **invalid** for cognitive interpretation using three criteria: image tracking (paired-order consistency), word sensitivity, and parse quality.
+
+```{r fig-validity-gate, fig.width=8, fig.height=5, fig.cap="Validity gate labels based on image tracking and quality checks."}
+p <- plot_model_validity(df, validity_df)
+ggsave(file.path(fig_dir, "C_model_validity_gate.png"), p, width = 8, height = 5, dpi = 300)
+p
+```
+
+```{r table-validity-gate}
+validity_table <- validity_df |>
+  left_join(get_model_metadata(), by = "model") |>
+  select(model, model_family, param_b, deployment, architecture,
+         image_tracking_rate, word_sensitivity_rate, parse_quality,
+         unclear_rate, retry_rate, validity_label) |>
+  arrange(desc(image_tracking_rate))
+
+readr::write_csv(validity_table, file.path(data_dir, "table_model_validity_gate.csv"))
+knitr::kable(validity_table, digits = 3)
 ```
 
 ```{r fig-position-bias-stim, fig.width=10, fig.height=5, fig.cap="Image tracking rate by stimulus, broken down by model."}
@@ -92,6 +125,14 @@ ggsave(file.path(fig_dir, "A_model_bias_main.png"), p, width = 8, height = 5, dp
 p
 ```
 
+### Valid models only
+
+```{r fig-model-valid-only, fig.width=8, fig.height=5, fig.cap="Shape bias by model restricted to models that pass validity gates."}
+p <- plot_model_bias_main(df_valid)
+ggsave(file.path(fig_dir, "A_model_bias_valid_only.png"), p, width = 8, height = 5, dpi = 300)
+p
+```
+
 ```{r fig-model-supplement, fig.width=8, fig.height=5, fig.cap="Full response breakdown (shape / texture / unclear) by model."}
 p <- plot_model_bias_supplement(df)
 ggsave(file.path(fig_dir, "A_model_bias_supplement.png"), p, width = 8, height = 5, dpi = 300)
@@ -146,6 +187,68 @@ p
 p <- plot_stimulus_bias_main(df)
 ggsave(file.path(fig_dir, "B_stimulus_bias_main.png"), p, width = 10, height = 5, dpi = 300)
 p
+```
+
+## Inferential Analysis
+
+We estimate trial-level effects on shape choice with logistic modeling and report uncertainty for model-level bias and ordering effects.
+
+```{r table-inference-model}
+shape_fit <- fit_shape_choice_model(df)
+shape_coef <- summarize_shape_choice_model(shape_fit)
+readr::write_csv(shape_coef, file.path(data_dir, "table_shape_choice_model_coefficients.csv"))
+knitr::kable(head(shape_coef, 25), digits = 3)
+```
+
+```{r table-model-shape-ci}
+model_ci <- compute_model_shape_ci(df)
+readr::write_csv(model_ci, file.path(data_dir, "table_model_shape_ci.csv"))
+knitr::kable(model_ci, digits = 3)
+```
+
+```{r table-ordering-effect-ci}
+ordering_ci <- compute_ordering_effect_ci(df)
+readr::write_csv(ordering_ci, file.path(data_dir, "table_model_ordering_effect_ci.csv"))
+knitr::kable(ordering_ci, digits = 3)
+```
+
+## Stimulus Covariates
+
+We link benchmark responses to engineered stimulus metadata (`mode`, texture family, texture consistency) and optional human-annotation covariates (`complexity`, `novelty`, `realism`, `abstractness`, `artifact_like`).
+
+```{r table-stimulus-covariates-summary}
+cov_summary <- summarize_covariate_effects(df_cov)
+readr::write_csv(cov_summary, file.path(data_dir, "table_stimulus_covariate_summary.csv"))
+knitr::kable(cov_summary, digits = 3)
+```
+
+```{r table-stimulus-covariate-model}
+cov_fit <- fit_stimulus_covariate_model(df_cov)
+cov_coef <- summarize_shape_choice_model(cov_fit)
+readr::write_csv(cov_coef, file.path(data_dir, "table_stimulus_covariate_model_coefficients.csv"))
+knitr::kable(head(cov_coef, 25), digits = 3)
+```
+
+## Human-Comparison Preparation
+
+```{r table-human-frozen-subset}
+frozen_subset <- propose_human_benchmark_subset(df_cov, n_stimuli = 12, seed = 42)
+readr::write_csv(frozen_subset, file.path(data_dir, "human_frozen_stimulus_subset.csv"))
+knitr::kable(frozen_subset, digits = 3)
+```
+
+```{r table-human-protocol}
+human_protocol <- build_human_protocol_spec(trials_per_stimulus = 10)
+readr::write_csv(human_protocol, file.path(data_dir, "human_protocol_spec.csv"))
+knitr::kable(human_protocol)
+```
+
+## Robustness and Replication Diagnostics
+
+```{r table-robustness}
+robustness <- compute_robustness_diagnostics(df)
+readr::write_csv(robustness, file.path(data_dir, "table_robustness_diagnostics.csv"))
+knitr::kable(robustness, digits = 3)
 ```
 
 ```{r fig-stim-supplement, fig.width=10, fig.height=5, fig.cap="Full response breakdown (shape / texture / unclear) by stimulus."}

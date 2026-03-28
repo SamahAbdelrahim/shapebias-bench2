@@ -1,5 +1,7 @@
 library(readr)
 library(dplyr)
+library(tibble)
+library(stringr)
 
 # ---------------------------------------------------------------------------
 # Paths from .env
@@ -22,11 +24,20 @@ read_dotenv <- function(path = file.path(REPO_ROOT, ".env")) {
 
 #' Get the results directory (absolute) from .env RESULTS_DIR
 get_results_dir <- function() {
-  read_dotenv()
+  if (file.exists(file.path(REPO_ROOT, ".env"))) {
+    read_dotenv()
+  }
   rd <- Sys.getenv("RESULTS_DIR", unset = "results")
   # Resolve relative paths against repo root
   if (!startsWith(rd, "/")) rd <- file.path(REPO_ROOT, rd)
   rd
+}
+
+#' Get the data subdirectory inside results, creating it if needed
+get_data_dir <- function() {
+  data_dir <- file.path(get_results_dir(), "data")
+  if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
+  data_dir
 }
 
 #' Get the figures output directory, creating it if needed
@@ -38,7 +49,7 @@ get_figures_dir <- function() {
 
 #' Get the default CSV data path
 get_data_path <- function(filename = "local_eval.csv") {
-  file.path(get_results_dir(), "data", filename)
+  file.path(get_data_dir(), filename)
 }
 
 # Model sizes in billions of parameters
@@ -73,6 +84,36 @@ MODEL_FAMILIES <- c(
   "qwen3.5-122b-a10b" = "Qwen"
 )
 
+MODEL_DEPLOYMENT <- c(
+  "qwen3.5-0.8b"     = "local",
+  "internvl"         = "local",
+  "qwen3-vl-2b"      = "local",
+  "smolvlm"          = "local",
+  "tinyllava"        = "local",
+  "qwen3-vl-4b"      = "local",
+  "qwen3.5-4b"       = "local",
+  "qwen3.5-9b"       = "remote",
+  "qwen3.5-27b"      = "remote",
+  "qwen3.5-35b-a3b"  = "remote",
+  "llama4-scout"     = "remote",
+  "qwen3.5-122b-a10b"= "remote"
+)
+
+MODEL_ARCH <- c(
+  "qwen3.5-0.8b"      = "dense",
+  "internvl"          = "dense",
+  "qwen3-vl-2b"       = "dense",
+  "smolvlm"           = "dense",
+  "tinyllava"         = "dense",
+  "qwen3-vl-4b"       = "dense",
+  "qwen3.5-4b"        = "dense",
+  "qwen3.5-9b"        = "dense",
+  "qwen3.5-27b"       = "dense",
+  "qwen3.5-35b-a3b"   = "moe",
+  "llama4-scout"      = "moe",
+  "qwen3.5-122b-a10b" = "moe"
+)
+
 FAMILY_COLORS <- c(
   "Qwen"     = "#1f77b4",
   "InternVL" = "#ff7f0e",
@@ -83,10 +124,14 @@ FAMILY_COLORS <- c(
 
 #' Load and clean results CSV(s)
 load_results <- function(csv_paths) {
-  if (length(csv_paths) == 1) {
-    df <- read_csv(csv_paths, show_col_types = FALSE)
+  existing_paths <- csv_paths[file.exists(csv_paths)]
+  if (length(existing_paths) == 0) {
+    stop("No input CSV files found. Checked:\n", paste(csv_paths, collapse = "\n"))
+  }
+  if (length(existing_paths) == 1) {
+    df <- read_csv(existing_paths, show_col_types = FALSE)
   } else {
-    df <- bind_rows(lapply(csv_paths, read_csv, show_col_types = FALSE))
+    df <- bind_rows(lapply(existing_paths, read_csv, show_col_types = FALSE))
   }
   df <- df |>
     mutate(
@@ -123,8 +168,14 @@ add_model_size <- function(df) {
     model = names(MODEL_SIZES),
     param_b = unname(MODEL_SIZES)
   )
+  if (!"param_b" %in% names(df)) {
+    df <- df |>
+      left_join(size_df, by = "model")
+  }
+  if (!"model_family" %in% names(df)) df$model_family <- NA_character_
+  if (!"deployment" %in% names(df)) df$deployment <- NA_character_
+  if (!"architecture" %in% names(df)) df$architecture <- NA_character_
   df <- df |>
-    left_join(size_df, by = "model") |>
     mutate(
       model_label = paste0(model, "\n(", param_b, "B)"),
       model_label = factor(
@@ -134,7 +185,67 @@ add_model_size <- function(df) {
           mutate(label = paste0(model, "\n(", param_b, "B)")) |>
           pull(label)
       ),
-      model_family = MODEL_FAMILIES[model]
+      model_family = ifelse(is.na(model_family), MODEL_FAMILIES[model], model_family),
+      deployment = ifelse(is.na(deployment), MODEL_DEPLOYMENT[model], deployment),
+      architecture = ifelse(is.na(architecture), MODEL_ARCH[model], architecture)
     )
   df
+}
+
+#' Build model metadata table for joining/export
+get_model_metadata <- function() {
+  tibble(
+    model = names(MODEL_SIZES),
+    param_b = as.numeric(unname(MODEL_SIZES)),
+    model_family = unname(MODEL_FAMILIES[names(MODEL_SIZES)]),
+    deployment = unname(MODEL_DEPLOYMENT[names(MODEL_SIZES)]),
+    architecture = unname(MODEL_ARCH[names(MODEL_SIZES)])
+  )
+}
+
+#' Canonical result paths in priority order
+get_candidate_result_paths <- function() {
+  c(
+    get_data_path("local_eval.csv"),
+    get_data_path("remote_all_fixed.csv"),
+    get_data_path("remote_all.csv"),
+    file.path(get_results_dir(), "local_eval.csv"),
+    file.path(get_results_dir(), "remote_all_fixed.csv"),
+    file.path(get_results_dir(), "remote_all.csv")
+  )
+}
+
+#' Build one canonical combined dataset for all available runs
+build_canonical_dataset <- function(output_path = get_data_path("canonical_combined_eval.csv")) {
+  candidate_paths <- get_candidate_result_paths()
+  existing_paths <- unique(candidate_paths[file.exists(candidate_paths)])
+  if (length(existing_paths) == 0) {
+    stop("No result CSVs found in expected paths.")
+  }
+
+  source_dfs <- lapply(existing_paths, function(path) {
+    df <- read_csv(path, show_col_types = FALSE)
+    filename <- basename(path)
+    run_source <- case_when(
+      str_detect(filename, "local") ~ "local",
+      str_detect(filename, "remote") ~ "remote",
+      TRUE ~ "other"
+    )
+    df |>
+      mutate(
+        source_file = filename,
+        source_path = path,
+        run_source = run_source
+      )
+  })
+
+  combined <- bind_rows(source_dfs) |>
+    mutate(order_method = ifelse(order_method == "fixed", "deterministic", order_method)) |>
+    distinct(model, stim_id, word, ordering, source_file, .keep_all = TRUE) |>
+    left_join(get_model_metadata(), by = "model")
+
+  output_dir <- dirname(output_path)
+  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+  write_csv(combined, output_path)
+  combined
 }
