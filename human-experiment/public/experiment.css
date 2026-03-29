@@ -341,3 +341,109 @@ body {
     height: min(46vw, 232px);
   }
 }
+
+/* Height-based exact-fit tuning for laptop screens */
+@media (max-height: 860px) {
+  .jspsych-display-element {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .sb-instruction-page .sb-intro-title {
+    font-size: 30px;
+    margin-bottom: 10px;
+  }
+
+  .sb-instruction-page .sb-intro-copy {
+    font-size: 16px;
+    line-height: 1.42;
+  }
+
+  .sb-instruction-page .sb-instruction-list {
+    margin-top: 4px;
+    margin-bottom: 8px;
+  }
+
+  .sb-instruction-page .sb-example-wrap {
+    margin-top: 6px;
+    padding: 6px 6px 1px;
+  }
+
+  .sb-instruction-page .sb-example-image {
+    width: 132px;
+    height: 132px;
+  }
+
+  .sb-trial-view .sb-prompt-top {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .sb-trial-view .sb-prompt-question {
+    font-size: 21px;
+    margin-bottom: 5px;
+  }
+
+  .sb-trial-view .sb-reference-image {
+    width: min(31vh, 220px);
+    height: min(31vh, 220px);
+  }
+
+  .sb-trial-view .sb-image {
+    width: min(28vh, 200px);
+    height: min(28vh, 200px);
+  }
+
+  #jspsych-html-button-response-btngroup {
+    margin-top: 6px;
+  }
+}
+
+@media (max-height: 760px) {
+  .jspsych-display-element {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .sb-instruction-page .sb-intro-title {
+    font-size: 27px;
+    margin-bottom: 8px;
+  }
+
+  .sb-instruction-page .sb-intro-copy {
+    font-size: 15px;
+    line-height: 1.34;
+  }
+
+  .sb-instruction-page .sb-example-image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .sb-trial-view .sb-prompt-top {
+    font-size: 18px;
+  }
+
+  .sb-trial-view .sb-prompt-question {
+    font-size: 19px;
+  }
+
+  .sb-trial-view .sb-reference-image {
+    width: min(28vh, 190px);
+    height: min(28vh, 190px);
+  }
+
+  .sb-trial-view .sb-image {
+    width: min(24vh, 172px);
+    height: min(24vh, 172px);
+  }
+
+  .sb-trial-view .sb-card {
+    width: 224px;
+  }
+
+  .jspsych-btn {
+    font-size: 16px;
+    padding: 9px 18px;
+  }
+}
