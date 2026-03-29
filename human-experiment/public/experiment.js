@@ -120,11 +120,28 @@
     return;
   }
 
-  function makePrompt(word) {
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function buildPromptParts(word) {
     if (condition === "no_word_category") {
-      return "See this object in the first image. Can you find another one of the two images (1 or 2)?";
+      return {
+        intro: 'This first image is a "<span class="sb-highlight">label</span>".',
+        question:
+          'Which of the following two images is also a "<span class="sb-highlight">label</span>"?'
+      };
     }
-    return `The first image is a ${word}. Which of the following two images (1 or 2) is also a ${word}?`;
+    const safeWord = escapeHtml(word);
+    return {
+      intro: `This first image is a "<span class="sb-highlight">${safeWord}</span>".`,
+      question: `Which of the following two images is also a "<span class="sb-highlight">${safeWord}</span>"?`
+    };
   }
 
   function chooseOrderings() {
@@ -192,15 +209,33 @@
     const seen = new Set();
     const out = [];
     const lengths = [6, 7, 8, 9, 10];
-    while (out.length < count) {
-      const idx = out.length;
-      const wordType = idx % 2 === 0 ? "sudo" : "random";
+
+    // Keep human-friendly labels comparable to benchmark:
+    // include both sudo + random labels in a balanced mix.
+    const sudoCount = Math.ceil(count / 2);
+    const randomCount = Math.floor(count / 2);
+    const typePool = [];
+    for (let i = 0; i < sudoCount; i += 1) typePool.push("sudo");
+    for (let i = 0; i < randomCount; i += 1) typePool.push("random");
+
+    // Seeded shuffle so assignments are deterministic per participant seed.
+    for (let i = typePool.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rand() * (i + 1));
+      const tmp = typePool[i];
+      typePool[i] = typePool[j];
+      typePool[j] = tmp;
+    }
+
+    for (let idx = 0; idx < count; idx += 1) {
+      const wordType = typePool[idx];
       const length = lengths[idx % lengths.length];
-      const candidate =
-        wordType === "sudo"
-          ? makePseudoWord(rand, length)
-          : makeRandomWord(rand, length);
-      if (seen.has(candidate)) continue;
+      let candidate = "";
+      do {
+        candidate =
+          wordType === "sudo"
+            ? makePseudoWord(rand, length)
+            : makeRandomWord(rand, length);
+      } while (seen.has(candidate));
       seen.add(candidate);
       out.push({ name: candidate, type: wordType, length });
     }
@@ -222,22 +257,22 @@
 
   function renderStimulusHtml(t) {
     return `
-      <div class="sb-container">
+      <div class="sb-container sb-trial-view">
+        <div class="sb-card sb-reference-card">
+          <div class="sb-prompt sb-prompt-top">${t.prompt_intro}</div>
+          <img class="sb-image sb-reference-image" src="${t.reference_url}" alt="reference image">
+        </div>
+        <div class="sb-prompt sb-prompt-question">${t.prompt_question}</div>
         <div class="sb-grid">
-          <div class="sb-card">
-            <div class="sb-label">Reference</div>
-            <img class="sb-image" src="${t.reference_url}" alt="reference">
+          <div class="sb-card sb-option-card">
+            <div class="sb-label">Option 1</div>
+            <img class="sb-image" src="${t.image_a_url}" alt="option 1 image">
           </div>
-          <div class="sb-card">
-            <div class="sb-label">Image 1</div>
-            <img class="sb-image" src="${t.image_a_url}" alt="image 1">
-          </div>
-          <div class="sb-card">
-            <div class="sb-label">Image 2</div>
-            <img class="sb-image" src="${t.image_b_url}" alt="image 2">
+          <div class="sb-card sb-option-card">
+            <div class="sb-label">Option 2</div>
+            <img class="sb-image" src="${t.image_b_url}" alt="option 2 image">
           </div>
         </div>
-        <div class="sb-question">${t.prompt_text}</div>
       </div>
     `;
   }
@@ -265,6 +300,7 @@
           ? orderingChoices[0]
           : orderingChoices[Math.floor(Math.random() * orderingChoices.length)];
       const shapeFirst = ordering === "shape_first";
+      const promptParts = buildPromptParts(w.name);
       trialVars.push({
         prolific_pid,
         study_id,
@@ -284,7 +320,12 @@
         image_b_url: shapeFirst ? stim.texture_match_url : stim.shape_match_url,
         shape_match_url: stim.shape_match_url,
         texture_match_url: stim.texture_match_url,
-        prompt_text: makePrompt(w.name)
+        prompt_text:
+          condition === "no_word_category"
+            ? "Which of the following two images is also a label?"
+            : `Which of the following two images is also a ${w.name}?`,
+        prompt_intro: promptParts.intro,
+        prompt_question: promptParts.question
       });
     }
   } else {
@@ -299,6 +340,7 @@
         const ords = chooseOrderings();
         for (const ordering of ords) {
           const shapeFirst = ordering === "shape_first";
+          const promptParts = buildPromptParts(w.name);
           trialVars.push({
             prolific_pid,
             study_id,
@@ -318,7 +360,12 @@
             image_b_url: shapeFirst ? stim.texture_match_url : stim.shape_match_url,
             shape_match_url: stim.shape_match_url,
             texture_match_url: stim.texture_match_url,
-            prompt_text: makePrompt(w.name)
+            prompt_text:
+              condition === "no_word_category"
+                ? "Which of the following two images is also a label?"
+                : `Which of the following two images is also a ${w.name}?`,
+            prompt_intro: promptParts.intro,
+            prompt_question: promptParts.question
           });
         }
       }
@@ -409,15 +456,61 @@
     type: jsPsychInstructions,
     pages: [
       `<div class="sb-container">
-        <h2>Welcome</h2>
-        <p>You will see 3 images per trial: one reference image and two candidate images.</p>
-        <p>Your task is to decide whether image <b>1</b> or image <b>2</b> matches the reference based on the question.</p>
-        <p>Please respond carefully. There are <b>${finalTrials.length}</b> trials.</p>
+        <div class="sb-intro-logo-wrap">
+          <img class="sb-intro-logo" src="/general_assets/stanford.png" alt="Stanford University logo" onerror="this.style.display='none'">
+        </div>
+        <h2 class="sb-intro-title">Welcome</h2>
+        <div class="sb-intro-copy">
+          <p>By answering the following questions, you are participating in a study being performed by cognitive scientists in the Stanford Department of Psychology.</p>
+          <p>If you have questions about this research, please contact us at <a href="mailto:languagecoglab@gmail.com">languagecoglab@gmail.com</a>.</p>
+          <p>You must be at least 18 years old to participate. Your participation is voluntary.</p>
+          <p>You may decline to answer any question, and you may stop at any time without adverse consequences.</p>
+          <p>Your responses are anonymous and will be used for research purposes only.</p>
+        </div>
       </div>`,
-      `<div class="sb-container">
-        <h3>Response format</h3>
-        <p>Select button <b>1</b> or <b>2</b>.</p>
-        <p class="sb-note">Design: <code>${design}</code> | Condition: <code>${condition}</code> | Stimulus set: <code>${stimSet}</code></p>
+      `<div class="sb-container sb-instruction-page">
+        <h3 class="sb-intro-title">Task Instructions</h3>
+        <div class="sb-intro-copy">
+          <p>You will complete <b>${finalTrials.length}</b> trials. In each trial:</p>
+          <ul class="sb-instruction-list">
+            <li>An image appears at the top.</li>
+            <li>Two options will appear with it.</li>
+            <li>Your task is to choose between these two images.</li>
+          </ul>
+          <div class="sb-example-wrap">
+            <p class="sb-example-title">For example:</p>
+            <div class="sb-card sb-reference-card sb-example-reference">
+              <div class="sb-prompt sb-prompt-top">This first image is a "<span class="sb-highlight">chair</span>".</div>
+              <img
+                class="sb-image sb-reference-image sb-example-image"
+                src="/general_assets/chair_target.jpg"
+                alt="example target chair"
+                onerror="this.onerror=null;this.src='/human-experiment/favicon.svg';"
+              >
+            </div>
+            <div class="sb-prompt sb-prompt-question">Which of the following two is also a "<span class="sb-highlight">chair</span>"?</div>
+            <div class="sb-grid sb-example-grid">
+              <div class="sb-card sb-option-card">
+                <div class="sb-label">Option 1</div>
+                <img
+                  class="sb-image sb-example-image"
+                  src="/general_assets/chair_option_match.jpg"
+                  alt="example matching chair option"
+                  onerror="this.onerror=null;this.src='/human-experiment/favicon.svg';"
+                >
+              </div>
+              <div class="sb-card sb-option-card">
+                <div class="sb-label">Option 2</div>
+                <img
+                  class="sb-image sb-example-image"
+                  src="/general_assets/chair_option_nonmatch.jpg"
+                  alt="example non-matching option"
+                  onerror="this.onerror=null;this.src='/human-experiment/favicon.svg';"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
       </div>`
     ],
     show_clickable_nav: true
@@ -428,7 +521,7 @@
       {
         type: jsPsychHtmlButtonResponse,
         stimulus: jsPsych.timelineVariable("stimulus_html"),
-        choices: ["1", "2"],
+        choices: ["Option 1", "Option 2"],
         data: {
           prolific_pid: jsPsych.timelineVariable("prolific_pid"),
           study_id: jsPsych.timelineVariable("study_id"),
