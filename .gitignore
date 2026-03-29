@@ -35,3 +35,9 @@ analysis_pipe/renv/staging/
 analysis_pipe/.Rprofile
 analysis_pipe/*_files/
 analysis_pipe/*.html
+
+# human experiment
+human-experiment/mongo_auth.json
+
+# shapebias-bench-2
+shapebias-bench-2/mongo_auth.json

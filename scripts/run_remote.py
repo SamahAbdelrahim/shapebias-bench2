@@ -20,6 +20,9 @@ Usage:
     # Append results to existing CSV
     python scripts/run_remote.py --models qwen3.5-9b --ordering shape_first -o results/run.csv
     python scripts/run_remote.py --models qwen3.5-9b --ordering texture_first -o results/run.csv
+
+    # Run no-word control condition (reduced pilot)
+    python scripts/run_remote.py --models all --ordering both --prompt-condition no_word_category --no-word-mode reduced -o results/no_word_pilot_remote.csv
 """
 
 from __future__ import annotations
@@ -79,9 +82,22 @@ PROVIDER_BASE_URLS = {
 # ---------------------------------------------------------------------------
 # Remote inference helpers
 # ---------------------------------------------------------------------------
-def image_to_base64_url(img: Image.Image, fmt: str = "PNG") -> str:
+def image_to_base64_url(img: Image.Image, fmt: str = "JPEG",
+                        max_side: int = 768, jpeg_quality: int = 85) -> str:
+    # Resize/compress to avoid provider request-body limits (HTTP 413).
+    if max(img.size) > max_side:
+        scale = max_side / float(max(img.size))
+        new_size = (max(1, int(img.width * scale)), max(1, int(img.height * scale)))
+        img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+    if fmt.upper() == "JPEG":
+        img = img.convert("RGB")
+
     buf = BytesIO()
-    img.save(buf, format=fmt)
+    save_kwargs = {}
+    if fmt.upper() == "JPEG":
+        save_kwargs.update({"quality": jpeg_quality, "optimize": True})
+    img.save(buf, format=fmt, **save_kwargs)
     b64 = base64.b64encode(buf.getvalue()).decode()
     return f"data:image/{fmt.lower()};base64,{b64}"
 
@@ -102,7 +118,16 @@ def run_remote(model_name: str, images: list[Image.Image], prompt: str) -> dict:
 
     cfg = REMOTE_MODELS[model_name]
     base_url = PROVIDER_BASE_URLS[cfg["provider"]]
-    hf_token = os.environ.get("HUGGING_FACE") or os.environ.get("HF_API_TOKEN")
+    hf_token = (
+        os.environ.get("HUGGING_FACE")
+        or os.environ.get("HF_API_TOKEN")
+        or os.environ.get("HF_TOKEN")
+        or os.environ.get("OPENAI_API_KEY")
+    )
+    if not hf_token:
+        raise RuntimeError(
+            "Missing API token. Set one of HUGGING_FACE, HF_API_TOKEN, HF_TOKEN, or OPENAI_API_KEY."
+        )
 
     client = OpenAI(api_key=hf_token, base_url=base_url, timeout=60.0)
     messages = build_messages(images, prompt)
@@ -156,10 +181,26 @@ def main():
                         help="Number of parallel workers (default: 10)")
     parser.add_argument("--resume", default=None, metavar="CSV",
                         help="Resume from a partial CSV — skip already-completed trials and append new results")
+    parser.add_argument("--prompt-condition", default="noun_label",
+                        choices=["noun_label", "no_word_category"],
+                        help="Prompt variant to use (default: noun_label)")
+    parser.add_argument("--no-word-mode", default="matched",
+                        choices=["matched", "reduced"],
+                        help="For no_word_category: matched keeps full word-loop trial count, reduced runs one pass per stimulus.")
     add_common_args(parser)
     args = parser.parse_args()
 
     random.seed(args.seed)
+
+    token_present = bool(
+        os.environ.get("HUGGING_FACE")
+        or os.environ.get("HF_API_TOKEN")
+        or os.environ.get("HF_TOKEN")
+        or os.environ.get("OPENAI_API_KEY")
+    )
+    if not token_present:
+        print("Error: no API token found. Set HUGGING_FACE, HF_API_TOKEN, HF_TOKEN, or OPENAI_API_KEY.")
+        sys.exit(1)
 
     # Resolve model list
     model_names = []
@@ -172,8 +213,17 @@ def main():
                 sys.exit(1)
             model_names.append(m)
 
-    # Load stimuli and words
-    words = load_words()
+    # Load stimuli and words (or no-word placeholders)
+    if args.prompt_condition == "no_word_category" and args.no_word_mode == "reduced":
+        words = [{"name": "__no_word__", "type": "no_word", "length": 0}]
+    elif args.prompt_condition == "no_word_category":
+        # Matched mode preserves trial counts by reusing word slots.
+        words = [
+            {"name": f"no_word_slot_{i+1}", "type": "no_word", "length": 0}
+            for i in range(len(load_words()))
+        ]
+    else:
+        words = load_words()
     stimuli = load_stimuli(args.stim_set, args.num_stimuli)
     stim_set_label = args.stim_set or "env/default"
     ord_mult = 2 if args.ordering == "both" else 1
@@ -181,11 +231,15 @@ def main():
 
     print(f"Models:      {model_names}")
     print(f"Ordering:    {args.ordering}")
+    print(f"Condition:   {args.prompt_condition} ({args.no_word_mode})")
     print(f"Repeats:     {args.repeats}")
     print(f"Temperature: {args.temperature}")
     print(f"Workers:     {args.workers}")
     print(f"Stimuli:     {len(stimuli)} from {stim_set_label}")
-    print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
+    if args.prompt_condition == "noun_label":
+        print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
+    else:
+        print(f"No-word slots: {len(words)} (mode={args.no_word_mode})")
     print(f"Trials per model: {len(stimuli)} x {len(words)} x {args.repeats} repeats x {ord_mult} orderings = {trials_per}")
     print()
 
@@ -251,7 +305,8 @@ def main():
                 return run_remote(_mk, images, prompt)
 
             trial_results = run_trial(run_fn, stim, word, word_type, word_length,
-                                      ordering=args.ordering)
+                                      ordering=args.ordering,
+                                      prompt_condition=args.prompt_condition)
             for r in trial_results:
                 r["model"] = model_key
                 r["repeat"] = repeat

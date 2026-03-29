@@ -138,6 +138,9 @@ load_results <- function(csv_paths) {
       choice = factor(choice, levels = c("shape", "texture", "unclear")),
       order_method = ifelse(order_method == "fixed", "deterministic", order_method)
     )
+  if (!"prompt_condition" %in% names(df)) {
+    df <- df |> mutate(prompt_condition = "noun_label")
+  }
   df
 }
 
@@ -209,9 +212,15 @@ get_candidate_result_paths <- function() {
     get_data_path("local_eval.csv"),
     get_data_path("remote_all_fixed.csv"),
     get_data_path("remote_all.csv"),
+    get_data_path("no_word_pilot_remote_dedup.csv"),
+    get_data_path("no_word_pilot_remote.csv"),
+    get_data_path("no_word_full_remote.csv"),
     file.path(get_results_dir(), "local_eval.csv"),
     file.path(get_results_dir(), "remote_all_fixed.csv"),
-    file.path(get_results_dir(), "remote_all.csv")
+    file.path(get_results_dir(), "remote_all.csv"),
+    file.path(get_results_dir(), "no_word_pilot_remote_dedup.csv"),
+    file.path(get_results_dir(), "no_word_pilot_remote.csv"),
+    file.path(get_results_dir(), "no_word_full_remote.csv")
   )
 }
 
@@ -231,17 +240,29 @@ build_canonical_dataset <- function(output_path = get_data_path("canonical_combi
       str_detect(filename, "remote") ~ "remote",
       TRUE ~ "other"
     )
+    source_priority <- case_when(
+      str_detect(filename, "remote_all_fixed\\.csv$") ~ 3L,
+      str_detect(filename, "no_word_full_remote\\.csv$") ~ 3L,
+      str_detect(filename, "no_word_pilot_remote_dedup\\.csv$") ~ 3L,
+      str_detect(filename, "local_eval\\.csv$") ~ 2L,
+      str_detect(filename, "no_word_pilot_remote\\.csv$") ~ 2L,
+      str_detect(filename, "remote_all\\.csv$") ~ 1L,
+      TRUE ~ 0L
+    )
     df |>
       mutate(
         source_file = filename,
         source_path = path,
-        run_source = run_source
+        run_source = run_source,
+        source_priority = source_priority
       )
   })
 
   combined <- bind_rows(source_dfs) |>
     mutate(order_method = ifelse(order_method == "fixed", "deterministic", order_method)) |>
-    distinct(model, stim_id, word, ordering, source_file, .keep_all = TRUE) |>
+    mutate(prompt_condition = ifelse(is.na(prompt_condition), "noun_label", prompt_condition)) |>
+    arrange(desc(source_priority)) |>
+    distinct(model, stim_id, word, ordering, prompt_condition, .keep_all = TRUE) |>
     left_join(get_model_metadata(), by = "model")
 
   output_dir <- dirname(output_path)

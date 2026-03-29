@@ -9,7 +9,8 @@ library(tibble)
 #' with columns: stim_id, complexity, novelty, realism, abstractness, artifact_like.
 load_stimulus_covariates <- function(
   repo_root = REPO_ROOT,
-  optional_metadata_path = get_data_path("stimulus_metadata.csv")
+  optional_metadata_path = get_data_path("stimulus_metadata.csv"),
+  preferred_mode = Sys.getenv("STIMULUS_MODE", unset = "stimuli_A_auto_contrast")
 ) {
   manifest_path <- file.path(
     repo_root, "stimuli_pipe", "stimuli_per_stl_packages", "combined_benchmark_manifest.csv"
@@ -63,7 +64,16 @@ load_stimulus_covariates <- function(
       left_join(template, by = "stim_id")
   }
 
-  base_cov
+  if (!is.null(preferred_mode) && preferred_mode %in% unique(base_cov$mode)) {
+    base_cov <- base_cov |>
+      filter(mode == preferred_mode)
+  }
+
+  # Guarantee one row per stim_id for safe trial-level joins.
+  base_cov |>
+    group_by(stim_id) |>
+    slice_head(n = 1) |>
+    ungroup()
 }
 
 #' Join stimulus covariates to trial-level benchmark data

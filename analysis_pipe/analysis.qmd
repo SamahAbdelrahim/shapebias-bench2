@@ -15,6 +15,7 @@ source("src/validity_gates.R")
 source("src/inference.R")
 source("src/stimulus_covariates.R")
 source("src/next_steps_utils.R")
+source("src/condition_contrast.R")
 
 df <- build_canonical_dataset() |> add_model_size()
 validity_df <- compute_model_validity(df)
@@ -25,6 +26,7 @@ data_dir <- get_data_dir()
 
 readr::write_csv(validity_df, file.path(data_dir, "model_validity_summary.csv"))
 readr::write_csv(df, file.path(data_dir, "canonical_combined_eval.csv"))
+has_no_word <- "prompt_condition" %in% names(df) && any(df$prompt_condition == "no_word_category")
 ```
 
 ## Validation
@@ -187,6 +189,26 @@ p
 p <- plot_stimulus_bias_main(df)
 ggsave(file.path(fig_dir, "B_stimulus_bias_main.png"), p, width = 10, height = 5, dpi = 300)
 p
+```
+
+## Condition Contrast (Noun Label vs No-Word)
+
+```{r table-condition-contrast}
+if (has_no_word) {
+  condition_contrast <- compute_condition_contrasts(df)
+  readr::write_csv(condition_contrast, file.path(data_dir, "table_condition_contrast.csv"))
+  knitr::kable(condition_contrast, digits = 3)
+} else {
+  knitr::kable(data.frame(note = "No no_word_category rows found yet. Run no-word evaluation first."))
+}
+```
+
+```{r fig-condition-delta-shape, fig.width=8, fig.height=5, fig.cap="Per-model delta in shape-bias rate between no-word and noun-label conditions."}
+if (has_no_word) {
+  p <- plot_condition_delta_shape(df)
+  ggsave(file.path(fig_dir, "E_condition_delta_shape.png"), p, width = 8, height = 5, dpi = 300)
+  p
+}
 ```
 
 ## Inferential Analysis

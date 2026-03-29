@@ -46,19 +46,27 @@ WORD_PAIRS = [
 ]
 
 # ===========================================================================
-# PROMPT TEMPLATE
+# PROMPT TEMPLATES
 # ===========================================================================
-PROMPT_TEMPLATE = (
-    "The first image is a {word}. "
-    "Which of the following two images (1 or 2) is also a {word}? "
-    "Your response must be exactly one character: 1 or 2. No other text."
-)
+PROMPT_TEMPLATES = {
+    "noun_label": (
+        "The first image is a {word}. "
+        "Which of the following two images (1 or 2) is also a {word}? "
+        "Your response must be exactly one character: 1 or 2. No other text."
+    ),
+    "no_word_category": (
+        "See this object in the first image. "
+        "Can you find another one of the two (1 or 2)? "
+        "Your response must be exactly one character: 1 or 2. No other text."
+    ),
+}
 
 # ===========================================================================
 # CSV OUTPUT FIELDS
 # ===========================================================================
 CSV_FIELDS = [
     "model", "model_name", "stim_id", "word", "word_type", "word_length",
+    "prompt_condition",
     "ordering", "order_method", "a_is", "b_is", "raw_text", "parsed_answer", "choice",
     "generation_time_s", "num_tokens_generated", "attempts",
     "repeat", "temperature",
@@ -77,8 +85,13 @@ def load_words() -> list[dict]:
     return words
 
 
-def make_prompt(word: str) -> str:
-    return PROMPT_TEMPLATE.format(word=word)
+def make_prompt(word: str | None = None, prompt_condition: str = "noun_label") -> str:
+    if prompt_condition not in PROMPT_TEMPLATES:
+        raise ValueError(f"Unknown prompt_condition '{prompt_condition}'")
+    template = PROMPT_TEMPLATES[prompt_condition]
+    if "{word}" in template:
+        return template.format(word=word or "object")
+    return template
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +161,8 @@ def run_with_retry(run_fn, images: list[Image.Image], prompt: str) -> dict:
 # Single trial (both orderings)
 # ---------------------------------------------------------------------------
 def run_trial(run_fn, stimulus: dict, word: str, word_type: str,
-              word_length: int = 0, ordering: str = "both") -> list[dict]:
+              word_length: int = 0, ordering: str = "both",
+              prompt_condition: str = "noun_label") -> list[dict]:
     """Run one stimulus in specified ordering(s). Returns list of result dicts.
 
     ordering: "shape_first", "texture_first", "random", or "both" (default).
@@ -156,7 +170,7 @@ def run_trial(run_fn, stimulus: dict, word: str, word_type: str,
     ref = stimulus["reference"]
     shape = stimulus["shape_match"]
     texture = stimulus["texture_match"]
-    prompt = make_prompt(word)
+    prompt = make_prompt(word, prompt_condition=prompt_condition)
 
     # Determine which orderings to run
     orderings_config = {
@@ -192,6 +206,7 @@ def run_trial(run_fn, stimulus: dict, word: str, word_type: str,
             "word": word,
             "word_type": word_type,
             "word_length": word_length,
+            "prompt_condition": prompt_condition,
             "ordering": ord_name,
             "order_method": order_method,
             "a_is": a_is,
