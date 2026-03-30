@@ -89,11 +89,14 @@ function pickHumanStimPackage(participantSeed) {
 }
 
 function resolveStimPackage({ requestedPkg, design, participantSeed }) {
-  if (requestedPkg && ALLOWED_STIM_PACKAGES.has(requestedPkg)) {
-    return requestedPkg;
-  }
   if (design === "human_friendly") {
+    if (requestedPkg && HUMAN_UNIQUE_STIM_PACKAGES.includes(requestedPkg)) {
+      return requestedPkg;
+    }
     return pickHumanStimPackage(participantSeed);
+  }
+  if (requestedPkg === BENCHMARK_STIM_PACKAGE) {
+    return requestedPkg;
   }
   return BENCHMARK_STIM_PACKAGE;
 }

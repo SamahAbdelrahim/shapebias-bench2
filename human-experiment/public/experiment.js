@@ -111,11 +111,12 @@
   const config = await configRes.json();
   const completionCode = params.get("cc") || config.completion_code || "TESTCODE";
   const participantSeed = `${prolific_pid}|${study_id}|${session_id}`;
-  const defaultStimPackage =
+  const stimPackage =
     design === "human_friendly"
-      ? chooseParticipantStimPackage(participantSeed)
+      ? HUMAN_UNIQUE_STIM_PACKAGES.includes(stimPkgParam)
+        ? stimPkgParam
+        : chooseParticipantStimPackage(participantSeed)
       : BENCHMARK_STIM_PACKAGE;
-  const stimPackage = stimPkgParam || defaultStimPackage;
   ck("Resolved config", { completionCode, default_stim_set: config.default_stim_set });
 
   setBootStatus("Loading stimuli list...");
