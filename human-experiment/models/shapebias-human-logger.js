@@ -10,6 +10,7 @@ const ShapeBiasHumanSchema = new mongoose.Schema(
 
     condition: String,
     stim_set: String,
+    stim_pkg: String,
     trial_index: Number,
 
     stim_id: String,

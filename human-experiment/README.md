@@ -58,6 +58,7 @@ Optional env vars:
 - `design`: `human_friendly` (default) or `benchmark`
 - `condition`: `noun_label` (default) or `no_word_category`
 - `stim_set`: e.g. `stimuli_A_auto_contrast`
+- `stim_pkg`: optional explicit stimulus package override; if omitted, the app auto-selects by `design`
 - `ordering`: in `human_friendly` default is `random`; in `benchmark` default is `both`
 - `trial_limit`: in `human_friendly` default is `30`; in `benchmark`, `0` means full set
 - `shuffle`: `1` (default) or `0`
@@ -67,23 +68,24 @@ Optional env vars:
 
 The experiment reads:
 
-`stimuli_pipe/stimuli_per_stl_packages/<stim_set>/manifest.csv` (repo root)
+`stimuli_pipe/<stim_pkg>/<stim_set>/manifest.csv` (repo root)
 
 Required structure under repo-root `stimuli_pipe/`:
 
-- `stimuli_per_stl_packages/stimuli_A_auto_contrast/<stl_id>/reference.png`
-- `stimuli_per_stl_packages/stimuli_A_auto_contrast/<stl_id>/shape_match.png`
-- `stimuli_per_stl_packages/stimuli_A_auto_contrast/<stl_id>/texture_match.png`
-- same pattern for `stimuli_B_controlled_simple/`
+- `stimuli_per_stl_packages/<stim_set>/<stl_id>/{reference,shape_match,texture_match}.png` (benchmark)
+- `stimuli_unique_texture_per_stl_v1/<stim_set>/<stl_id>/{reference,shape_match,texture_match}.png` (human)
+- `stimuli_unique_texture_per_stl_v2/<stim_set>/<stl_id>/{reference,shape_match,texture_match}.png` (human)
 
 For each stimulus, design behavior depends on mode:
 
 - `human_friendly` (default):
+  - participant is assigned one texture-unique package at random (deterministically from `PROLIFIC_PID|STUDY_ID|SESSION_ID`): `stimuli_unique_texture_per_stl_v1` or `stimuli_unique_texture_per_stl_v2`,
   - one exposure per selected object (no model-style exhaustive Cartesian repetition),
   - one unique generated word per trial for noun-label condition (no word reused across different objects),
   - random left/right mapping by default, logged via `ordering`, `a_is`, `b_is`.
 
 - `benchmark`:
+  - uses `stimuli_per_stl_packages` (model-evaluation package),
   - model-style full expansion over 10 fixed benchmark words and counterbalanced orderings.
 
 Default benchmark full condition with `ordering=both` is:

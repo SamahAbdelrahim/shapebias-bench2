@@ -68,6 +68,11 @@
     BENCHMARK_WORDS.push({ name: sudo, type: "sudo", length });
     BENCHMARK_WORDS.push({ name: rand, type: "random", length });
   }
+  const BENCHMARK_STIM_PACKAGE = "stimuli_per_stl_packages";
+  const HUMAN_UNIQUE_STIM_PACKAGES = [
+    "stimuli_unique_texture_per_stl_v1",
+    "stimuli_unique_texture_per_stl_v2"
+  ];
 
   const url = new URL(window.location.href);
   const params = url.searchParams;
@@ -77,6 +82,7 @@
   const design = params.get("design") || "human_friendly"; // human_friendly | benchmark
   const condition = params.get("condition") || "noun_label"; // noun_label | no_word_category
   const stimSet = params.get("stim_set") || "stimuli_A_auto_contrast";
+  const stimPkgParam = params.get("stim_pkg");
   const orderMode = params.get("ordering") || (design === "human_friendly" ? "random" : "both");
   const defaultLimit = design === "human_friendly" ? 30 : 0;
   const trialLimit = Number(params.get("trial_limit") || defaultLimit);
@@ -90,6 +96,7 @@
     design,
     condition,
     stimSet,
+    stimPkgParam,
     orderMode,
     trialLimit,
     shuffleTrials,
@@ -103,14 +110,26 @@
   ck("Config response received", { ok: configRes.ok, status: configRes.status });
   const config = await configRes.json();
   const completionCode = params.get("cc") || config.completion_code || "TESTCODE";
+  const participantSeed = `${prolific_pid}|${study_id}|${session_id}`;
+  const defaultStimPackage =
+    design === "human_friendly"
+      ? chooseParticipantStimPackage(participantSeed)
+      : BENCHMARK_STIM_PACKAGE;
+  const stimPackage = stimPkgParam || defaultStimPackage;
   ck("Resolved config", { completionCode, default_stim_set: config.default_stim_set });
 
   setBootStatus("Loading stimuli list...");
-  ck("Fetching /api/stimuli", { stim_set: stimSet });
-  const stimRes = await fetch(`/api/stimuli?stim_set=${encodeURIComponent(stimSet)}`);
+  ck("Fetching /api/stimuli", { stim_set: stimSet, stim_pkg: stimPackage, design });
+  const stimRes = await fetch(
+    `/api/stimuli?stim_set=${encodeURIComponent(stimSet)}&stim_pkg=${encodeURIComponent(stimPackage)}&design=${encodeURIComponent(design)}&prolific_pid=${encodeURIComponent(prolific_pid)}&study_id=${encodeURIComponent(study_id)}&session_id=${encodeURIComponent(session_id)}`
+  );
   ck("Stimuli response received", { ok: stimRes.ok, status: stimRes.status });
   const stimData = await stimRes.json();
+  const resolvedStimSet = stimData.stim_set || stimSet;
+  const resolvedStimPackage = stimData.stim_pkg || stimPackage;
   ck("Stimuli payload parsed", {
+    stim_set: resolvedStimSet,
+    stim_pkg: resolvedStimPackage,
     hasStimuliArray: Array.isArray(stimData.stimuli),
     count: Array.isArray(stimData.stimuli) ? stimData.stimuli.length : null
   });
@@ -168,6 +187,11 @@
       h = Math.imul(h, 16777619);
     }
     return h >>> 0;
+  }
+
+  function chooseParticipantStimPackage(seedText) {
+    const idx = hashString(seedText) % HUMAN_UNIQUE_STIM_PACKAGES.length;
+    return HUMAN_UNIQUE_STIM_PACKAGES[idx];
   }
 
   function mulberry32(seed) {
@@ -280,7 +304,7 @@
   const trialVars = [];
   if (design === "human_friendly") {
     // Human-friendly default: one trial per object with unique labels to avoid memory carry-over.
-    const seedText = `${prolific_pid}|${study_id}|${session_id}|${stimSet}|${condition}`;
+    const seedText = `${prolific_pid}|${study_id}|${session_id}|${resolvedStimSet}|${resolvedStimPackage}|${condition}`;
     const selectedStimuli = maybeSampleStimuli(stimData.stimuli, trialLimit, `${seedText}|stimuli`);
     const uniqueWords = buildUniqueHumanWords(selectedStimuli.length, `${seedText}|words`);
     ck("Human-friendly trial builder", {
@@ -307,7 +331,8 @@
         session_id,
         completion_code: completionCode,
         condition,
-        stim_set: stimSet,
+        stim_set: resolvedStimSet,
+        stim_pkg: resolvedStimPackage,
         stim_id: String(stim.stim_id),
         word: w.name,
         word_type: w.type,
@@ -347,7 +372,8 @@
             session_id,
             completion_code: completionCode,
             condition,
-            stim_set: stimSet,
+            stim_set: resolvedStimSet,
+            stim_pkg: resolvedStimPackage,
             stim_id: String(stim.stim_id),
             word: w.name,
             word_type: w.type,
@@ -429,7 +455,8 @@
     session_id,
     design,
     condition,
-    stim_set: stimSet,
+    stim_set: resolvedStimSet,
+    stim_pkg: resolvedStimPackage,
     ordering_mode: orderMode
   });
 
@@ -529,6 +556,7 @@
           completion_code: jsPsych.timelineVariable("completion_code"),
           condition: jsPsych.timelineVariable("condition"),
           stim_set: jsPsych.timelineVariable("stim_set"),
+          stim_pkg: jsPsych.timelineVariable("stim_pkg"),
           stim_id: jsPsych.timelineVariable("stim_id"),
           word: jsPsych.timelineVariable("word"),
           word_type: jsPsych.timelineVariable("word_type"),
@@ -565,6 +593,7 @@
             completion_code: data.completion_code,
             condition: data.condition,
             stim_set: data.stim_set,
+            stim_pkg: data.stim_pkg,
             trial_index: data.trial_index,
             stim_id: data.stim_id,
             word: data.word,

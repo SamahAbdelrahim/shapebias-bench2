@@ -11,6 +11,15 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const STIMULI_ROOT = path.join(REPO_ROOT, "stimuli_pipe");
 const COMPLETION_CODE = process.env.PROLIFIC_COMPLETION_CODE || "TESTCODE";
+const BENCHMARK_STIM_PACKAGE = "stimuli_per_stl_packages";
+const HUMAN_UNIQUE_STIM_PACKAGES = [
+  "stimuli_unique_texture_per_stl_v1",
+  "stimuli_unique_texture_per_stl_v2"
+];
+const ALLOWED_STIM_PACKAGES = new Set([
+  BENCHMARK_STIM_PACKAGE,
+  ...HUMAN_UNIQUE_STIM_PACKAGES
+]);
 
 function parseSimpleCsv(csvText) {
   const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -28,10 +37,34 @@ function parseSimpleCsv(csvText) {
   return rows;
 }
 
-function loadStimuliFromManifest(stimSet) {
+function hashString(input) {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function pickHumanStimPackage(participantSeed) {
+  const idx = hashString(participantSeed) % HUMAN_UNIQUE_STIM_PACKAGES.length;
+  return HUMAN_UNIQUE_STIM_PACKAGES[idx];
+}
+
+function resolveStimPackage({ requestedPkg, design, participantSeed }) {
+  if (requestedPkg && ALLOWED_STIM_PACKAGES.has(requestedPkg)) {
+    return requestedPkg;
+  }
+  if (design === "human_friendly") {
+    return pickHumanStimPackage(participantSeed);
+  }
+  return BENCHMARK_STIM_PACKAGE;
+}
+
+function loadStimuliFromManifest(stimPackage, stimSet) {
   const manifestPath = path.join(
     STIMULI_ROOT,
-    "stimuli_per_stl_packages",
+    stimPackage,
     stimSet,
     "manifest.csv"
   );
@@ -39,14 +72,28 @@ function loadStimuliFromManifest(stimSet) {
     throw new Error(`Manifest not found: ${manifestPath}`);
   }
   const rows = parseSimpleCsv(fs.readFileSync(manifestPath, "utf8"));
+  const normalizeStimulusRelPath = (rawValue) => {
+    const raw = String(rawValue || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    const parts = raw.split("/").filter(Boolean);
+    let idx = 0;
+
+    // Legacy manifests may start with stimuli_per_stl_packages/.
+    if (parts[idx] === BENCHMARK_STIM_PACKAGE) idx += 1;
+    // Some manifests include a package segment after the legacy prefix.
+    if (parts[idx] && ALLOWED_STIM_PACKAGES.has(parts[idx])) idx += 1;
+    // Use whatever remains (usually <stim_set>/<stl_id>/<file>.png).
+    const tail = parts.slice(idx);
+    if (tail.length === 0) return "";
+    return path.posix.join(stimPackage, ...tail);
+  };
   return rows.map((r) => {
     const norm = (p) => `/${p.replace(/^\/+/, "")}`;
     return {
       stim_id: r.stl_id,
       mode: r.mode,
-      reference_url: norm(path.posix.join("stimuli_pipe", r.reference)),
-      shape_match_url: norm(path.posix.join("stimuli_pipe", r.shape_match)),
-      texture_match_url: norm(path.posix.join("stimuli_pipe", r.texture_match))
+      reference_url: norm(path.posix.join("stimuli_pipe", normalizeStimulusRelPath(r.reference))),
+      shape_match_url: norm(path.posix.join("stimuli_pipe", normalizeStimulusRelPath(r.shape_match))),
+      texture_match_url: norm(path.posix.join("stimuli_pipe", normalizeStimulusRelPath(r.texture_match)))
     };
   });
 }
@@ -103,19 +150,25 @@ app.get("/", (_req, res) => {
 app.get("/api/config", (_req, res) => {
   res.json({
     completion_code: COMPLETION_CODE,
-    default_stim_set: process.env.DEFAULT_STIM_SET || "stimuli_A_auto_contrast"
+    default_stim_set: process.env.DEFAULT_STIM_SET || "stimuli_A_auto_contrast",
+    benchmark_stim_pkg: BENCHMARK_STIM_PACKAGE,
+    human_stim_pkgs: HUMAN_UNIQUE_STIM_PACKAGES
   });
 });
 
 app.get("/api/stimuli", (req, res) => {
   try {
+    const design = String(req.query.design || "human_friendly");
     const stimSet = String(req.query.stim_set || process.env.DEFAULT_STIM_SET || "stimuli_A_auto_contrast");
-    const stimuli = loadStimuliFromManifest(stimSet);
-    res.json({ stim_set: stimSet, count: stimuli.length, stimuli });
+    const requestedPkg = req.query.stim_pkg ? String(req.query.stim_pkg) : "";
+    const participantSeed = `${String(req.query.prolific_pid || "debug_pid")}|${String(req.query.study_id || "debug_study")}|${String(req.query.session_id || "debug_session")}`;
+    const stimPkg = resolveStimPackage({ requestedPkg, design, participantSeed });
+    const stimuli = loadStimuliFromManifest(stimPkg, stimSet);
+    res.json({ stim_set: stimSet, stim_pkg: stimPkg, count: stimuli.length, stimuli });
   } catch (err) {
     console.warn("[local-preview] /api/stimuli fallback:", String(err.message || err));
     const stimuli = fallbackStimuli();
-    res.json({ stim_set: "preview_fallback", count: stimuli.length, stimuli, preview_fallback: true });
+    res.json({ stim_set: "preview_fallback", stim_pkg: "preview_fallback", count: stimuli.length, stimuli, preview_fallback: true });
   }
 });
 
