@@ -501,9 +501,8 @@
         <div class="sb-intro-copy">
           <p>You will complete <b>${finalTrials.length}</b> trials. In each trial:</p>
           <ul class="sb-instruction-list">
-            <li>An image appears at the top.</li>
-            <li>Two options will appear with it.</li>
-            <li>Your task is to choose between these two images.</li>
+            <li>An image of an object appears at the top. The object is labeled with a word.</li>
+            <li>Two options will appear with it. Your task is to choose between these two options.</li>
           </ul>
           <div class="sb-example-wrap">
             <p class="sb-example-title">For example:</p>
@@ -516,7 +515,7 @@
                 onerror="this.onerror=null;this.src='/human-experiment/favicon.svg';"
               >
             </div>
-            <div class="sb-prompt sb-prompt-question">Which of the following two is also a "<span class="sb-highlight">chair</span>"?</div>
+            <div class="sb-prompt sb-prompt-question">Which of the following is also a "<span class="sb-highlight">chair</span>"?</div>
             <div class="sb-grid sb-example-grid">
               <div class="sb-card sb-option-card">
                 <div class="sb-label">Option 1</div>
@@ -538,6 +537,51 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>`,
+      `<div class="sb-container sb-instruction-page">
+        <h3 class="sb-intro-title">Task Instructions</h3>
+        <div class="sb-intro-copy">
+          <div class="sb-example-wrap">
+            <p class="sb-example-title">Another example:</p>
+            <div class="sb-card sb-reference-card sb-example-reference">
+              <div class="sb-prompt sb-prompt-top">This first image is "<span class="sb-highlight">sand</span>".</div>
+              <img
+                class="sb-image sb-reference-image sb-example-image"
+                src="/general_assets/sand_target.jpg"
+                alt="example target sand"
+                onerror="this.onerror=null;this.src='/human-experiment/favicon.svg';"
+              >
+            </div>
+            <div class="sb-prompt sb-prompt-question">Which of the following is also "<span class="sb-highlight">sand</span>"?</div>
+            <div class="sb-grid sb-example-grid">
+              <div class="sb-card sb-option-card">
+                <div class="sb-label">Option 1</div>
+                <img
+                  class="sb-image sb-example-image"
+                  src="/general_assets/sand_option_match.jpg"
+                  alt="example matching sand option"
+                  onerror="this.onerror=null;this.src='/human-experiment/favicon.svg';"
+                >
+              </div>
+              <div class="sb-card sb-option-card">
+                <div class="sb-label">Option 2</div>
+                <img
+                  class="sb-image sb-example-image"
+                  src="/general_assets/sand_option_nonmatch.jpg"
+                  alt="example non-matching sand option"
+                  onerror="this.onerror=null;this.src='/human-experiment/favicon.svg';"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`,
+      `<div class="sb-container sb-instruction-page">
+        <h3 class="sb-intro-title">Now let's begin!</h3>
+        <div class="sb-intro-copy">
+          <p>You will start the task.</p>
+          <p>Remember to choose between Option 1 and Option 2 on each trial.</p>
         </div>
       </div>`
     ],
