@@ -62,6 +62,9 @@ Optional env vars:
 - `ordering`: in `human_friendly` default is `random`; in `benchmark` default is `both`
 - `trial_limit`: in `human_friendly` default is `30`; in `benchmark`, `0` means full set
 - `shuffle`: `1` (default) or `0`
+- `word_mode`: `sudo_only` (default) or `mixed`; applies only to `human_friendly`
+- `word_min_len`: minimum generated label length (default `4`; human_friendly only)
+- `word_max_len`: maximum generated label length (default `8`; human_friendly only)
 - `sudo_threshold`: pseudo-word English-transition threshold in `[0,1]` (default `0.62`); applies only to sudo words in `human_friendly`
 - `cc`: completion code override
 

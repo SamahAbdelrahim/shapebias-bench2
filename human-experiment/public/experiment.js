@@ -103,6 +103,10 @@
   const shuffleTrials = params.get("shuffle") !== "0";
   const verboseTrials = params.get("verbose_trials") === "1";
   const preloadMode = params.get("preload") || "minimal"; // off | minimal | all
+  const requestedWordMode = params.get("word_mode") || "sudo_only"; // sudo_only | mixed
+  const wordMode = requestedWordMode === "mixed" ? "mixed" : "sudo_only";
+  const wordMinLen = Math.max(1, Number(params.get("word_min_len") || 4));
+  const wordMaxLen = Math.max(wordMinLen, Number(params.get("word_max_len") || 8));
   // Sudo (pseudo) words only: minimum English-transition score [0..1].
   // Higher means stricter English-like filtering.
   const sudoThreshold = Number(params.get("sudo_threshold") || 0.62);
@@ -118,8 +122,10 @@
     trialLimit,
     shuffleTrials,
     verboseTrials,
-    preloadMode
-    ,
+    preloadMode,
+    wordMode,
+    wordMinLen,
+    wordMaxLen,
     sudoThreshold
   });
 
@@ -173,13 +179,13 @@
       return {
         intro: 'This first image is a "<span class="sb-highlight">label</span>".',
         question:
-          'Which of the following two images is also a "<span class="sb-highlight">label</span>"?'
+          'Which of the following two is also a "<span class="sb-highlight">label</span>"?'
       };
     }
     const safeWord = escapeHtml(word);
     return {
       intro: `This first image is a "<span class="sb-highlight">${safeWord}</span>".`,
-      question: `Which of the following two images is also a "<span class="sb-highlight">${safeWord}</span>"?`
+      question: `Which of the following two is also a "<span class="sb-highlight">${safeWord}</span>"?`
     };
   }
 
@@ -263,16 +269,19 @@
     return sum / n;
   }
 
-  function buildUniqueHumanWords(count, seedText) {
+  function buildUniqueHumanWords(count, seedText, mode = "sudo_only") {
     const rand = mulberry32(hashString(seedText));
     const seen = new Set();
     const out = [];
-    const lengths = [6, 7, 8, 9, 10];
+    const lengths = [];
+    for (let len = wordMinLen; len <= wordMaxLen; len += 1) {
+      lengths.push(len);
+    }
 
-    // Keep human-friendly labels comparable to benchmark:
-    // include both sudo + random labels in a balanced mix.
-    const sudoCount = Math.ceil(count / 2);
-    const randomCount = Math.floor(count / 2);
+    // Default behavior: all words are pseudo (sudo) for human-friendly mode.
+    // Optional fallback: mixed 50/50 sudo+random via word_mode=mixed.
+    const sudoCount = mode === "mixed" ? Math.ceil(count / 2) : count;
+    const randomCount = mode === "mixed" ? Math.floor(count / 2) : 0;
     const typePool = [];
     for (let i = 0; i < sudoCount; i += 1) typePool.push("sudo");
     for (let i = 0; i < randomCount; i += 1) typePool.push("random");
@@ -360,13 +369,14 @@
   const trialVars = [];
   if (design === "human_friendly") {
     // Human-friendly default: one trial per object with unique labels to avoid memory carry-over.
-    const seedText = `${prolific_pid}|${study_id}|${session_id}|${resolvedStimSet}|${resolvedStimPackage}|${condition}`;
+    const seedText = `${prolific_pid}|${study_id}|${session_id}|${resolvedStimSet}|${resolvedStimPackage}|${condition}|${wordMode}`;
     const selectedStimuli = maybeSampleStimuli(stimData.stimuli, trialLimit, `${seedText}|stimuli`);
-    const uniqueWords = buildUniqueHumanWords(selectedStimuli.length, `${seedText}|words`);
+    const uniqueWords = buildUniqueHumanWords(selectedStimuli.length, `${seedText}|words`, wordMode);
     ck("Human-friendly trial builder", {
       seedPreview: `${seedText.slice(0, 20)}...`,
       selectedStimuli: selectedStimuli.length,
-      uniqueWords: uniqueWords.length
+      uniqueWords: uniqueWords.length,
+      wordMode
     });
     for (let i = 0; i < selectedStimuli.length; i += 1) {
       const stim = selectedStimuli[i];
