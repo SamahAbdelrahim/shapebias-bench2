@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "analyze:words": "node analyze_human_words.js"
+    "analyze:words": "node analyze_human_words.js",
+    "export:results": "node export_human_results.js"
   },
   "dependencies": {
     "@jspsych/plugin-html-button-response": "^2.1.0",

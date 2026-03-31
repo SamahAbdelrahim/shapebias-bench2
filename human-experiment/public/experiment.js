@@ -90,9 +90,13 @@
 
   const url = new URL(window.location.href);
   const params = url.searchParams;
-  const prolific_pid = params.get("PROLIFIC_PID") || "debug_pid";
-  const study_id = params.get("STUDY_ID") || "debug_study";
-  const session_id = params.get("SESSION_ID") || "debug_session";
+  const prolificPidParam = params.get("PROLIFIC_PID");
+  const studyIdParam = params.get("STUDY_ID");
+  const sessionIdParam = params.get("SESSION_ID");
+  const isProlificSession = Boolean(prolificPidParam && studyIdParam && sessionIdParam);
+  const prolific_pid = prolificPidParam || "debug_pid";
+  const study_id = studyIdParam || "debug_study";
+  const session_id = sessionIdParam || "debug_session";
   const design = params.get("design") || "human_friendly"; // human_friendly | benchmark
   const condition = params.get("condition") || "noun_label"; // noun_label | no_word_category
   const stimSet = params.get("stim_set") || "stimuli_A_auto_contrast";
@@ -114,6 +118,7 @@
     prolific_pid,
     study_id,
     session_id,
+    isProlificSession,
     design,
     condition,
     stimSet,
@@ -134,7 +139,7 @@
   const configRes = await fetch("/api/config");
   ck("Config response received", { ok: configRes.ok, status: configRes.status });
   const config = await configRes.json();
-  const completionCode = params.get("cc") || config.completion_code || "TESTCODE";
+  const completionCode = isProlificSession ? "CTJN09E1" : "TESTCODE";
   const participantSeed = `${prolific_pid}|${study_id}|${session_id}`;
   const stimPackage =
     design === "human_friendly"
@@ -142,7 +147,11 @@
         ? stimPkgParam
         : chooseParticipantStimPackage(participantSeed)
       : BENCHMARK_STIM_PACKAGE;
-  ck("Resolved config", { completionCode, default_stim_set: config.default_stim_set });
+  ck("Resolved config", {
+    completionCode,
+    isProlificSession,
+    default_stim_set: config.default_stim_set
+  });
 
   setBootStatus("Loading stimuli list...");
   ck("Fetching /api/stimuli", { stim_set: stimSet, stim_pkg: stimPackage, design });
