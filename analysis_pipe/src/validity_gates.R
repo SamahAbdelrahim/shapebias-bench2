@@ -104,6 +104,16 @@ filter_valid_models <- function(df, validity_df = NULL) {
     filter(model %in% valid_models)
 }
 
+#' Keep valid and borderline models for sensitivity analyses
+filter_valid_and_borderline_models <- function(df, validity_df = NULL) {
+  if (is.null(validity_df)) validity_df <- compute_model_validity(df)
+  selected_models <- validity_df |>
+    filter(validity_label %in% c("valid", "borderline")) |>
+    pull(model)
+  df |>
+    filter(model %in% selected_models)
+}
+
 #' Plot model validity labels by image tracking performance
 plot_model_validity <- function(df, validity_df = NULL) {
   if (is.null(validity_df)) validity_df <- compute_model_validity(df)

@@ -6,9 +6,8 @@ library(stringr)
 # ---------------------------------------------------------------------------
 # Paths from .env
 # ---------------------------------------------------------------------------
-# here::here() points to analysis_pipe/ (renv project root).
-# Repo root is one level up.
-REPO_ROOT <- normalizePath(file.path(here::here(), ".."))
+# `here::here()` resolves to the repository root in this project layout.
+REPO_ROOT <- normalizePath(here::here())
 
 read_dotenv <- function(path = file.path(REPO_ROOT, ".env")) {
   if (!file.exists(path)) stop(".env file not found at: ", path)
@@ -38,6 +37,11 @@ get_data_dir <- function() {
   data_dir <- file.path(get_results_dir(), "data")
   if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
   data_dir
+}
+
+#' Get the model-results input directory
+get_model_results_dir <- function() {
+  file.path(get_results_dir(), "model.results")
 }
 
 #' Get the figures output directory, creating it if needed
@@ -209,18 +213,12 @@ get_model_metadata <- function() {
 #' Canonical result paths in priority order
 get_candidate_result_paths <- function() {
   c(
-    get_data_path("local_eval.csv"),
-    get_data_path("remote_all_fixed.csv"),
-    get_data_path("remote_all.csv"),
-    get_data_path("no_word_pilot_remote_dedup.csv"),
-    get_data_path("no_word_pilot_remote.csv"),
-    get_data_path("no_word_full_remote.csv"),
-    file.path(get_results_dir(), "local_eval.csv"),
-    file.path(get_results_dir(), "remote_all_fixed.csv"),
-    file.path(get_results_dir(), "remote_all.csv"),
-    file.path(get_results_dir(), "no_word_pilot_remote_dedup.csv"),
-    file.path(get_results_dir(), "no_word_pilot_remote.csv"),
-    file.path(get_results_dir(), "no_word_full_remote.csv")
+    file.path(get_model_results_dir(), "local_eval.csv"),
+    file.path(get_model_results_dir(), "remote_all_fixed.csv"),
+    file.path(get_model_results_dir(), "remote_all.csv"),
+    file.path(get_model_results_dir(), "no_word_pilot_remote_dedup.csv"),
+    file.path(get_model_results_dir(), "no_word_pilot_remote.csv"),
+    file.path(get_model_results_dir(), "no_word_full_remote.csv")
   )
 }
 
@@ -234,6 +232,13 @@ build_canonical_dataset <- function(output_path = get_data_path("canonical_combi
 
   source_dfs <- lapply(existing_paths, function(path) {
     df <- read_csv(path, show_col_types = FALSE)
+    if (!"prompt_condition" %in% names(df)) {
+      df <- df |> mutate(prompt_condition = "noun_label")
+    }
+    df <- df |>
+      mutate(
+        across(any_of(c("raw_text", "parsed_answer")), as.character)
+      )
     filename <- basename(path)
     run_source <- case_when(
       str_detect(filename, "local") ~ "local",

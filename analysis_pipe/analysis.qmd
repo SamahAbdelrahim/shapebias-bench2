@@ -16,11 +16,16 @@ source("src/inference.R")
 source("src/stimulus_covariates.R")
 source("src/next_steps_utils.R")
 source("src/condition_contrast.R")
+source("src/human_analysis.R")
 
 df <- build_canonical_dataset() |> add_model_size()
 validity_df <- compute_model_validity(df)
 df_valid <- filter_valid_models(df, validity_df)
+df_valid_plus_borderline <- filter_valid_and_borderline_models(df, validity_df)
 df_cov <- join_stimulus_covariates(df)
+human_df <- load_human_results()
+human_friendly_df <- filter_human_friendly(human_df)
+has_human_friendly <- nrow(human_friendly_df) > 0
 fig_dir <- get_figures_dir()
 data_dir <- get_data_dir()
 
@@ -263,6 +268,77 @@ knitr::kable(frozen_subset, digits = 3)
 human_protocol <- build_human_protocol_spec(trials_per_stimulus = 10)
 readr::write_csv(human_protocol, file.path(data_dir, "human_protocol_spec.csv"))
 knitr::kable(human_protocol)
+```
+
+## Human-Friendly Pilot Summary
+
+The human-friendly protocol is analyzed separately from the benchmark model pipeline. These summaries are descriptive and intended for pilot quality control and coarse behavioral characterization, not strict benchmark-equivalent inference.
+
+```{r table-human-friendly-overall}
+if (has_human_friendly) {
+  human_summary <- summarize_human_friendly_overall(human_friendly_df)
+  readr::write_csv(human_summary, file.path(data_dir, "human_friendly_summary.csv"))
+  knitr::kable(human_summary, digits = 3)
+} else {
+  knitr::kable(data.frame(note = "No human_results.csv export found for human-friendly data. Run the export step first."))
+}
+```
+
+```{r table-human-friendly-participants}
+if (has_human_friendly) {
+  human_participants <- summarize_human_friendly_by_participant(human_friendly_df)
+  readr::write_csv(human_participants, file.path(data_dir, "human_friendly_participant_summary.csv"))
+  knitr::kable(human_participants, digits = 3)
+}
+```
+
+```{r table-human-friendly-stimuli}
+if (has_human_friendly) {
+  human_stimuli <- summarize_human_friendly_by_stimulus(human_friendly_df)
+  readr::write_csv(human_stimuli, file.path(data_dir, "human_friendly_stimulus_summary.csv"))
+  knitr::kable(head(human_stimuli, 20), digits = 3)
+}
+```
+
+## Human-Vs-Model Comparison
+
+The primary human-versus-model comparison should use only models that pass the validity gates above. This follows the updated guidance in `interpret/models_validity.md`: interpret shape-bias relative to the validity-gated subset first, then use broader model pools only as robustness checks.
+
+All comparisons below remain approximate because the human-friendly protocol was deliberately designed to reduce repetition, memory carry-over, and demand-characteristic effects in human participants. These tables should therefore be interpreted as cautious comparisons of high-level behavioral tendencies rather than strict benchmark-equivalent estimates.
+
+```{r table-human-model-valid-only}
+if (has_human_friendly) {
+  human_model_valid_only <- compute_human_model_approx_comparison(human_friendly_df, df_valid, model_subset_label = "valid_models_only")
+  readr::write_csv(human_model_valid_only, file.path(data_dir, "human_model_valid_only_approx_comparison.csv"))
+  knitr::kable(human_model_valid_only, digits = 3)
+}
+```
+
+### Robustness: Valid + Borderline Models
+
+```{r table-human-model-valid-plus-borderline}
+if (has_human_friendly) {
+  human_model_valid_plus_borderline <- compute_human_model_approx_comparison(
+    human_friendly_df,
+    df_valid_plus_borderline,
+    model_subset_label = "valid_plus_borderline_models"
+  )
+  readr::write_csv(
+    human_model_valid_plus_borderline,
+    file.path(data_dir, "human_model_valid_plus_borderline_approx_comparison.csv")
+  )
+  knitr::kable(human_model_valid_plus_borderline, digits = 3)
+}
+```
+
+### Robustness: All Models
+
+```{r table-human-model-approx}
+if (has_human_friendly) {
+  human_model_approx <- compute_human_model_approx_comparison(human_friendly_df, df, model_subset_label = "all_models")
+  readr::write_csv(human_model_approx, file.path(data_dir, "human_model_approx_comparison.csv"))
+  knitr::kable(human_model_approx, digits = 3)
+}
 ```
 
 ## Robustness and Replication Diagnostics
