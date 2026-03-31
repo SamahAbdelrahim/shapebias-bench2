@@ -5,7 +5,8 @@
   "description": "jsPsych + Express + MongoDB human experiment for shape-bias 3-image 2AFC",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "analyze:words": "node analyze_human_words.js"
   },
   "dependencies": {
     "@jspsych/plugin-html-button-response": "^2.1.0",

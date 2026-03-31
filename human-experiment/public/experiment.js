@@ -73,6 +73,20 @@
     "stimuli_unique_texture_per_stl_v1",
     "stimuli_unique_texture_per_stl_v2"
   ];
+  // Frequent English bigrams with rough relative weights (higher = more English-like).
+  // Used only for filtering pseudo-words (sudo words), not random words.
+  const ENGLISH_BIGRAM_WEIGHTS = {
+    th: 1.0, he: 0.98, in: 0.96, er: 0.94, an: 0.93, re: 0.92, on: 0.91, at: 0.9,
+    en: 0.9, nd: 0.89, ti: 0.88, es: 0.87, or: 0.86, te: 0.86, of: 0.85, ed: 0.85,
+    is: 0.84, it: 0.84, al: 0.83, ar: 0.82, st: 0.82, to: 0.82, nt: 0.81, ng: 0.81,
+    se: 0.8, ha: 0.8, as: 0.79, ou: 0.79, io: 0.78, le: 0.78, ve: 0.77, co: 0.77,
+    me: 0.76, de: 0.76, hi: 0.75, ri: 0.75, ro: 0.74, ic: 0.74, ne: 0.74, ea: 0.73,
+    ra: 0.73, ce: 0.72, li: 0.72, ch: 0.72, ll: 0.71, be: 0.71, ma: 0.7, si: 0.7,
+    om: 0.69, ur: 0.69, ca: 0.68, el: 0.68, ta: 0.68, la: 0.67, ns: 0.67, di: 0.67,
+    fo: 0.66, ho: 0.66, pe: 0.65, ec: 0.65, pr: 0.65, no: 0.64, wa: 0.64, wi: 0.64,
+    us: 0.63, tr: 0.63, wh: 0.63, ge: 0.62, po: 0.62, lo: 0.62, im: 0.61, il: 0.61,
+    mo: 0.61, un: 0.6, ai: 0.6, ie: 0.59, oo: 0.59, ee: 0.58, ss: 0.57, tt: 0.57
+  };
 
   const url = new URL(window.location.href);
   const params = url.searchParams;
@@ -89,6 +103,9 @@
   const shuffleTrials = params.get("shuffle") !== "0";
   const verboseTrials = params.get("verbose_trials") === "1";
   const preloadMode = params.get("preload") || "minimal"; // off | minimal | all
+  // Sudo (pseudo) words only: minimum English-transition score [0..1].
+  // Higher means stricter English-like filtering.
+  const sudoThreshold = Number(params.get("sudo_threshold") || 0.62);
   ck("Parsed URL parameters", {
     prolific_pid,
     study_id,
@@ -102,6 +119,8 @@
     shuffleTrials,
     verboseTrials,
     preloadMode
+    ,
+    sudoThreshold
   });
 
   setBootStatus("Loading config...");
@@ -229,6 +248,21 @@
     return out;
   }
 
+  function englishTransitionScore(word) {
+    const w = String(word || "").toLowerCase().replace(/[^a-z]/g, "");
+    if (w.length < 2) return 0;
+    let sum = 0;
+    let n = 0;
+    for (let i = 0; i < w.length - 1; i += 1) {
+      const bg = w.slice(i, i + 2);
+      // Smoothing floor keeps unseen transitions from being exactly zero.
+      const p = ENGLISH_BIGRAM_WEIGHTS[bg] || 0.02;
+      sum += p;
+      n += 1;
+    }
+    return sum / n;
+  }
+
   function buildUniqueHumanWords(count, seedText) {
     const rand = mulberry32(hashString(seedText));
     const seen = new Set();
@@ -255,12 +289,33 @@
       const wordType = typePool[idx];
       const length = lengths[idx % lengths.length];
       let candidate = "";
-      do {
-        candidate =
-          wordType === "sudo"
-            ? makePseudoWord(rand, length)
-            : makeRandomWord(rand, length);
-      } while (seen.has(candidate));
+      if (wordType === "sudo") {
+        // Strictly filter sudo words by English-like transition score.
+        let bestCandidate = "";
+        let bestScore = -1;
+        let accepted = false;
+        const maxAttempts = 400;
+        for (let tries = 0; tries < maxAttempts; tries += 1) {
+          const maybe = makePseudoWord(rand, length);
+          if (seen.has(maybe)) continue;
+          const s = englishTransitionScore(maybe);
+          if (s > bestScore) {
+            bestScore = s;
+            bestCandidate = maybe;
+          }
+          if (s >= sudoThreshold) {
+            candidate = maybe;
+            accepted = true;
+            break;
+          }
+        }
+        // Fallback: keep best seen candidate so generation always completes.
+        if (!accepted) candidate = bestCandidate || makePseudoWord(rand, length);
+      } else {
+        do {
+          candidate = makeRandomWord(rand, length);
+        } while (seen.has(candidate));
+      }
       seen.add(candidate);
       out.push({ name: candidate, type: wordType, length });
     }

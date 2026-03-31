@@ -1,0 +1,27 @@
+{
+  "prolific_pid": "debug_pid",
+  "study_id": "debug_study",
+  "session_id": "debug_session",
+  "stim_set": "stimuli_A_auto_contrast",
+  "stim_pkg": "stimuli_unique_texture_per_stl_v2",
+  "condition": "noun_label",
+  "trial_limit": 30,
+  "seed_text": "debug_pid|debug_study|debug_session|stimuli_A_auto_contrast|stimuli_unique_texture_per_stl_v2|noun_label|words",
+  "corpus_size": 1952,
+  "thresholds": {
+    "p10_logprob": -2.7902122868792807,
+    "p25_logprob": -2.595821752222861
+  },
+  "counts": {
+    "total_words": 30,
+    "pseudo_words": 15,
+    "random_words": 15,
+    "pseudo_english_like_p10": 1,
+    "random_english_like_p10": 0,
+    "total_english_like_p10": 1
+  },
+  "output": {
+    "csv": "/home/samah/projects/shapebias-bench-2/human-experiment/reports/human_words_analysis_debug_pid_debug_study_debug_session_2026-03-30T04-50-04-589Z.csv",
+    "json": "/home/samah/projects/shapebias-bench-2/human-experiment/reports/human_words_analysis_debug_pid_debug_study_debug_session_2026-03-30T04-50-04-589Z.json"
+  }
+}

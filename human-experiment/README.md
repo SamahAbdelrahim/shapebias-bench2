@@ -62,6 +62,7 @@ Optional env vars:
 - `ordering`: in `human_friendly` default is `random`; in `benchmark` default is `both`
 - `trial_limit`: in `human_friendly` default is `30`; in `benchmark`, `0` means full set
 - `shuffle`: `1` (default) or `0`
+- `sudo_threshold`: pseudo-word English-transition threshold in `[0,1]` (default `0.62`); applies only to sudo words in `human_friendly`
 - `cc`: completion code override
 
 ## Trial construction
@@ -93,3 +94,26 @@ Default benchmark full condition with `ordering=both` is:
 `30 stimuli x 10 words x 2 orderings = 600 trials`.
 
 Use `trial_limit` for pilots.
+
+## Word-list analysis utility
+
+You can reproduce the generated human-friendly word list for a participant and
+estimate how English-like each word is (character transition probabilities).
+
+From `human-experiment/`:
+
+```bash
+npm run analyze:words -- --prolific_pid P1 --study_id S1 --session_id T1
+```
+
+Optional flags:
+
+- `--stim_set` (default: `stimuli_A_auto_contrast`)
+- `--stim_pkg` (default: deterministic v1/v2 package choice)
+- `--condition` (default: `noun_label`)
+- `--trial_limit` (default: `30`)
+
+Outputs are written to `human-experiment/reports/`:
+
+- `human_words_analysis_<...>.csv` (per-word scores/classification)
+- `human_words_analysis_<...>.json` (summary counts and thresholds)
