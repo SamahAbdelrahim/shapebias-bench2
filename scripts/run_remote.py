@@ -23,6 +23,10 @@ Usage:
 
     # Run no-word control condition (reduced pilot)
     python scripts/run_remote.py --models all --ordering both --prompt-condition no_word_category --no-word-mode reduced -o results/no_word_pilot_remote.csv
+
+    # Human-matched eval (v1/v2 stimuli + JS-parity words; deterministic --ordering)
+    python scripts/run_remote.py --eval-mode human_matched --stim-pkg stimuli_unique_texture_per_stl_v1 \\
+        --ordering both --models qwen3.5-9b
 """
 
 from __future__ import annotations
@@ -46,14 +50,27 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from evaluation_pipe.eval_core import (
+    BENCHMARK_STIM_PACKAGE,
+    DEFAULT_HUMAN_TRIAL_LIMIT,
     ENV_PATH,
+    HUMAN_MATCHED_REMOTE_CSV_SUBDIR,
+    HUMAN_STIM_PACKAGES,
     MAX_TOKENS_REMOTE,
+    REMOTE_UNIFORM_SYSTEM_PROMPT,
     TEMPERATURE,
     add_common_args,
+    benchmark_csv_meta,
+    build_openai_compatible_vision_messages,
+    build_unique_human_words,
+    human_eval_seed_text,
+    human_matched_csv_meta,
     load_stimuli,
+    load_stimuli_human_package,
     load_words,
+    maybe_sample_stimuli_human,
     print_summary,
     resolve_output_path,
+    resolve_stim_set_name,
     run_trial,
     write_results,
 )
@@ -64,12 +81,32 @@ load_dotenv(ENV_PATH)
 # REMOTE MODEL REGISTRY
 # ===========================================================================
 REMOTE_MODELS = {
-    "qwen3.5-9b":       {"provider": "huggingface",      "model_id": "Qwen/Qwen3.5-9B"},
-    "qwen3.5-27b":      {"provider": "huggingface",      "model_id": "Qwen/Qwen3.5-27B:featherless-ai"},
-    "qwen3.5-35b-a3b":  {"provider": "huggingface",      "model_id": "Qwen/Qwen3.5-35B-A3B"},
-    "qwen3.5-122b-a10b":{"provider": "huggingface",      "model_id": "Qwen/Qwen3.5-122B-A10B"},
-    "llama4-scout":     {"provider": "huggingface-groq",  "model_id": "meta-llama/llama-4-scout-17b-16e-instruct"},
-    # "llama4-maverick":{"provider": "huggingface-sambanova", "model_id": "Llama-4-Maverick-17B-128E-Instruct"},
+    "qwen3.5-9b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3.5-9B",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    "qwen3.5-27b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3.5-27B:featherless-ai",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    "qwen3.5-35b-a3b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3.5-35B-A3B",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    "qwen3.5-122b-a10b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3.5-122B-A10B",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    "llama4-scout": {
+        "provider": "huggingface-groq",
+        "model_id": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    # "llama4-maverick":{"provider": "huggingface-sambanova", "model_id": "...", "system_prompt": None},
 }
 
 PROVIDER_BASE_URLS = {
@@ -102,21 +139,27 @@ def image_to_base64_url(img: Image.Image, fmt: str = "JPEG",
     return f"data:image/{fmt.lower()};base64,{b64}"
 
 
-def build_messages(images: list[Image.Image], prompt: str) -> list[dict]:
-    content = []
-    for img in images:
-        content.append({
-            "type": "image_url",
-            "image_url": {"url": image_to_base64_url(img)},
-        })
-    content.append({"type": "text", "text": prompt})
-    return [{"role": "user", "content": content}]
+def build_messages(
+    images: list[Image.Image],
+    prompt: str,
+    *,
+    system_prompt: str | None = None,
+) -> list[dict]:
+    """Same vision layout as local VLMs (labeled slots + task prompt from eval_core)."""
+    return build_openai_compatible_vision_messages(
+        images,
+        prompt,
+        image_to_url=image_to_base64_url,
+        system_prompt=system_prompt,
+    )
 
 
-def run_remote(model_name: str, images: list[Image.Image], prompt: str) -> dict:
+def run_remote(model_name: str, images: list[Image.Image], prompt: str,
+               temperature: float | None = None) -> dict:
     from openai import OpenAI
 
     cfg = REMOTE_MODELS[model_name]
+    system_prompt = cfg.get("system_prompt")
     base_url = PROVIDER_BASE_URLS[cfg["provider"]]
     hf_token = (
         os.environ.get("HUGGING_FACE")
@@ -130,7 +173,7 @@ def run_remote(model_name: str, images: list[Image.Image], prompt: str) -> dict:
         )
 
     client = OpenAI(api_key=hf_token, base_url=base_url, timeout=60.0)
-    messages = build_messages(images, prompt)
+    messages = build_messages(images, prompt, system_prompt=system_prompt)
 
     # Disable thinking mode for Qwen3.5 models to avoid wasting tokens.
     # Keep max_tokens low (128) to cap runaway thinking if the provider
@@ -142,11 +185,12 @@ def run_remote(model_name: str, images: list[Image.Image], prompt: str) -> dict:
         extra["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
 
     start = time.perf_counter()
+    temp = TEMPERATURE if temperature is None else temperature
     response = client.chat.completions.create(
         model=cfg["model_id"],
         messages=messages,
         max_tokens=max_tok,
-        temperature=TEMPERATURE,
+        temperature=temp,
         **extra,
     )
     elapsed = time.perf_counter() - start
@@ -187,6 +231,25 @@ def main():
     parser.add_argument("--no-word-mode", default="matched",
                         choices=["matched", "reduced"],
                         help="For no_word_category: matched keeps full word-loop trial count, reduced runs one pass per stimulus.")
+    parser.add_argument("--eval-mode", default="benchmark",
+                        choices=["benchmark", "human_matched"],
+                        help="benchmark: stimuli_per_stl_packages + WORD_PAIRS. "
+                             "human_matched: v1/v2 unique-texture packages + human word generator.")
+    parser.add_argument("--stim-pkg", default=None,
+                        help="Required for human_matched: stimuli_unique_texture_per_stl_v1 or v2.")
+    parser.add_argument("--trial-limit", type=int, default=None,
+                        help="human_matched: max stimuli after shuffle (default 30; 0 = all). Ignored for benchmark.")
+    parser.add_argument("--human-eval-seed", default="model_eval",
+                        help="human_matched: replaces participant id block in seedText (default model_eval).")
+    parser.add_argument("--word-mode", default="sudo_only",
+                        choices=["sudo_only", "mixed"],
+                        help="human_matched: sudo_only (default) or mixed sudo/random.")
+    parser.add_argument("--word-min-len", type=int, default=4,
+                        help="human_matched: min generated word length (default 4).")
+    parser.add_argument("--word-max-len", type=int, default=8,
+                        help="human_matched: max generated word length (default 8).")
+    parser.add_argument("--sudo-threshold", type=float, default=0.62,
+                        help="human_matched: min English bigram score for sudo words (default 0.62).")
     add_common_args(parser)
     args = parser.parse_args()
 
@@ -213,34 +276,111 @@ def main():
                 sys.exit(1)
             model_names.append(m)
 
-    # Load stimuli and words (or no-word placeholders)
-    if args.prompt_condition == "no_word_category" and args.no_word_mode == "reduced":
-        words = [{"name": "__no_word__", "type": "no_word", "length": 0}]
-    elif args.prompt_condition == "no_word_category":
-        # Matched mode preserves trial counts by reusing word slots.
-        words = [
-            {"name": f"no_word_slot_{i+1}", "type": "no_word", "length": 0}
-            for i in range(len(load_words()))
-        ]
+    stim_set_resolved = resolve_stim_set_name(args.stim_set)
+    csv_meta: dict[str, str]
+
+    if args.eval_mode == "human_matched":
+        if not args.stim_pkg or args.stim_pkg not in HUMAN_STIM_PACKAGES:
+            print(
+                f"Error: --eval-mode human_matched requires --stim-pkg in "
+                f"{sorted(HUMAN_STIM_PACKAGES)}"
+            )
+            sys.exit(1)
+        if args.num_stimuli is not None:
+            print("Warning: --num-stimuli is ignored in human_matched (use --trial-limit).")
+        trial_limit = (
+            DEFAULT_HUMAN_TRIAL_LIMIT if args.trial_limit is None else args.trial_limit
+        )
+        if args.word_max_len < args.word_min_len or args.word_min_len < 1:
+            print("Error: need 1 <= word_min_len <= word_max_len")
+            sys.exit(1)
+
+        full_stimuli = load_stimuli_human_package(args.stim_pkg, stim_set_resolved)
+        base_seed = human_eval_seed_text(
+            args.human_eval_seed,
+            stim_set_resolved,
+            args.stim_pkg,
+            args.prompt_condition,
+            args.word_mode,
+        )
+        stimuli = maybe_sample_stimuli_human(
+            full_stimuli, trial_limit, f"{base_seed}|stimuli"
+        )
+        if args.prompt_condition == "noun_label":
+            words = build_unique_human_words(
+                len(stimuli),
+                f"{base_seed}|words",
+                mode=args.word_mode,
+                word_min_len=args.word_min_len,
+                word_max_len=args.word_max_len,
+                sudo_threshold=args.sudo_threshold,
+            )
+        else:
+            words = [
+                {"name": f"__no_word__{i + 1}", "type": "no_word", "length": 0}
+                for i in range(len(stimuli))
+            ]
+        stim_pairs = list(zip(stimuli, words))
+        csv_meta = human_matched_csv_meta(
+            stim_pkg=args.stim_pkg,
+            stim_set=stim_set_resolved,
+            human_word_seed=base_seed,
+            word_mode=args.word_mode,
+            word_min_len=args.word_min_len,
+            word_max_len=args.word_max_len,
+            sudo_threshold=args.sudo_threshold,
+            trial_limit=trial_limit,
+        )
     else:
-        words = load_words()
-    stimuli = load_stimuli(args.stim_set, args.num_stimuli)
-    stim_set_label = args.stim_set or "env/default"
+        if args.stim_pkg:
+            print("Warning: --stim-pkg is ignored unless --eval-mode human_matched.")
+        if args.trial_limit is not None:
+            print("Warning: --trial-limit is ignored unless --eval-mode human_matched.")
+        # Load stimuli and words (or no-word placeholders)
+        if args.prompt_condition == "no_word_category" and args.no_word_mode == "reduced":
+            words = [{"name": "__no_word__", "type": "no_word", "length": 0}]
+        elif args.prompt_condition == "no_word_category":
+            words = [
+                {"name": f"no_word_slot_{i+1}", "type": "no_word", "length": 0}
+                for i in range(len(load_words()))
+            ]
+        else:
+            words = load_words()
+        stimuli = load_stimuli(args.stim_set, args.num_stimuli)
+        stim_pairs = [(s, w) for s in stimuli for w in words]
+        csv_meta = benchmark_csv_meta(stim_set_resolved)
+
+    stim_set_label = stim_set_resolved
     ord_mult = 2 if args.ordering == "both" else 1
-    trials_per = len(stimuli) * len(words) * args.repeats * ord_mult
+    trials_per = len(stim_pairs) * args.repeats * ord_mult
 
     print(f"Models:      {model_names}")
+    print(f"Eval mode:   {args.eval_mode}")
     print(f"Ordering:    {args.ordering}")
     print(f"Condition:   {args.prompt_condition} ({args.no_word_mode})")
     print(f"Repeats:     {args.repeats}")
     print(f"Temperature: {args.temperature}")
     print(f"Workers:     {args.workers}")
-    print(f"Stimuli:     {len(stimuli)} from {stim_set_label}")
-    if args.prompt_condition == "noun_label":
-        print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
+    if args.eval_mode == "human_matched":
+        print(
+            f"Stimuli:     {len(stimuli)} (pkg={args.stim_pkg}, set={stim_set_label}, "
+            f"trial_limit={csv_meta['trial_limit']})"
+        )
+        print(f"Word seed:   {csv_meta['human_word_seed']}")
+        if args.prompt_condition == "noun_label":
+            print(
+                f"Words:       {len(words)} (mode={args.word_mode}, "
+                f"len {args.word_min_len}-{args.word_max_len}, sudo_threshold={args.sudo_threshold})"
+            )
+        else:
+            print(f"No-word placeholders: {len(words)}")
     else:
-        print(f"No-word slots: {len(words)} (mode={args.no_word_mode})")
-    print(f"Trials per model: {len(stimuli)} x {len(words)} x {args.repeats} repeats x {ord_mult} orderings = {trials_per}")
+        print(f"Stimuli:     {len(stimuli)} from {BENCHMARK_STIM_PACKAGE}/{stim_set_label}")
+        if args.prompt_condition == "noun_label":
+            print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
+        else:
+            print(f"No-word slots: {len(words)} (mode={args.no_word_mode})")
+    print(f"Trials per model: {len(stim_pairs)} pairs x {args.repeats} repeats x {ord_mult} orderings = {trials_per}")
     print()
 
     # Handle --resume: load completed trials and use that CSV for appending
@@ -259,7 +399,9 @@ def main():
         else:
             print(f"Warning: --resume file {output_path} not found, starting fresh")
     else:
-        output_path = resolve_output_path(args.output, prefix="remote")
+        prefix = "remote_human" if args.eval_mode == "human_matched" else "remote"
+        hm_sub = HUMAN_MATCHED_REMOTE_CSV_SUBDIR if args.eval_mode == "human_matched" else None
+        output_path = resolve_output_path(args.output, prefix=prefix, default_subdir=hm_sub)
 
     all_results = []
     write_lock = threading.Lock()
@@ -273,23 +415,22 @@ def main():
         tasks = []
         skipped = 0
         for repeat in range(1, args.repeats + 1):
-            for stim in stimuli:
-                for w in words:
-                    # Check if all orderings for this task are done
-                    if args.ordering == "both":
-                        check_ords = ["shape_first", "texture_first"]
-                    elif args.ordering == "random":
-                        check_ords = ["shape_first", "texture_first"]
-                    else:
-                        check_ords = [args.ordering]
-                    all_done = all(
-                        (model_key, stim["stim_id"], w["name"], o, str(repeat)) in done_keys
-                        for o in check_ords
-                    )
-                    if all_done:
-                        skipped += 1
-                    else:
-                        tasks.append((repeat, stim, w))
+            for stim, w in stim_pairs:
+                # Check if all orderings for this task are done
+                if args.ordering == "both":
+                    check_ords = ["shape_first", "texture_first"]
+                elif args.ordering == "random":
+                    check_ords = ["shape_first", "texture_first"]
+                else:
+                    check_ords = [args.ordering]
+                all_done = all(
+                    (model_key, stim["stim_id"], w["name"], o, str(repeat)) in done_keys
+                    for o in check_ords
+                )
+                if all_done:
+                    skipped += 1
+                else:
+                    tasks.append((repeat, stim, w))
 
         if skipped:
             print(f"  Skipped {skipped} already-completed tasks")
@@ -302,7 +443,7 @@ def main():
             word, word_type, word_length = w["name"], w["type"], w["length"]
 
             def run_fn(images, prompt, _mk=model_key):
-                return run_remote(_mk, images, prompt)
+                return run_remote(_mk, images, prompt, temperature=args.temperature)
 
             trial_results = run_trial(run_fn, stim, word, word_type, word_length,
                                       ordering=args.ordering,
@@ -311,6 +452,7 @@ def main():
                 r["model"] = model_key
                 r["repeat"] = repeat
                 r["temperature"] = args.temperature
+                r.update(csv_meta)
             return trial_results
 
         with ThreadPoolExecutor(max_workers=args.workers) as executor:

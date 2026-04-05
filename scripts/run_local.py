@@ -33,14 +33,17 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from evaluation_pipe.eval_core import (
+    BENCHMARK_STIM_PACKAGE,
     DEFAULT_DEVICE,
     ENV_PATH,
     MAX_TOKENS_LOCAL,
     add_common_args,
+    benchmark_csv_meta,
     load_stimuli,
     load_words,
     print_summary,
     resolve_output_path,
+    resolve_stim_set_name,
     run_trial,
     write_results,
 )
@@ -104,13 +107,14 @@ def main():
     # Load stimuli and words
     words = load_words()
     stimuli = load_stimuli(args.stim_set, args.num_stimuli)
-    stim_set_label = args.stim_set or "env/default"
+    stim_set_label = resolve_stim_set_name(args.stim_set)
+    csv_meta = benchmark_csv_meta(stim_set_label)
     print(f"Models:      {model_names}")
     print(f"Device:      {args.device}")
     print(f"Ordering:    {args.ordering}")
     print(f"Repeats:     {args.repeats}")
     print(f"Temperature: {args.temperature}")
-    print(f"Stimuli:     {len(stimuli)} from {stim_set_label}")
+    print(f"Stimuli:     {len(stimuli)} from {BENCHMARK_STIM_PACKAGE}/{stim_set_label}")
     print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
     ord_mult = 2 if args.ordering == "both" else 1
     trials_per = len(stimuli) * len(words) * args.repeats * ord_mult
@@ -144,6 +148,7 @@ def main():
                         r["model"] = model_key
                         r["repeat"] = repeat
                         r["temperature"] = args.temperature
+                        r.update(csv_meta)
                         print(f"    {r['ordering']:15s} -> {r['raw_text']!r:10s}  choice={r['choice']}")
                         all_results.append(r)
                     # Save incrementally after each stimulus+word trial

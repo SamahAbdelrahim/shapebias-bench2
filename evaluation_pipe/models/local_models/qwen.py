@@ -6,6 +6,8 @@ import torch
 from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
+from evaluation_pipe.eval_core import build_transformers_vision_user_content
+
 from ..base import BaseVLM, ModelResponse
 from .. import register_model
 
@@ -44,16 +46,7 @@ class _Qwen3VLBase(BaseVLM):
         max_new_tokens: int = 128,
         temperature: float = 0.0,
     ) -> ModelResponse:
-        # Build multi-image chat message with explicit A/B labels
-        content: list[dict] = [
-            {"type": "text", "text": "Reference image:"},
-            {"type": "image", "image": images[0]},
-            {"type": "text", "text": "Image 1:"},
-            {"type": "image", "image": images[1]},
-            {"type": "text", "text": "Image 2:"},
-            {"type": "image", "image": images[2]},
-            {"type": "text", "text": prompt},
-        ]
+        content = build_transformers_vision_user_content(images, prompt)
         messages = [{"role": "user", "content": content}]
 
         inputs = self._processor.apply_chat_template(

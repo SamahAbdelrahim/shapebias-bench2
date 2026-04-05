@@ -4,6 +4,8 @@ A benchmark for evaluating the shape bias in CNN and VLM
 Three main folders:
 stimuli_pipe to create stimuli + evaluation and model pipeline + analysis_pipe
 
+Remote evaluation (benchmark vs human-matched stimuli/words) is documented in `evaluation_pipe/README.md`. Model validity, selection rationale, and local vs remote prompt parity are in `interpret/model_choice_decision_log.md` (see also `interpret/models_validity.md`).
+
 Stimuli onboarding:
 - Start with `STIMULI_GUIDE.md` (repo root/stimuli_pipe)
 - Then read:
@@ -29,7 +31,7 @@ Rationale for why these 3 models were selected is documented in:
 For the latest validity-gate rerun and narrative interpretation across all current
 models, see:
 
-- `interpret/models_validity.md`
+- `interpret/models_validity.md` (after updating the CSV, run `python scripts/update_models_validity_md.py` to refresh the auto-generated failure table)
 - `results/data/model_validity_summary.csv`
 
 

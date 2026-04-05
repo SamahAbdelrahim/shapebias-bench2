@@ -6,6 +6,11 @@ import torch
 from PIL import Image
 from transformers import AutoProcessor, Qwen3_5ForConditionalGeneration
 
+from evaluation_pipe.eval_core import (
+    QWEN35_VLM_SYSTEM_PROMPT,
+    build_transformers_vision_user_content,
+)
+
 from ..base import BaseVLM, ModelResponse
 from .. import register_model
 
@@ -14,7 +19,7 @@ class _Qwen35Base(BaseVLM):
     """Shared loading/inference logic for Qwen3.5 vision-language models."""
 
     _default_model_id: str  # set by subclasses
-    _system_prompt = "Answer concisely. Do not explain your reasoning."
+    _system_prompt = QWEN35_VLM_SYSTEM_PROMPT
 
     def __init__(
         self,
@@ -45,21 +50,11 @@ class _Qwen35Base(BaseVLM):
         max_new_tokens: int = 128,
         temperature: float = 0.0,
     ) -> ModelResponse:
-        # Build multi-image chat message with system prompt for concise output
+        content = build_transformers_vision_user_content(images, prompt)
         messages: list[dict] = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
+            {"role": "user", "content": content},
         ]
-        # Build multi-image chat message with explicit A/B labels
-        content: list[dict] = [
-            {"type": "text", "text": "Reference image:"},
-            {"type": "image", "image": images[0]},
-            {"type": "text", "text": "Image 1:"},
-            {"type": "image", "image": images[1]},
-            {"type": "text", "text": "Image 2:"},
-            {"type": "image", "image": images[2]},
-            {"type": "text", "text": prompt},
-        ]
-        messages.append({"role": "user", "content": content})
 
         # Two-step tokenization: the processor's apply_chat_template does not
         # forward enable_thinking to the Jinja2 template, so we call the

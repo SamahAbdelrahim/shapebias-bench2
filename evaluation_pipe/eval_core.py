@@ -20,7 +20,16 @@ from PIL import Image
 REPO_ROOT = Path(__file__).resolve().parent.parent
 STIMULI_DIR = REPO_ROOT / "stimuli_pipe" / "stimuli_per_stl_packages"
 RESULTS_DIR = REPO_ROOT / "results"
+# When `run_remote.py` runs `--eval-mode human_matched` without `-o`, CSVs default here
+# (under RESULTS_DIR or `$RESULTS_DIR`), next to other `model.results` trees for analysis_pipe.
+HUMAN_MATCHED_REMOTE_CSV_SUBDIR = Path("model.results") / "human_matched"
 ENV_PATH = REPO_ROOT / ".env"
+
+# Human-friendly stimulus packages (must match human-experiment/server.js).
+HUMAN_STIM_PACKAGES = frozenset(
+    {"stimuli_unique_texture_per_stl_v1", "stimuli_unique_texture_per_stl_v2"}
+)
+BENCHMARK_STIM_PACKAGE = "stimuli_per_stl_packages"
 
 # ===========================================================================
 # HYPERPARAMETERS
@@ -32,6 +41,7 @@ TEMPERATURE = 0.0             # sampling temperature (0.0 = greedy/deterministic
 RANDOM_SEED = 42              # default random seed for reproducibility
 DEFAULT_STIM_SET = "stimuli_A_auto_contrast"
 DEFAULT_DEVICE = "cuda"
+DEFAULT_HUMAN_TRIAL_LIMIT = 30
 
 # ===========================================================================
 # WORD PAIRS — 5 pseudo (sudo) + 5 random, length-matched
@@ -44,6 +54,20 @@ WORD_PAIRS = [
     ("procation",    "qahftrxck",   9),
     ("adinefults",   "cgchqjjfgy",  10),
 ]
+
+# Frequent English bigrams — mirrors human-experiment/public/experiment.js
+ENGLISH_BIGRAM_WEIGHTS: dict[str, float] = {
+    "th": 1.0, "he": 0.98, "in": 0.96, "er": 0.94, "an": 0.93, "re": 0.92, "on": 0.91, "at": 0.9,
+    "en": 0.9, "nd": 0.89, "ti": 0.88, "es": 0.87, "or": 0.86, "te": 0.86, "of": 0.85, "ed": 0.85,
+    "is": 0.84, "it": 0.84, "al": 0.83, "ar": 0.82, "st": 0.82, "to": 0.82, "nt": 0.81, "ng": 0.81,
+    "se": 0.8, "ha": 0.8, "as": 0.79, "ou": 0.79, "io": 0.78, "le": 0.78, "ve": 0.77, "co": 0.77,
+    "me": 0.76, "de": 0.76, "hi": 0.75, "ri": 0.75, "ro": 0.74, "ic": 0.74, "ne": 0.74, "ea": 0.73,
+    "ra": 0.73, "ce": 0.72, "li": 0.72, "ch": 0.72, "ll": 0.71, "be": 0.71, "ma": 0.7, "si": 0.7,
+    "om": 0.69, "ur": 0.69, "ca": 0.68, "el": 0.68, "ta": 0.68, "la": 0.67, "ns": 0.67, "di": 0.67,
+    "fo": 0.66, "ho": 0.66, "pe": 0.65, "ec": 0.65, "pr": 0.65, "no": 0.64, "wa": 0.64, "wi": 0.64,
+    "us": 0.63, "tr": 0.63, "wh": 0.63, "ge": 0.62, "po": 0.62, "lo": 0.62, "im": 0.61, "il": 0.61,
+    "mo": 0.61, "un": 0.6, "ai": 0.6, "ie": 0.59, "oo": 0.59, "ee": 0.58, "ss": 0.57, "tt": 0.57,
+}
 
 # ===========================================================================
 # PROMPT TEMPLATES
@@ -61,6 +85,73 @@ PROMPT_TEMPLATES = {
     ),
 }
 
+# Backward compat for scripts that import a single noun_label template string.
+PROMPT_TEMPLATE = PROMPT_TEMPLATES["noun_label"]
+
+# ===========================================================================
+# Vision turn layout (shared: local Transformers + remote OpenAI-compatible API)
+# ===========================================================================
+# Order must stay aligned with run_trial([ref, option_a, option_b]).
+VISION_USER_IMAGE_LABELS = ("Reference image:", "Image 1:", "Image 2:")
+
+# Used for Qwen3.5 VLM **local** wrappers (`qwen35.py`) only.
+QWEN35_VLM_SYSTEM_PROMPT = "Answer concisely. Do not explain your reasoning."
+
+# **Remote** (`run_remote.py`): one uniform system line for every `REMOTE_MODELS` entry.
+# See `interpret/remote_eval_prompt_policy.md`.
+REMOTE_UNIFORM_SYSTEM_PROMPT = (
+    "Follow the user's instructions exactly. "
+    "When they ask for a single character (1 or 2), reply with only that character and no other text."
+)
+
+
+def build_transformers_vision_user_content(
+    images: list[Image.Image],
+    prompt: str,
+) -> list[dict]:
+    """Content block for a single user message (Transformers chat templates)."""
+    if len(images) != len(VISION_USER_IMAGE_LABELS):
+        raise ValueError(
+            f"expected {len(VISION_USER_IMAGE_LABELS)} images, got {len(images)}"
+        )
+    content: list[dict] = []
+    for label, img in zip(VISION_USER_IMAGE_LABELS, images):
+        content.append({"type": "text", "text": label})
+        content.append({"type": "image", "image": img})
+    content.append({"type": "text", "text": prompt})
+    return content
+
+
+def build_openai_compatible_vision_messages(
+    images: list[Image.Image],
+    prompt: str,
+    *,
+    image_to_url,
+    system_prompt: str | None = None,
+) -> list[dict]:
+    """Chat messages for OpenAI-style vision APIs (e.g. HF router).
+
+    *image_to_url* maps each PIL image to a URL string (e.g. data:image/jpeg;base64,...).
+    """
+    if len(images) != len(VISION_USER_IMAGE_LABELS):
+        raise ValueError(
+            f"expected {len(VISION_USER_IMAGE_LABELS)} images, got {len(images)}"
+        )
+    content: list[dict] = []
+    for label, img in zip(VISION_USER_IMAGE_LABELS, images):
+        content.append({"type": "text", "text": label})
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": image_to_url(img)},
+        })
+    content.append({"type": "text", "text": prompt})
+    messages: list[dict] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": content})
+    return messages
+
+
 # ===========================================================================
 # CSV OUTPUT FIELDS
 # ===========================================================================
@@ -70,7 +161,196 @@ CSV_FIELDS = [
     "ordering", "order_method", "a_is", "b_is", "raw_text", "parsed_answer", "choice",
     "generation_time_s", "num_tokens_generated", "attempts",
     "repeat", "temperature",
+    "eval_mode", "stim_pkg", "stim_set", "human_word_seed",
+    "word_mode", "word_min_len", "word_max_len", "sudo_threshold", "trial_limit",
 ]
+
+
+# ---------------------------------------------------------------------------
+# Human-eval: hash / RNG (match experiment.js)
+# ---------------------------------------------------------------------------
+def _u32(x: int) -> int:
+    return x & 0xFFFFFFFF
+
+
+def _imul(a: int, b: int) -> int:
+    return _u32(a * b)
+
+
+def hash_string(s: str) -> int:
+    h = 2166136261
+    for ch in s:
+        h ^= ord(ch)
+        h = _imul(h, 16777619)
+    return _u32(h)
+
+
+def mulberry32(seed: int):
+    t = _u32(seed)
+
+    def rand() -> float:
+        nonlocal t
+        t = _u32(t + 0x6D2B79F5)
+        x = _imul(t ^ (t >> 15), t | 1)
+        x = _u32(x ^ (x + _imul(x ^ (x >> 7), x | 61)))
+        return ((x ^ (x >> 14)) & 0xFFFFFFFF) / 4294967296.0
+
+    return rand
+
+
+def random_int(rand_fn, min_inclusive: int, max_inclusive: int) -> int:
+    return int(rand_fn() * (max_inclusive - min_inclusive + 1)) + min_inclusive
+
+
+def english_transition_score(word: str) -> float:
+    w = "".join(c for c in word.lower() if "a" <= c <= "z")
+    if len(w) < 2:
+        return 0.0
+    total = 0.0
+    n = 0
+    for i in range(len(w) - 1):
+        bg = w[i : i + 2]
+        total += ENGLISH_BIGRAM_WEIGHTS.get(bg, 0.02)
+        n += 1
+    return total / n
+
+
+def make_pseudo_word(rand_fn, length: int) -> str:
+    consonants = "bcdfghjklmnpqrstvwxyz"
+    vowels = "aeiou"
+    out = []
+    for i in range(length):
+        bank = consonants if i % 2 == 0 else vowels
+        out.append(bank[random_int(rand_fn, 0, len(bank) - 1)])
+    return "".join(out)
+
+
+def make_random_word(rand_fn, length: int) -> str:
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    return "".join(letters[random_int(rand_fn, 0, 25)] for _ in range(length))
+
+
+def build_unique_human_words(
+    count: int,
+    seed_text: str,
+    *,
+    mode: str = "sudo_only",
+    word_min_len: int = 4,
+    word_max_len: int = 8,
+    sudo_threshold: float = 0.62,
+) -> list[dict]:
+    """Match human-experiment/public/experiment.js buildUniqueHumanWords."""
+    rand_fn = mulberry32(hash_string(seed_text))
+    seen: set[str] = set()
+    out: list[dict] = []
+    lengths = list(range(word_min_len, word_max_len + 1))
+
+    sudo_count = (count + 1) // 2 if mode == "mixed" else count
+    random_count = count // 2 if mode == "mixed" else 0
+    type_pool = ["sudo"] * sudo_count + ["random"] * random_count
+
+    for i in range(len(type_pool) - 1, 0, -1):
+        j = random_int(rand_fn, 0, i)
+        type_pool[i], type_pool[j] = type_pool[j], type_pool[i]
+
+    for idx in range(count):
+        word_type = type_pool[idx]
+        length = lengths[idx % len(lengths)]
+        candidate = ""
+        if word_type == "sudo":
+            best_candidate = ""
+            best_score = -1.0
+            accepted = False
+            for _ in range(400):
+                maybe = make_pseudo_word(rand_fn, length)
+                if maybe in seen:
+                    continue
+                sc = english_transition_score(maybe)
+                if sc > best_score:
+                    best_score = sc
+                    best_candidate = maybe
+                if sc >= sudo_threshold:
+                    candidate = maybe
+                    accepted = True
+                    break
+            if not accepted:
+                candidate = best_candidate or make_pseudo_word(rand_fn, length)
+        else:
+            while True:
+                candidate = make_random_word(rand_fn, length)
+                if candidate not in seen:
+                    break
+        seen.add(candidate)
+        out.append({"name": candidate, "type": word_type, "length": length})
+    return out
+
+
+def maybe_sample_stimuli_human(stimuli: list[dict], trial_limit: int, seed_text: str) -> list[dict]:
+    """Match experiment.js maybeSampleStimuli (Fisher–Yates with mulberry32)."""
+    if trial_limit <= 0 or trial_limit >= len(stimuli):
+        return list(stimuli)
+    rand_fn = mulberry32(hash_string(seed_text))
+    idxs = list(range(len(stimuli)))
+    for i in range(len(idxs) - 1, 0, -1):
+        j = random_int(rand_fn, 0, i)
+        idxs[i], idxs[j] = idxs[j], idxs[i]
+    return [stimuli[i] for i in idxs[:trial_limit]]
+
+
+def resolve_stim_set_name(stim_set: str | None) -> str:
+    if stim_set is None:
+        env_dataset = os.environ.get("IMAGE_DATASET")
+        return Path(env_dataset).name if env_dataset else DEFAULT_STIM_SET
+    return stim_set
+
+
+def human_eval_seed_text(
+    human_eval_seed: str,
+    stim_set: str,
+    stim_pkg: str,
+    condition: str,
+    word_mode: str,
+) -> str:
+    """Base seed string aligned with human-friendly builder (participant ids → one token)."""
+    return f"{human_eval_seed}|{stim_set}|{stim_pkg}|{condition}|{word_mode}"
+
+
+def benchmark_csv_meta(stim_set: str) -> dict[str, str]:
+    return {
+        "eval_mode": "benchmark",
+        "stim_pkg": BENCHMARK_STIM_PACKAGE,
+        "stim_set": stim_set,
+        "human_word_seed": "",
+        "word_mode": "",
+        "word_min_len": "",
+        "word_max_len": "",
+        "sudo_threshold": "",
+        "trial_limit": "",
+    }
+
+
+def human_matched_csv_meta(
+    *,
+    stim_pkg: str,
+    stim_set: str,
+    human_word_seed: str,
+    word_mode: str,
+    word_min_len: int,
+    word_max_len: int,
+    sudo_threshold: float,
+    trial_limit: int,
+) -> dict[str, str]:
+    return {
+        "eval_mode": "human_matched",
+        "stim_pkg": stim_pkg,
+        "stim_set": stim_set,
+        "human_word_seed": human_word_seed,
+        "word_mode": word_mode,
+        "word_min_len": str(word_min_len),
+        "word_max_len": str(word_max_len),
+        "sudo_threshold": str(sudo_threshold),
+        "trial_limit": str(trial_limit),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -99,9 +379,7 @@ def make_prompt(word: str | None = None, prompt_condition: str = "noun_label") -
 # ---------------------------------------------------------------------------
 def load_stimuli(stim_set: str | None = None,
                  num_stimuli: int | None = None) -> list[dict]:
-    if stim_set is None:
-        env_dataset = os.environ.get("IMAGE_DATASET")
-        stim_set = Path(env_dataset).name if env_dataset else DEFAULT_STIM_SET
+    stim_set = resolve_stim_set_name(stim_set)
     stim_base = STIMULI_DIR / stim_set
     stim_dirs = sorted([d for d in stim_base.iterdir() if d.is_dir()],
                        key=lambda d: int(d.name))
@@ -117,6 +395,34 @@ def load_stimuli(stim_set: str | None = None,
             "shape_match": Image.open(d / "shape_match.png").convert("RGB"),
             "texture_match": Image.open(d / "texture_match.png").convert("RGB"),
         })
+    return stimuli
+
+
+def load_stimuli_human_package(stim_pkg: str, stim_set: str | None = None) -> list[dict]:
+    """Load stimuli from v1/v2 human packages in manifest.csv order."""
+    if stim_pkg not in HUMAN_STIM_PACKAGES:
+        raise ValueError(
+            f"stim_pkg must be one of {sorted(HUMAN_STIM_PACKAGES)}, got {stim_pkg!r}"
+        )
+    stim_set = resolve_stim_set_name(stim_set)
+    manifest_path = REPO_ROOT / "stimuli_pipe" / stim_pkg / stim_set / "manifest.csv"
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+
+    stimuli: list[dict] = []
+    with open(manifest_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            sid = str(row.get("stl_id", "")).strip()
+            if not sid:
+                continue
+            trial_dir = REPO_ROOT / "stimuli_pipe" / stim_pkg / stim_set / sid
+            stimuli.append({
+                "stim_id": sid,
+                "reference": Image.open(trial_dir / "reference.png").convert("RGB"),
+                "shape_match": Image.open(trial_dir / "shape_match.png").convert("RGB"),
+                "texture_match": Image.open(trial_dir / "texture_match.png").convert("RGB"),
+            })
     return stimuli
 
 
@@ -235,6 +541,10 @@ def add_common_args(parser) -> None:
 # ---------------------------------------------------------------------------
 # CSV writing and summary
 # ---------------------------------------------------------------------------
+def _csv_row(row: dict) -> dict:
+    return {k: row.get(k, "") for k in CSV_FIELDS}
+
+
 def write_results(all_results: list[dict], output_path: Path,
                    append: bool = False, quiet: bool = False) -> None:
     """Write results to CSV. When append=True, adds rows without overwriting."""
@@ -242,48 +552,85 @@ def write_results(all_results: list[dict], output_path: Path,
     write_header = not append or not output_path.exists() or output_path.stat().st_size == 0
     mode = "a" if append else "w"
     with open(output_path, mode, newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
+        writer = csv.DictWriter(
+            f, fieldnames=CSV_FIELDS, extrasaction="ignore", restval="",
+        )
         if write_header:
             writer.writeheader()
-        writer.writerows(all_results)
+        writer.writerows(_csv_row(r) for r in all_results)
     if not quiet:
         print(f"\nResults {'appended to' if append else 'saved to'} {output_path}")
 
 
+def _shape_pct_decisive(s: int, t: int) -> str:
+    return f"{s / (s + t) * 100:.0f}%" if (s + t) > 0 else "N/A"
+
+
+def _shape_pct_all(s: int, t: int, u: int) -> str:
+    tot = s + t + u
+    return f"{s / tot * 100:.0f}%" if tot > 0 else "N/A"
+
+
 def print_summary(all_results: list[dict], model_names: list[str]) -> None:
     """Print shape-bias summary tables."""
-    print(f"\n{'='*70}")
-    print(f"{'SUMMARY':^70}")
-    print(f"{'='*70}")
-    print(f"  {'Model':25s}  {'Shape':>6s}  {'Texture':>8s}  {'Unclear':>8s}  {'Shape %':>8s}")
-    print(f"  {'-'*25}  {'-'*6}  {'-'*8}  {'-'*8}  {'-'*8}")
+    print(f"\n{'='*90}")
+    print(f"{'SUMMARY':^90}")
+    print(f"{'='*90}")
+    hdr = (
+        f"  {'Model':25s}  {'Shape':>6s}  {'Texture':>8s}  {'Unclear':>8s}  "
+        f"{'Shape%(dec)':>12s}  {'Shape%(all)':>12s}"
+    )
+    print(hdr)
+    print(f"  {'-'*25}  {'-'*6}  {'-'*8}  {'-'*8}  {'-'*12}  {'-'*12}")
 
     for model_key in model_names:
         model_res = [r for r in all_results if r["model"] == model_key]
         s = sum(1 for r in model_res if r["choice"] == "shape")
         t = sum(1 for r in model_res if r["choice"] == "texture")
         u = sum(1 for r in model_res if r["choice"] == "unclear")
-        pct = f"{s / (s + t) * 100:.0f}%" if (s + t) > 0 else "N/A"
-        print(f"  {model_key:25s}  {s:>6d}  {t:>8d}  {u:>8d}  {pct:>8s}")
+        print(
+            f"  {model_key:25s}  {s:>6d}  {t:>8d}  {u:>8d}  "
+            f"{_shape_pct_decisive(s, t):>12s}  {_shape_pct_all(s, t, u):>12s}"
+        )
 
     # Breakdown by ordering
-    print(f"\n  {'Model':25s}  {'Ordering':15s}  {'Shape':>6s}  {'Texture':>8s}  {'Shape %':>8s}")
-    print(f"  {'-'*25}  {'-'*15}  {'-'*6}  {'-'*8}  {'-'*8}")
+    print(
+        f"\n  {'Model':25s}  {'Ordering':15s}  {'Shape':>6s}  {'Texture':>8s}  "
+        f"{'Shape%(dec)':>12s}  {'Shape%(all)':>12s}"
+    )
+    print(f"  {'-'*25}  {'-'*15}  {'-'*6}  {'-'*8}  {'-'*12}  {'-'*12}")
     for model_key in model_names:
         for ordering in ["shape_first", "texture_first"]:
             subset = [r for r in all_results
                       if r["model"] == model_key and r["ordering"] == ordering]
             s = sum(1 for r in subset if r["choice"] == "shape")
             t = sum(1 for r in subset if r["choice"] == "texture")
-            pct = f"{s / (s + t) * 100:.0f}%" if (s + t) > 0 else "N/A"
-            print(f"  {model_key:25s}  {ordering:15s}  {s:>6d}  {t:>8d}  {pct:>8s}")
+            u = sum(1 for r in subset if r["choice"] == "unclear")
+            print(
+                f"  {model_key:25s}  {ordering:15s}  {s:>6d}  {t:>8d}  "
+                f"{_shape_pct_decisive(s, t):>12s}  {_shape_pct_all(s, t, u):>12s}"
+            )
 
 
-def resolve_output_path(output_arg: str | None, prefix: str = "eval") -> Path:
-    """Resolve output CSV path from CLI arg or generate timestamped default."""
+def resolve_output_path(
+    output_arg: str | None,
+    prefix: str = "eval",
+    *,
+    default_subdir: Path | str | None = None,
+) -> Path:
+    """Resolve output CSV path from CLI arg or generate timestamped default.
+
+    If ``output_arg`` is None, the file is written under ``results_dir`` (from
+    ``$RESULTS_DIR`` or ``RESULTS_DIR``). When ``default_subdir`` is set, it is
+    appended first (e.g. ``model.results/human_matched`` for organized remote runs).
+    """
     if output_arg is not None:
         return Path(output_arg)
     results_dir = Path(os.environ["RESULTS_DIR"]) if os.environ.get("RESULTS_DIR") else RESULTS_DIR
     results_dir.mkdir(exist_ok=True)
+    base = results_dir
+    if default_subdir is not None:
+        base = results_dir / Path(default_subdir)
+        base.mkdir(parents=True, exist_ok=True)
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    return results_dir / f"{prefix}_{timestamp}.csv"
+    return base / f"{prefix}_{timestamp}.csv"

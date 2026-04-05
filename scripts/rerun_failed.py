@@ -27,9 +27,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from evaluation_pipe.eval_core import (
     CSV_FIELDS,
     ENV_PATH,
+    HUMAN_STIM_PACKAGES,
     RANDOM_SEED,
     load_stimuli,
+    load_stimuli_human_package,
     make_prompt,
+    resolve_stim_set_name,
     run_with_retry,
 )
 from scripts.run_remote import REMOTE_MODELS, run_remote
@@ -68,7 +71,18 @@ def main():
         print(f"  {m}: {c} failed")
 
     # Load all stimuli (we need to look up by stim_id)
-    stimuli = load_stimuli()
+    sample = next((r for r in all_rows if r.get("stim_id")), None)
+    if (
+        sample
+        and sample.get("eval_mode") == "human_matched"
+        and sample.get("stim_pkg") in HUMAN_STIM_PACKAGES
+    ):
+        pkg = sample["stim_pkg"]
+        stim_set = resolve_stim_set_name(sample.get("stim_set") or None)
+        stimuli = load_stimuli_human_package(pkg, stim_set)
+        print(f"Loaded human_matched stimuli: {pkg}/{stim_set} ({len(stimuli)} items)")
+    else:
+        stimuli = load_stimuli()
     stim_by_id = {s["stim_id"]: s for s in stimuli}
 
     # Rerun failed trials
@@ -99,10 +113,11 @@ def main():
         else:
             images = [ref, stim["texture_match"], stim["shape_match"]]
 
-        prompt = make_prompt(word)
+        pc = row.get("prompt_condition") or "noun_label"
+        prompt = make_prompt(word, prompt_condition=pc)
 
         def run_fn(imgs, p, _mk=model_key):
-            return run_remote(_mk, imgs, p)
+            return run_remote(_mk, imgs, p, temperature=float(row.get("temperature") or 0.0))
 
         res = run_with_retry(run_fn, images, prompt)
         answer = res.get("parsed_answer")
@@ -143,9 +158,11 @@ def main():
 
     # Write updated CSV
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
+        writer = csv.DictWriter(
+            f, fieldnames=CSV_FIELDS, extrasaction="ignore", restval="",
+        )
         writer.writeheader()
-        writer.writerows(all_rows)
+        writer.writerows({k: r.get(k, "") for k in CSV_FIELDS} for r in all_rows)
 
     print(f"\nDone. Fixed {fixed}/{len(failed)}, still unclear: {still_failed}")
     print(f"Updated CSV saved to {csv_path}")
