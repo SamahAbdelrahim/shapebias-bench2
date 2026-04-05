@@ -81,6 +81,40 @@ load_dotenv(ENV_PATH)
 # REMOTE MODEL REGISTRY
 # ===========================================================================
 REMOTE_MODELS = {
+    # Previously local-only VLMs (same HF IDs as local wrappers); remote uses
+    # REMOTE_UNIFORM_SYSTEM_PROMPT — verify each ID on your HF router account.
+    #
+    # InternVL: local default `OpenGVLab/InternVL3-1B-hf` is often **not** exposed on
+    # the default HF Inference router (400 model_not_supported). Add an entry here when
+    # your account lists a served InternVL / multi-modal ID.
+    "qwen3-vl-2b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    "qwen3-vl-4b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3-VL-4B-Instruct",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+        # Optional dedicated Inference Endpoint (see .env.example + evaluation_pipe/README.md)
+        "endpoint_base_url_env": "HF_ENDPOINT_QWEN3_VL_4B_BASE_URL",
+        "endpoint_model_env": "HF_ENDPOINT_QWEN3_VL_4B_MODEL",
+    },
+    "qwen3.5-0.8b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3.5-0.8B",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    "qwen3.5-4b": {
+        "provider": "huggingface",
+        "model_id": "Qwen/Qwen3.5-4B",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
+    "smolvlm": {
+        "provider": "huggingface",
+        "model_id": "HuggingFaceTB/SmolVLM2-2.2B-Instruct",
+        "system_prompt": REMOTE_UNIFORM_SYSTEM_PROMPT,
+    },
     "qwen3.5-9b": {
         "provider": "huggingface",
         "model_id": "Qwen/Qwen3.5-9B",
@@ -114,6 +148,28 @@ PROVIDER_BASE_URLS = {
     "huggingface-groq":      "https://router.huggingface.co/groq/openai/v1",
     "huggingface-sambanova": "https://router.huggingface.co/sambanova/v1",
 }
+
+
+def _openai_base_url_for_config(cfg: dict) -> str:
+    """Router default, or dedicated HF Inference Endpoint from env (OpenAI-compatible /v1)."""
+    env_key = cfg.get("endpoint_base_url_env")
+    if env_key:
+        raw = os.environ.get(env_key, "").strip()
+        if raw:
+            raw = raw.rstrip("/")
+            if not raw.endswith("/v1"):
+                raw = f"{raw}/v1"
+            return raw
+    return PROVIDER_BASE_URLS[cfg["provider"]]
+
+
+def _openai_model_for_config(cfg: dict) -> str:
+    env_key = cfg.get("endpoint_model_env")
+    if env_key:
+        override = os.environ.get(env_key, "").strip()
+        if override:
+            return override
+    return cfg["model_id"]
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +216,8 @@ def run_remote(model_name: str, images: list[Image.Image], prompt: str,
 
     cfg = REMOTE_MODELS[model_name]
     system_prompt = cfg.get("system_prompt")
-    base_url = PROVIDER_BASE_URLS[cfg["provider"]]
+    base_url = _openai_base_url_for_config(cfg)
+    api_model = _openai_model_for_config(cfg)
     hf_token = (
         os.environ.get("HUGGING_FACE")
         or os.environ.get("HF_API_TOKEN")
@@ -181,13 +238,18 @@ def run_remote(model_name: str, images: list[Image.Image], prompt: str,
     # and retry than to burn thousands of thinking tokens.
     extra = {}
     max_tok = MAX_TOKENS_REMOTE
-    if "qwen" in cfg["model_id"].lower():
+    # Router-only: Qwen chat templates may honor enable_thinking; dedicated endpoints often omit it.
+    using_dedicated_endpoint = bool(
+        cfg.get("endpoint_base_url_env")
+        and os.environ.get(cfg["endpoint_base_url_env"], "").strip()
+    )
+    if "qwen" in cfg["model_id"].lower() and not using_dedicated_endpoint:
         extra["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
 
     start = time.perf_counter()
     temp = TEMPERATURE if temperature is None else temperature
     response = client.chat.completions.create(
-        model=cfg["model_id"],
+        model=api_model,
         messages=messages,
         max_tokens=max_tok,
         temperature=temp,
@@ -241,6 +303,15 @@ def main():
                         help="human_matched: max stimuli after shuffle (default 30; 0 = all). Ignored for benchmark.")
     parser.add_argument("--human-eval-seed", default="model_eval",
                         help="human_matched: replaces participant id block in seedText (default model_eval).")
+    parser.add_argument(
+        "--human-matched-stim-condition",
+        default=None,
+        choices=["noun_label", "no_word_category"],
+        metavar="CONDITION",
+        help="human_matched only: condition string used only for stimulus subsample/shuffle seed "
+             "(default: same as --prompt-condition). For paired noun vs no-word runs, pass "
+             "noun_label on no_word_category jobs so stimulus order matches the noun-label batch.",
+    )
     parser.add_argument("--word-mode", default="sudo_only",
                         choices=["sudo_only", "mixed"],
                         help="human_matched: sudo_only (default) or mixed sudo/random.")
@@ -252,6 +323,10 @@ def main():
                         help="human_matched: min English bigram score for sudo words (default 0.62).")
     add_common_args(parser)
     args = parser.parse_args()
+
+    if args.human_matched_stim_condition and args.eval_mode != "human_matched":
+        print("Error: --human-matched-stim-condition requires --eval-mode human_matched")
+        sys.exit(1)
 
     random.seed(args.seed)
 
@@ -296,6 +371,18 @@ def main():
             sys.exit(1)
 
         full_stimuli = load_stimuli_human_package(args.stim_pkg, stim_set_resolved)
+        stim_cond = (
+            args.human_matched_stim_condition
+            if args.human_matched_stim_condition is not None
+            else args.prompt_condition
+        )
+        base_seed_stim = human_eval_seed_text(
+            args.human_eval_seed,
+            stim_set_resolved,
+            args.stim_pkg,
+            stim_cond,
+            args.word_mode,
+        )
         base_seed = human_eval_seed_text(
             args.human_eval_seed,
             stim_set_resolved,
@@ -304,7 +391,7 @@ def main():
             args.word_mode,
         )
         stimuli = maybe_sample_stimuli_human(
-            full_stimuli, trial_limit, f"{base_seed}|stimuli"
+            full_stimuli, trial_limit, f"{base_seed_stim}|stimuli"
         )
         if args.prompt_condition == "noun_label":
             words = build_unique_human_words(
@@ -325,6 +412,7 @@ def main():
             stim_pkg=args.stim_pkg,
             stim_set=stim_set_resolved,
             human_word_seed=base_seed,
+            stimulus_shuffle_condition=stim_cond,
             word_mode=args.word_mode,
             word_min_len=args.word_min_len,
             word_max_len=args.word_max_len,
@@ -367,6 +455,10 @@ def main():
             f"trial_limit={csv_meta['trial_limit']})"
         )
         print(f"Word seed:   {csv_meta['human_word_seed']}")
+        if stim_cond != args.prompt_condition:
+            print(
+                f"Stim seed:   uses condition={stim_cond} in shuffle (prompt_condition={args.prompt_condition})"
+            )
         if args.prompt_condition == "noun_label":
             print(
                 f"Words:       {len(words)} (mode={args.word_mode}, "

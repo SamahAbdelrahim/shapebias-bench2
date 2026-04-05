@@ -161,7 +161,7 @@ CSV_FIELDS = [
     "ordering", "order_method", "a_is", "b_is", "raw_text", "parsed_answer", "choice",
     "generation_time_s", "num_tokens_generated", "attempts",
     "repeat", "temperature",
-    "eval_mode", "stim_pkg", "stim_set", "human_word_seed",
+    "eval_mode", "stim_pkg", "stim_set", "human_word_seed", "stimulus_shuffle_condition",
     "word_mode", "word_min_len", "word_max_len", "sudo_threshold", "trial_limit",
 ]
 
@@ -321,6 +321,7 @@ def benchmark_csv_meta(stim_set: str) -> dict[str, str]:
         "stim_pkg": BENCHMARK_STIM_PACKAGE,
         "stim_set": stim_set,
         "human_word_seed": "",
+        "stimulus_shuffle_condition": "",
         "word_mode": "",
         "word_min_len": "",
         "word_max_len": "",
@@ -334,6 +335,7 @@ def human_matched_csv_meta(
     stim_pkg: str,
     stim_set: str,
     human_word_seed: str,
+    stimulus_shuffle_condition: str,
     word_mode: str,
     word_min_len: int,
     word_max_len: int,
@@ -345,6 +347,7 @@ def human_matched_csv_meta(
         "stim_pkg": stim_pkg,
         "stim_set": stim_set,
         "human_word_seed": human_word_seed,
+        "stimulus_shuffle_condition": stimulus_shuffle_condition,
         "word_mode": word_mode,
         "word_min_len": str(word_min_len),
         "word_max_len": str(word_max_len),

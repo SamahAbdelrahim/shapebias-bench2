@@ -35,6 +35,10 @@ As of the update summarized in `interpret/models_validity.md`:
 
 **Broader coverage (families):** After Tier A (parity with valid/borderline IDs), it is useful to add **one strong model per family** for generalization: e.g. Qwen2.5-VL, InternVL, Llama 3.2 vision (if available on the same API), etc. That is a scientific choice (diversity vs cost), not a validity requirement.
 
+### 3.1 Former local models on the Hugging Face router
+
+[`REMOTE_MODELS`](../scripts/run_remote.py) includes the **same Hugging Face IDs** as the local wrappers for `qwen3-vl-2b`, `qwen3-vl-4b`, `qwen3.5-0.8b`, `qwen3.5-4b`, and `smolvlm`, so you can run human-matched (or benchmark) **remotely** when your account can serve them. If the router returns **`model_not_supported` (400)**, enable the right **Inference / partner provider** for that checkpoint in Hugging Face settings, or keep using [`run_local.py`](../scripts/run_local.py). **InternVL** is not in the default registry — `OpenGVLab/InternVL3-1B-hf` is commonly unavailable on the default router; add an entry when you have a served ID.
+
 ## 4. Remote system prompt (uniform, task-aligned)
 
 For **remote** API runs, all models share one **`system`** line so cross-model comparison is not confounded by family-specific priors. Options considered, reasoning, and the **exact frozen string** are documented in **`interpret/remote_eval_prompt_policy.md`**.

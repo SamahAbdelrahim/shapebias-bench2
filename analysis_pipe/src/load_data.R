@@ -216,6 +216,7 @@ get_candidate_result_paths <- function() {
     file.path(get_model_results_dir(), "local_eval.csv"),
     file.path(get_model_results_dir(), "remote_all_fixed.csv"),
     file.path(get_model_results_dir(), "remote_all.csv"),
+    file.path(get_model_results_dir(), "no_word_full_remote_trio_dedup.csv"),
     file.path(get_model_results_dir(), "no_word_pilot_remote_dedup.csv"),
     file.path(get_model_results_dir(), "no_word_pilot_remote.csv"),
     file.path(get_model_results_dir(), "no_word_full_remote.csv")
@@ -246,6 +247,7 @@ build_canonical_dataset <- function(output_path = get_data_path("canonical_combi
       TRUE ~ "other"
     )
     source_priority <- case_when(
+      str_detect(filename, "no_word_full_remote_trio_dedup\\.csv$") ~ 4L,
       str_detect(filename, "remote_all_fixed\\.csv$") ~ 3L,
       str_detect(filename, "no_word_full_remote\\.csv$") ~ 3L,
       str_detect(filename, "no_word_pilot_remote_dedup\\.csv$") ~ 3L,
