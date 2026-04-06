@@ -12,11 +12,17 @@ Default output:
 Usage (from repo root):
     python evaluation_pipe/benchmark_standardized_rerun/run_local_benchmark_standardized.py \\
         --models all --ordering both --repeats 1
+
+Resume after timeout (same stim set, seed, ordering, repeats, and models as the
+interrupted run); results append to the CSV given by ``--resume``:
+    python ... --models qwen3-vl-2b --ordering both --repeats 1 \\
+        --resume results/model.results/benchmark_standardized_rerun/local_eval_standardized.csv
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import random
 import sys
 from pathlib import Path
@@ -37,6 +43,7 @@ from evaluation_pipe.eval_core import (
     add_common_args,
     benchmark_csv_meta,
     build_transformers_vision_user_content,
+    load_completed_trial_keys,
     load_stimuli,
     load_words,
     print_summary,
@@ -229,6 +236,12 @@ def main() -> None:
     )
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument(
+        "--resume",
+        default=None,
+        metavar="CSV",
+        help="Append to this CSV and skip (model, stim_id, word, ordering, repeat) already present.",
+    )
     add_common_args(parser)
     args = parser.parse_args()
 
@@ -267,7 +280,7 @@ def main() -> None:
 
     print("Standardized local benchmark (evaluation_pipe/benchmark_standardized_rerun)")
     print(f"System prompt: REMOTE_UNIFORM_SYSTEM_PROMPT (runtime-patched local wrappers)")
-    print(f"Output:        {args.output}")
+    print(f"Output:        {args.resume or args.output}")
     print(f"Models:        {model_names}")
     print(f"Device:        {args.device}")
     print(f"Ordering:      {args.ordering}")
@@ -277,8 +290,20 @@ def main() -> None:
     print(f"Trials/model:  {trials_per}")
     print()
 
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if args.resume:
+        output_path = Path(args.resume)
+        if output_path.exists() and output_path.stat().st_size > 0:
+            done_keys = load_completed_trial_keys(output_path)
+            print(f"Resuming from {output_path} — {len(done_keys)} row-keys already done")
+        else:
+            done_keys = set()
+            print(f"Warning: --resume file {output_path} not found or empty, starting fresh")
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        done_keys = set()
+
     all_results: list[dict] = []
 
     for model_key in model_names:
@@ -292,12 +317,26 @@ def main() -> None:
         def run_fn(images, prompt, _m=model):
             return run_local(_m, images, prompt, temperature=args.temperature)
 
+        skipped = 0
         for repeat in range(1, args.repeats + 1):
             if args.repeats > 1:
                 print(f"\n  --- Repeat {repeat}/{args.repeats} ---")
             for stim in stimuli:
                 for w in words:
                     word, word_type, word_length = w["name"], w["type"], w["length"]
+                    if args.ordering == "both":
+                        check_ords = ["shape_first", "texture_first"]
+                    elif args.ordering == "random":
+                        check_ords = ["shape_first", "texture_first"]
+                    else:
+                        check_ords = [args.ordering]
+                    if all(
+                        (model_key, stim["stim_id"], word, o, str(repeat)) in done_keys
+                        for o in check_ords
+                    ):
+                        skipped += 1
+                        continue
+
                     print(f"  Stimulus {stim['stim_id']:>3s} (word={word}, type={word_type}, len={word_length})")
                     trial_results = run_trial(
                         run_fn,
@@ -314,12 +353,32 @@ def main() -> None:
                         r.update(csv_meta)
                         print(f"    {r['ordering']:15s} -> {r['raw_text']!r:10s}  choice={r['choice']}")
                         all_results.append(r)
+                        done_keys.add(
+                            (
+                                r["model"],
+                                r["stim_id"],
+                                r["word"],
+                                r["ordering"],
+                                str(r["repeat"]),
+                            )
+                        )
                     write_results(trial_results, output_path, append=True, quiet=True)
+
+        if skipped:
+            print(f"  Skipped {skipped} already-completed stimulus–word blocks")
 
         model.unload()
         print(f"  Unloaded {model_key}")
 
-    print_summary(all_results, model_names)
+    if output_path.exists() and output_path.stat().st_size > 0:
+        with open(output_path, newline="") as f:
+            summary_rows = list(csv.DictReader(f))
+        if summary_rows:
+            print_summary(summary_rows, model_names)
+        else:
+            print_summary(all_results, model_names)
+    else:
+        print_summary(all_results, model_names)
 
 
 if __name__ == "__main__":

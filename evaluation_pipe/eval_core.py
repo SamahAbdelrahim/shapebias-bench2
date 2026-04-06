@@ -565,6 +565,31 @@ def write_results(all_results: list[dict], output_path: Path,
         print(f"\nResults {'appended to' if append else 'saved to'} {output_path}")
 
 
+def load_completed_trial_keys(csv_path: Path) -> set[tuple[str, str, str, str, str]]:
+    """Keys for completed benchmark rows: (model, stim_id, word, ordering, repeat).
+
+    Matches skip/resume logic in ``run_remote_benchmark_standardized`` / local rerun.
+    """
+    done: set[tuple[str, str, str, str, str]] = set()
+    if not csv_path.exists() or csv_path.stat().st_size == 0:
+        return done
+    with open(csv_path, newline="") as f:
+        for row in csv.DictReader(f):
+            rep = row.get("repeat", "1")
+            if rep == "":
+                rep = "1"
+            done.add(
+                (
+                    row["model"],
+                    row["stim_id"],
+                    row["word"],
+                    row["ordering"],
+                    str(rep),
+                )
+            )
+    return done
+
+
 def _shape_pct_decisive(s: int, t: int) -> str:
     return f"{s / (s + t) * 100:.0f}%" if (s + t) > 0 else "N/A"
 

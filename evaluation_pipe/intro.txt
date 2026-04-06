@@ -1,0 +1,32 @@
+
+module load python/3.12.1
+# If you use pip PyTorch in the venv, avoid the cluster py-pytorch unless you know you need it:
+# module unload py-pytorch 2>/dev/null || true
+
+source "$HOME/venvs/shapebias-torch/bin/activate"
+
+#cd ~/shapebias-bench2
+
+python evaluation_pipe/benchmark_standardized_rerun/run_local_benchmark_standardized.py \
+  --models smolvlm --ordering both --repeats 1 --device cuda
+
+module load python/3.12.1
+source "$HOME/venvs/shapebias-torch/bin/activate"
+which python
+ldd "$(which python)" | grep libpython
+python -c "import sys; print(sys.version)"
+
+Summary
+Step	>>> Purpose
+module load python/3.12.1 >>> Provides libpython3.12 and matches how the venv was created
+source .../shapebias-torch/bin/activate >>> Uses your torch / transformers / num2words installs
+python ... >>>  Must be the venv’s Python after the two lines above
+
+Put module load python/3.12.1 (and source the venv) at the top of your Slurm script so every new job gets a consistent environment.
+
+cd ~/shapebias-bench2
+python evaluation_pipe/benchmark_standardized_rerun/run_local_benchmark_standardized.py \
+  --models smolvlm --ordering both --repeats 1 --device cuda
+
+pip show transformers torch
+python -c "import transformers, torch; print(transformers.__version__, torch.__version__)"
