@@ -565,28 +565,47 @@ def write_results(all_results: list[dict], output_path: Path,
         print(f"\nResults {'appended to' if append else 'saved to'} {output_path}")
 
 
+def _normalize_csv_row_keys(row: dict[str, str | None]) -> dict[str, str]:
+    """Strip whitespace and BOM from header-derived keys (Excel / utf-8-sig quirks)."""
+    out: dict[str, str] = {}
+    for k, v in row.items():
+        nk = (k or "").strip().lstrip("\ufeff")
+        if not nk:
+            continue
+        out[nk] = (v or "").strip() if isinstance(v, str) else (str(v) if v is not None else "")
+    return out
+
+
 def load_completed_trial_keys(csv_path: Path) -> set[tuple[str, str, str, str, str]]:
     """Keys for completed benchmark rows: (model, stim_id, word, ordering, repeat).
 
     Matches skip/resume logic in ``run_remote_benchmark_standardized`` / local rerun.
+    Rows missing any of those fields are skipped (legacy or non-benchmark CSVs).
     """
     done: set[tuple[str, str, str, str, str]] = set()
     if not csv_path.exists() or csv_path.stat().st_size == 0:
         return done
-    with open(csv_path, newline="") as f:
-        for row in csv.DictReader(f):
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames:
+            hdr = {(n or "").strip().lstrip("\ufeff") for n in reader.fieldnames if n}
+            if "model" not in hdr:
+                print(
+                    "Warning: resume CSV has no 'model' column; "
+                    "no trials will be skipped (check file is a benchmark results CSV)."
+                )
+        for raw in reader:
+            row = _normalize_csv_row_keys(raw)
+            model = row.get("model")
+            stim_id = row.get("stim_id")
+            word = row.get("word")
+            ordering = row.get("ordering")
+            if not model or not stim_id or not word or not ordering:
+                continue
             rep = row.get("repeat", "1")
             if rep == "":
                 rep = "1"
-            done.add(
-                (
-                    row["model"],
-                    row["stim_id"],
-                    row["word"],
-                    row["ordering"],
-                    str(rep),
-                )
-            )
+            done.add((model, stim_id, word, ordering, str(rep)))
     return done
 
 

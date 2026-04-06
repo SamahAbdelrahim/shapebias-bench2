@@ -371,7 +371,7 @@ def main() -> None:
         print(f"  Unloaded {model_key}")
 
     if output_path.exists() and output_path.stat().st_size > 0:
-        with open(output_path, newline="") as f:
+        with open(output_path, newline="", encoding="utf-8-sig") as f:
             summary_rows = list(csv.DictReader(f))
         if summary_rows:
             print_summary(summary_rows, model_names)
