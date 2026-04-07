@@ -620,6 +620,8 @@ def _shape_pct_all(s: int, t: int, u: int) -> str:
 
 def print_summary(all_results: list[dict], model_names: list[str]) -> None:
     """Print shape-bias summary tables."""
+    normalized_results = [_normalize_csv_row_keys(r) for r in all_results]
+
     print(f"\n{'='*90}")
     print(f"{'SUMMARY':^90}")
     print(f"{'='*90}")
@@ -631,10 +633,10 @@ def print_summary(all_results: list[dict], model_names: list[str]) -> None:
     print(f"  {'-'*25}  {'-'*6}  {'-'*8}  {'-'*8}  {'-'*12}  {'-'*12}")
 
     for model_key in model_names:
-        model_res = [r for r in all_results if r["model"] == model_key]
-        s = sum(1 for r in model_res if r["choice"] == "shape")
-        t = sum(1 for r in model_res if r["choice"] == "texture")
-        u = sum(1 for r in model_res if r["choice"] == "unclear")
+        model_res = [r for r in normalized_results if r.get("model") == model_key]
+        s = sum(1 for r in model_res if r.get("choice") == "shape")
+        t = sum(1 for r in model_res if r.get("choice") == "texture")
+        u = sum(1 for r in model_res if r.get("choice") == "unclear")
         print(
             f"  {model_key:25s}  {s:>6d}  {t:>8d}  {u:>8d}  "
             f"{_shape_pct_decisive(s, t):>12s}  {_shape_pct_all(s, t, u):>12s}"
@@ -648,11 +650,13 @@ def print_summary(all_results: list[dict], model_names: list[str]) -> None:
     print(f"  {'-'*25}  {'-'*15}  {'-'*6}  {'-'*8}  {'-'*12}  {'-'*12}")
     for model_key in model_names:
         for ordering in ["shape_first", "texture_first"]:
-            subset = [r for r in all_results
-                      if r["model"] == model_key and r["ordering"] == ordering]
-            s = sum(1 for r in subset if r["choice"] == "shape")
-            t = sum(1 for r in subset if r["choice"] == "texture")
-            u = sum(1 for r in subset if r["choice"] == "unclear")
+            subset = [
+                r for r in normalized_results
+                if r.get("model") == model_key and r.get("ordering") == ordering
+            ]
+            s = sum(1 for r in subset if r.get("choice") == "shape")
+            t = sum(1 for r in subset if r.get("choice") == "texture")
+            u = sum(1 for r in subset if r.get("choice") == "unclear")
             print(
                 f"  {model_key:25s}  {ordering:15s}  {s:>6d}  {t:>8d}  "
                 f"{_shape_pct_decisive(s, t):>12s}  {_shape_pct_all(s, t, u):>12s}"
