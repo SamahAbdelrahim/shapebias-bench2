@@ -116,3 +116,9 @@ class Qwen35_4B(_Qwen35Base):
     """Qwen3.5-4B wrapper."""
 
     _default_model_id = "Qwen/Qwen3.5-4B"
+
+@register_model("qwen3.5-1.7b")
+class Qwen35_17B(_Qwen35Base):
+    """Qwen3.5-1.7B-Instruct wrapper."""
+
+    _default_model_id = "Qwen/Qwen3.5-1.7B-Instruct"

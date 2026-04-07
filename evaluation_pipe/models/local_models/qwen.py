@@ -101,3 +101,9 @@ class Qwen3VL_4B(_Qwen3VLBase):
     """Qwen3-VL 4B Instruct wrapper."""
 
     _default_model_id = "Qwen/Qwen3-VL-4B-Instruct"
+
+@register_model("qwen3-vl-3b")
+class Qwen3VL_3B(_Qwen3VLBase):
+    """Qwen3-VL 3B Instruct wrapper."""
+
+    _default_model_id = "Qwen/Qwen3-VL-3B-Instruct"

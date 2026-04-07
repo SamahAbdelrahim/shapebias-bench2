@@ -87,3 +87,8 @@ class InternVL(BaseVLM):
         del self._model
         del self._processor
         torch.cuda.empty_cache()
+
+@register_model("internvl-2b")
+class InternVL_2B(InternVL):
+    def __init__(self, model_id: str = "OpenGVLab/InternVL3-2B-hf", device: str = "cuda", **kwargs):
+        super().__init__(model_id=model_id, device=device, **kwargs)
