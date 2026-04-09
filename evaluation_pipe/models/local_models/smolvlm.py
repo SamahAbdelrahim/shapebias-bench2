@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import time
+
 import torch
 from PIL import Image
-from transformers import AutoModelForImageTextToText, AutoProcessor
+from transformers import (
+    AutoModelForImageTextToText,
+    AutoProcessor,
+    SmolVLMForConditionalGeneration,
+    SmolVLMProcessor,
+)
 
 from evaluation_pipe.eval_core import build_transformers_vision_user_content
 
@@ -12,6 +19,7 @@ from ..base import BaseVLM, ModelResponse
 from .. import register_model
 
 _DEFAULT_MODEL_ID = "HuggingFaceTB/SmolVLM2-2.2B-Instruct"
+_DEFAULT_MODEL_ID_256M = "HuggingFaceTB/SmolVLM-256M-Instruct"
 
 
 @register_model("smolvlm")
@@ -26,12 +34,34 @@ class SmolVLM(BaseVLM):
     ) -> None:
         self._model_id = model_id
         self._device = device
-        self._processor = AutoProcessor.from_pretrained(model_id)
-        self._model = AutoModelForImageTextToText.from_pretrained(
-            model_id,
-            torch_dtype=torch.bfloat16,
-            **kwargs,
-        ).to(device)
+        load_dtype = torch.bfloat16 if device.startswith("cuda") else torch.float32
+
+        def _load_model(dtype: torch.dtype):
+            # Newer transformers releases can fail to auto-detect the image processor
+            # for SmolVLM2. Prefer explicit SmolVLM classes, then fall back to Auto*.
+            try:
+                processor = SmolVLMProcessor.from_pretrained(model_id)
+                model = SmolVLMForConditionalGeneration.from_pretrained(
+                    model_id,
+                    torch_dtype=dtype,
+                    **kwargs,
+                )
+            except Exception:
+                processor = AutoProcessor.from_pretrained(
+                    model_id,
+                    trust_remote_code=True,
+                )
+                model = AutoModelForImageTextToText.from_pretrained(
+                    model_id,
+                    torch_dtype=dtype,
+                    trust_remote_code=True,
+                    **kwargs,
+                )
+            return processor, model
+
+        self._processor, self._model = _load_model(load_dtype)
+        self._model = self._model.to(device)
+        self._device = device
         self._model.eval()
 
     @property
@@ -48,13 +78,19 @@ class SmolVLM(BaseVLM):
         content = build_transformers_vision_user_content(images, prompt)
         messages = [{"role": "user", "content": content}]
 
-        inputs = self._processor.apply_chat_template(
+        input_dtype = torch.bfloat16 if self._device.startswith("cuda") else torch.float32
+        # Two-step encode avoids kwargs warnings emitted by SmolVLMProcessor
+        # when tokenization kwargs are forwarded through apply_chat_template.
+        text = self._processor.tokenizer.apply_chat_template(
             messages,
             add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
+            tokenize=False,
+        )
+        inputs = self._processor(
+            text=[text],
+            images=list(images),
             return_tensors="pt",
-        ).to(self._device, dtype=torch.bfloat16)
+        ).to(self._device, dtype=input_dtype)
 
         input_len = inputs["input_ids"].shape[1]
 
@@ -82,7 +118,68 @@ class SmolVLM(BaseVLM):
             num_tokens_generated=num_tokens,
         )
 
+    def score_choices(
+        self,
+        images: list[Image.Image],
+        prompt: str,
+        choice_texts: tuple[str, str] = ("1", "2"),
+    ) -> dict:
+        """Return next-token probabilities/logits for two one-token choices."""
+        content = build_transformers_vision_user_content(images, prompt)
+        messages = [{"role": "user", "content": content}]
+        input_dtype = torch.bfloat16 if self._device.startswith("cuda") else torch.float32
+
+        text = self._processor.tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=False,
+        )
+        inputs = self._processor(
+            text=[text],
+            images=list(images),
+            return_tensors="pt",
+        ).to(self._device, dtype=input_dtype)
+
+        choice_ids: list[int] = []
+        for ch in choice_texts:
+            toks = self._processor.tokenizer.encode(ch, add_special_tokens=False)
+            if len(toks) != 1:
+                raise ValueError(f"Choice {ch!r} must map to one token; got ids={toks}")
+            choice_ids.append(toks[0])
+
+        t0 = time.perf_counter()
+        with torch.inference_mode():
+            out = self._model(**inputs)
+        elapsed = time.perf_counter() - t0
+
+        next_logits = out.logits[:, -1, :].float()
+        sel = next_logits[:, choice_ids].squeeze(0)
+        probs = torch.softmax(sel, dim=-1)
+
+        return {
+            "choice_texts": list(choice_texts),
+            "choice_token_ids": choice_ids,
+            "choice_logits": [float(sel[0].item()), float(sel[1].item())],
+            "choice_probs": [float(probs[0].item()), float(probs[1].item())],
+            "generation_time_s": elapsed,
+            "model_name": self.name,
+            "num_tokens_generated": 0,
+        }
+
     def unload(self) -> None:
         del self._model
         del self._processor
         torch.cuda.empty_cache()
+
+
+@register_model("smolvlm-256m")
+class SmolVLM256M(SmolVLM):
+    """Wrapper for SmolVLM-256M-Instruct (smaller baseline)."""
+
+    def __init__(
+        self,
+        model_id: str = _DEFAULT_MODEL_ID_256M,
+        device: str = "cuda",
+        **kwargs,
+    ) -> None:
+        super().__init__(model_id=model_id, device=device, **kwargs)

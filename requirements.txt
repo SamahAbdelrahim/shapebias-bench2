@@ -1,6 +1,8 @@
 torch
+torchvision
 transformers
 Pillow
+num2words
 python-dotenv
 accelerate
 requests

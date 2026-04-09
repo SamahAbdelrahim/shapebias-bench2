@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import os
 import random
+import re
 import time
 from pathlib import Path
 
@@ -83,6 +84,35 @@ PROMPT_TEMPLATES = {
         "Can you find another one of the two (1 or 2)? "
         "Your response must be exactly one character: 1 or 2. No other text."
     ),
+    "binary_yes_no": (
+        "The first image is a {word}. "
+        "The second image is one candidate object. "
+        "Is the second image the same object category as the first image? "
+        "Your response must be exactly one word: YES or NO. No other text."
+    ),
+    "binary_yes_no_conservative": (
+        "You see 2 images: Image 1 is the reference object and Image 2 is one candidate object. "
+        "Question: Is Image 2 the same object category as Image 1? "
+        "Rules: answer with exactly one token YES or NO. If uncertain, answer NO."
+    ),
+    "binary_score": (
+        "The first image is a {word}. "
+        "The second image is one candidate object. "
+        "Rate how likely the second image is the same object category as the first image, "
+        "from 0 to 100. "
+        "Your response must be exactly: SCORE=<integer 0-100>. No other text."
+    ),
+    "binary_score_0_3": (
+        "Image 1 is reference and Image 2 is one candidate. "
+        "Rate match strength from 0 to 3, where 0 means no match and 3 means very strong match. "
+        "Your response must be exactly: SCORE=<integer 0-3>. No other text."
+    ),
+    "rank_forced": (
+        "Image 1 is the reference object. Image 2 and Image 3 are candidates. "
+        "Rank the candidates by similarity to Image 1. "
+        "Your response must be exactly: BETTER=<1 or 2>; WORSE=<1 or 2>. "
+        "BETTER and WORSE must be different."
+    ),
 }
 
 # Backward compat for scripts that import a single noun_label template string.
@@ -91,8 +121,8 @@ PROMPT_TEMPLATE = PROMPT_TEMPLATES["noun_label"]
 # ===========================================================================
 # Vision turn layout (shared: local Transformers + remote OpenAI-compatible API)
 # ===========================================================================
-# Order must stay aligned with run_trial([ref, option_a, option_b]).
-VISION_USER_IMAGE_LABELS = ("Reference image:", "Image 1:", "Image 2:")
+VISION_USER_IMAGE_LABELS_3 = ("Reference image:", "Image 1:", "Image 2:")
+VISION_USER_IMAGE_LABELS_2 = ("Reference image:", "Candidate image:")
 
 # Used for Qwen3.5 VLM **local** wrappers (`qwen35.py`) only.
 QWEN35_VLM_SYSTEM_PROMPT = "Answer concisely. Do not explain your reasoning."
@@ -110,12 +140,14 @@ def build_transformers_vision_user_content(
     prompt: str,
 ) -> list[dict]:
     """Content block for a single user message (Transformers chat templates)."""
-    if len(images) != len(VISION_USER_IMAGE_LABELS):
-        raise ValueError(
-            f"expected {len(VISION_USER_IMAGE_LABELS)} images, got {len(images)}"
-        )
+    if len(images) == 3:
+        labels = VISION_USER_IMAGE_LABELS_3
+    elif len(images) == 2:
+        labels = VISION_USER_IMAGE_LABELS_2
+    else:
+        raise ValueError("expected 2 or 3 images")
     content: list[dict] = []
-    for label, img in zip(VISION_USER_IMAGE_LABELS, images):
+    for label, img in zip(labels, images):
         content.append({"type": "text", "text": label})
         content.append({"type": "image", "image": img})
     content.append({"type": "text", "text": prompt})
@@ -133,12 +165,14 @@ def build_openai_compatible_vision_messages(
 
     *image_to_url* maps each PIL image to a URL string (e.g. data:image/jpeg;base64,...).
     """
-    if len(images) != len(VISION_USER_IMAGE_LABELS):
-        raise ValueError(
-            f"expected {len(VISION_USER_IMAGE_LABELS)} images, got {len(images)}"
-        )
+    if len(images) == 3:
+        labels = VISION_USER_IMAGE_LABELS_3
+    elif len(images) == 2:
+        labels = VISION_USER_IMAGE_LABELS_2
+    else:
+        raise ValueError("expected 2 or 3 images")
     content: list[dict] = []
-    for label, img in zip(VISION_USER_IMAGE_LABELS, images):
+    for label, img in zip(labels, images):
         content.append({"type": "text", "text": label})
         content.append({
             "type": "image_url",
@@ -158,6 +192,7 @@ def build_openai_compatible_vision_messages(
 CSV_FIELDS = [
     "model", "model_name", "stim_id", "word", "word_type", "word_length",
     "prompt_condition",
+    "decision_mode", "swap_correct",
     "ordering", "order_method", "a_is", "b_is", "raw_text", "parsed_answer", "choice",
     "generation_time_s", "num_tokens_generated", "attempts",
     "repeat", "temperature",
@@ -444,6 +479,64 @@ def parse_answer(raw_text: str) -> str | None:
     return None
 
 
+def parse_yes_no(raw_text: str) -> str | None:
+    txt = (raw_text or "").strip().lower()
+    has_yes = "yes" in txt
+    has_no = "no" in txt
+    if has_yes and has_no:
+        return None
+    if has_yes:
+        return "yes"
+    if has_no:
+        return "no"
+    return None
+
+
+def parse_score_0_100(raw_text: str) -> int | None:
+    txt = (raw_text or "").strip().lower()
+    m = re.search(r"score\s*=\s*(\d{1,3})\b", txt)
+    if m:
+        v = int(m.group(1))
+        if 0 <= v <= 100:
+            return v
+    # Fallback: first standalone integer in range
+    m2 = re.search(r"\b(\d{1,3})\b", txt)
+    if m2:
+        v = int(m2.group(1))
+        if 0 <= v <= 100:
+            return v
+    return None
+
+
+def parse_score_0_3(raw_text: str) -> int | None:
+    txt = (raw_text or "").strip().lower()
+    m = re.search(r"score\s*=\s*([0-3])\b", txt)
+    if m:
+        return int(m.group(1))
+    m2 = re.search(r"\b([0-3])\b", txt)
+    if m2:
+        return int(m2.group(1))
+    return None
+
+
+def parse_rank_forced(raw_text: str) -> str | None:
+    """Return BETTER label ('1' or '2') from strict rank output."""
+    txt = (raw_text or "").strip().lower()
+    m = re.search(r"better\s*=\s*([12])\s*;\s*worse\s*=\s*([12])", txt)
+    if not m:
+        m = re.search(r"worse\s*=\s*([12])\s*;\s*better\s*=\s*([12])", txt)
+        if m:
+            worse, better = m.group(1), m.group(2)
+            if better != worse:
+                return better
+            return None
+        return None
+    better, worse = m.group(1), m.group(2)
+    if better == worse:
+        return None
+    return better
+
+
 def run_with_retry(run_fn, images: list[Image.Image], prompt: str) -> dict:
     result = None
     for attempt in range(1, MAX_RETRIES + 1):
@@ -458,6 +551,94 @@ def run_with_retry(run_fn, images: list[Image.Image], prompt: str) -> dict:
             result["attempts"] = attempt
             return result
         print(f"    [retry {attempt}/{MAX_RETRIES}] ambiguous/empty: {result['raw_text']!r}")
+
+    if result is None:
+        result = {"raw_text": "", "generation_time_s": 0, "model_name": "", "num_tokens_generated": 0}
+    result["parsed_answer"] = None
+    result["attempts"] = MAX_RETRIES
+    return result
+
+
+def run_with_retry_yes_no(run_fn, images: list[Image.Image], prompt: str) -> dict:
+    result = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            result = run_fn(images, prompt)
+        except Exception as e:
+            print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
+            continue
+        answer = parse_yes_no(result["raw_text"])
+        if answer is not None:
+            result["parsed_answer"] = answer
+            result["attempts"] = attempt
+            return result
+        print(f"    [retry {attempt}/{MAX_RETRIES}] ambiguous/empty YES/NO: {result['raw_text']!r}")
+
+    if result is None:
+        result = {"raw_text": "", "generation_time_s": 0, "model_name": "", "num_tokens_generated": 0}
+    result["parsed_answer"] = None
+    result["attempts"] = MAX_RETRIES
+    return result
+
+
+def run_with_retry_score(run_fn, images: list[Image.Image], prompt: str) -> dict:
+    result = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            result = run_fn(images, prompt)
+        except Exception as e:
+            print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
+            continue
+        score = parse_score_0_100(result["raw_text"])
+        if score is not None:
+            result["parsed_answer"] = str(score)
+            result["attempts"] = attempt
+            return result
+        print(f"    [retry {attempt}/{MAX_RETRIES}] ambiguous/empty SCORE: {result['raw_text']!r}")
+
+    if result is None:
+        result = {"raw_text": "", "generation_time_s": 0, "model_name": "", "num_tokens_generated": 0}
+    result["parsed_answer"] = None
+    result["attempts"] = MAX_RETRIES
+    return result
+
+
+def run_with_retry_score_0_3(run_fn, images: list[Image.Image], prompt: str) -> dict:
+    result = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            result = run_fn(images, prompt)
+        except Exception as e:
+            print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
+            continue
+        score = parse_score_0_3(result["raw_text"])
+        if score is not None:
+            result["parsed_answer"] = str(score)
+            result["attempts"] = attempt
+            return result
+        print(f"    [retry {attempt}/{MAX_RETRIES}] ambiguous/empty SCORE(0-3): {result['raw_text']!r}")
+
+    if result is None:
+        result = {"raw_text": "", "generation_time_s": 0, "model_name": "", "num_tokens_generated": 0}
+    result["parsed_answer"] = None
+    result["attempts"] = MAX_RETRIES
+    return result
+
+
+def run_with_retry_rank_forced(run_fn, images: list[Image.Image], prompt: str) -> dict:
+    result = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            result = run_fn(images, prompt)
+        except Exception as e:
+            print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
+            continue
+        better = parse_rank_forced(result["raw_text"])
+        if better is not None:
+            result["parsed_answer"] = better
+            result["attempts"] = attempt
+            return result
+        print(f"    [retry {attempt}/{MAX_RETRIES}] ambiguous/invalid rank output: {result['raw_text']!r}")
 
     if result is None:
         result = {"raw_text": "", "generation_time_s": 0, "model_name": "", "num_tokens_generated": 0}
@@ -523,6 +704,187 @@ def run_trial(run_fn, stimulus: dict, word: str, word_type: str,
             "choice": choice,
         })
 
+    return results
+
+
+def run_trial_binary_pair(
+    run_fn,
+    stimulus: dict,
+    word: str,
+    word_type: str,
+    word_length: int = 0,
+    prompt_condition: str = "binary_yes_no_conservative",
+) -> list[dict]:
+    """Run two independent binary decisions (shape candidate, texture candidate)."""
+    if prompt_condition not in {"binary_yes_no", "binary_yes_no_conservative", "binary_score"}:
+        raise ValueError(
+            "run_trial_binary_pair expects prompt_condition in "
+            "{'binary_yes_no','binary_yes_no_conservative','binary_score'}"
+        )
+
+    ref = stimulus["reference"]
+    shape = stimulus["shape_match"]
+    texture = stimulus["texture_match"]
+    prompt = make_prompt(word, prompt_condition=prompt_condition)
+
+    if prompt_condition == "binary_score":
+        shape_res = run_with_retry_score(run_fn, [ref, shape], prompt)
+        texture_res = run_with_retry_score(run_fn, [ref, texture], prompt)
+        s_shape = int(shape_res["parsed_answer"]) if shape_res.get("parsed_answer") is not None else None
+        s_texture = int(texture_res["parsed_answer"]) if texture_res.get("parsed_answer") is not None else None
+        if s_shape is not None and s_texture is not None:
+            if s_shape > s_texture:
+                choice = "shape"
+            elif s_texture > s_shape:
+                choice = "texture"
+            else:
+                choice = "unclear"
+        else:
+            choice = "unclear"
+    else:
+        shape_res = run_with_retry_yes_no(run_fn, [ref, shape], prompt)
+        texture_res = run_with_retry_yes_no(run_fn, [ref, texture], prompt)
+        shape_ans = shape_res.get("parsed_answer")
+        texture_ans = texture_res.get("parsed_answer")
+        if shape_ans == "yes" and texture_ans == "no":
+            choice = "shape"
+        elif shape_ans == "no" and texture_ans == "yes":
+            choice = "texture"
+        elif (
+            prompt_condition == "binary_yes_no_conservative"
+            and shape_ans == "yes"
+            and texture_ans == "yes"
+        ):
+            # Tie-break only when both candidates are positive.
+            tie_prompt = make_prompt(word, prompt_condition="binary_score_0_3")
+            shape_tie = run_with_retry_score_0_3(run_fn, [ref, shape], tie_prompt)
+            texture_tie = run_with_retry_score_0_3(run_fn, [ref, texture], tie_prompt)
+            s_shape = int(shape_tie["parsed_answer"]) if shape_tie.get("parsed_answer") is not None else None
+            s_texture = int(texture_tie["parsed_answer"]) if texture_tie.get("parsed_answer") is not None else None
+            if s_shape is not None and s_texture is not None:
+                if s_shape > s_texture:
+                    choice = "shape"
+                elif s_texture > s_shape:
+                    choice = "texture"
+                else:
+                    choice = "unclear"
+            else:
+                choice = "unclear"
+            # Attach tie-break detail to raw/parsed payload.
+            shape_res["raw_text"] = (
+                f"{shape_res.get('raw_text','')} | tie_score={shape_tie.get('raw_text','')}"
+            )
+            texture_res["raw_text"] = (
+                f"{texture_res.get('raw_text','')} | tie_score={texture_tie.get('raw_text','')}"
+            )
+            shape_res["parsed_answer"] = (
+                f"{shape_ans};tie={shape_tie.get('parsed_answer') or 'none'}"
+            )
+            texture_res["parsed_answer"] = (
+                f"{texture_ans};tie={texture_tie.get('parsed_answer') or 'none'}"
+            )
+        else:
+            choice = "unclear"
+
+    raw_text = (
+        f"shape_candidate={shape_res.get('raw_text', '')!r}; "
+        f"texture_candidate={texture_res.get('raw_text', '')!r}"
+    )
+    parsed = (
+        f"shape={shape_res.get('parsed_answer') or 'none'};"
+        f"texture={texture_res.get('parsed_answer') or 'none'}"
+    )
+
+    return [
+        {
+            "raw_text": raw_text,
+            "generation_time_s": round(
+                float(shape_res.get("generation_time_s", 0.0))
+                + float(texture_res.get("generation_time_s", 0.0)),
+                2,
+            ),
+            "model_name": shape_res.get("model_name") or texture_res.get("model_name", ""),
+            "num_tokens_generated": (
+                int(shape_res.get("num_tokens_generated") or 0)
+                + int(texture_res.get("num_tokens_generated") or 0)
+            ),
+            "parsed_answer": parsed,
+            "attempts": int(shape_res.get("attempts", MAX_RETRIES))
+            + int(texture_res.get("attempts", MAX_RETRIES)),
+            "stim_id": stimulus["stim_id"],
+            "word": word,
+            "word_type": word_type,
+            "word_length": word_length,
+            "prompt_condition": prompt_condition,
+            "ordering": "binary_pair",
+            "order_method": "independent_binary",
+            "a_is": "shape",
+            "b_is": "texture",
+            "choice": choice,
+        }
+    ]
+
+
+def run_trial_rank_forced(
+    run_fn,
+    stimulus: dict,
+    word: str,
+    word_type: str,
+    word_length: int = 0,
+    ordering: str = "both",
+    prompt_condition: str = "rank_forced",
+) -> list[dict]:
+    """Run 3-image forced ranking with strict BETTER/WORSE parse."""
+    if prompt_condition != "rank_forced":
+        raise ValueError("run_trial_rank_forced expects prompt_condition='rank_forced'")
+
+    ref = stimulus["reference"]
+    shape = stimulus["shape_match"]
+    texture = stimulus["texture_match"]
+    prompt = make_prompt(word, prompt_condition=prompt_condition)
+
+    orderings_config = {
+        "shape_first": [("shape_first", shape, texture, "shape", "texture")],
+        "texture_first": [("texture_first", texture, shape, "texture", "shape")],
+        "both": [
+            ("shape_first", shape, texture, "shape", "texture"),
+            ("texture_first", texture, shape, "texture", "shape"),
+        ],
+    }
+    if ordering == "random":
+        configs = list(orderings_config["both"])
+        random.shuffle(configs)
+        configs = configs[:1]
+        order_method = "random"
+    else:
+        configs = orderings_config[ordering]
+        order_method = "deterministic"
+
+    results = []
+    for ord_name, img_a, img_b, a_is, b_is in configs:
+        res = run_with_retry_rank_forced(run_fn, [ref, img_a, img_b], prompt)
+        answer = res.get("parsed_answer")
+        if answer == "1":
+            choice = a_is
+        elif answer == "2":
+            choice = b_is
+        else:
+            choice = "unclear"
+        results.append(
+            {
+                **res,
+                "stim_id": stimulus["stim_id"],
+                "word": word,
+                "word_type": word_type,
+                "word_length": word_length,
+                "prompt_condition": prompt_condition,
+                "ordering": ord_name,
+                "order_method": order_method,
+                "a_is": a_is,
+                "b_is": b_is,
+                "choice": choice,
+            }
+        )
     return results
 
 
