@@ -41,6 +41,7 @@ from evaluation_pipe.eval_core import (
     benchmark_csv_meta,
     load_stimuli,
     load_words,
+    load_completed_trial_keys,
     make_prompt,
     print_summary,
     resolve_output_path,
@@ -201,6 +202,8 @@ def main():
                         help="Decision policy: standard 2AFC, binary_pair, binary_pair_conservative, binary_rank_forced, or logit_forced_12.")
     parser.add_argument("--swap-correct", action="store_true",
                         help="For logit_forced_12, average with swapped candidate order to reduce position bias.")
+    parser.add_argument("--resume", default=None, metavar="CSV",
+                        help="Resume from a partial CSV — skip already-completed trials and append new results")
     add_common_args(parser)
     args = parser.parse_args()
 
@@ -268,7 +271,14 @@ def main():
     print(f"Trials per model: {len(stimuli)} x {len(words)} x {args.repeats} repeats x {ord_mult} orderings = {trials_per}")
     print()
 
-    output_path = resolve_output_path(args.output, prefix="local")
+    done_keys: set[tuple[str, str, str, str, str]] = set()
+    if args.resume:
+        output_path = Path(args.resume)
+        done_keys = load_completed_trial_keys(output_path)
+        print(f"Resume file: {output_path}")
+        print(f"Completed trial rows detected: {len(done_keys)}")
+    else:
+        output_path = resolve_output_path(args.output, prefix="local")
     all_results = []
 
     for model_key in model_names:
@@ -288,6 +298,24 @@ def main():
             for stim in stimuli:
                 for w in words:
                     word, word_type, word_length = w["name"], w["type"], w["length"]
+
+                    if args.decision_mode in {"binary_pair", "binary_pair_conservative"}:
+                        expected_orderings = ["binary_pair"]
+                    elif args.ordering == "both":
+                        expected_orderings = ["shape_first", "texture_first"]
+                    elif args.ordering == "random":
+                        expected_orderings = ["shape_first", "texture_first"]
+                    else:
+                        expected_orderings = [args.ordering]
+                    trial_key_prefix = (model_key, stim["stim_id"], word, str(repeat))
+                    all_done = all(
+                        (trial_key_prefix[0], trial_key_prefix[1], trial_key_prefix[2], ord_name, trial_key_prefix[3])
+                        in done_keys
+                        for ord_name in expected_orderings
+                    )
+                    if all_done:
+                        continue
+
                     print(f"  Stimulus {stim['stim_id']:>3s} (word={word}, type={word_type}, len={word_length})")
                     if args.decision_mode in {"binary_pair", "binary_pair_conservative"}:
                         trial_results = run_trial_binary_pair(
@@ -340,6 +368,16 @@ def main():
                         all_results.append(r)
                     # Save incrementally after each stimulus+word trial
                     write_results(trial_results, output_path, append=True, quiet=True)
+                    for r in trial_results:
+                        done_keys.add(
+                            (
+                                model_key,
+                                str(r.get("stim_id", "")),
+                                str(r.get("word", "")),
+                                str(r.get("ordering", "")),
+                                str(repeat),
+                            )
+                        )
 
         model.unload()
         print(f"  Unloaded {model_key}")
