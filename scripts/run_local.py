@@ -14,6 +14,9 @@ Usage:
     # Multiple repeats with temperature
     python scripts/run_local.py --models smolvlm --ordering shape_first --repeats 3 --temperature 0.7
 
+    # Use levante_bench runtime wrapper (model selected by id)
+    python scripts/run_local.py --models levante-runtime --ordering shape_first --levante-model-name qwen35
+
     # Append results to existing CSV
     python scripts/run_local.py --models smolvlm --ordering shape_first -o results/run.csv
     python scripts/run_local.py --models smolvlm --ordering texture_first -o results/run.csv
@@ -204,6 +207,30 @@ def main():
                         help="For logit_forced_12, average with swapped candidate order to reduce position bias.")
     parser.add_argument("--resume", default=None, metavar="CSV",
                         help="Resume from a partial CSV — skip already-completed trials and append new results")
+    parser.add_argument(
+        "--levante-model-name",
+        default="qwen35",
+        help=(
+            "Model ID passed to levante_bench.runtime.load_model when using "
+            "--models levante-runtime (default: qwen35)."
+        ),
+    )
+    parser.add_argument(
+        "--levante-model-config-path",
+        default=None,
+        help=(
+            "Optional model config YAML path passed to levante runtime when using "
+            "--models levante-runtime."
+        ),
+    )
+    parser.add_argument(
+        "--levante-configs-root",
+        default=None,
+        help=(
+            "Optional configs root containing models/*.yaml for levante runtime "
+            "lookups."
+        ),
+    )
     add_common_args(parser)
     args = parser.parse_args()
 
@@ -286,7 +313,16 @@ def main():
         print(f"Local model: {model_key}")
         print(f"{'='*60}")
 
-        model = create_model(model_key, device=args.device)
+        create_kwargs = {"device": args.device}
+        if model_key == "levante-runtime":
+            create_kwargs.update(
+                {
+                    "model_id": args.levante_model_name,
+                    "model_config_path": args.levante_model_config_path,
+                    "configs_root": args.levante_configs_root,
+                }
+            )
+        model = create_model(model_key, **create_kwargs)
         print(f"  Loaded: {model.name}")
 
         def run_fn(images, prompt, _m=model):

@@ -5,6 +5,24 @@ Shared logic: [`eval_core.py`](eval_core.py). Runners: **`scripts/run_remote.py`
 - `scripts/run_remote.py` — API / Hugging Face router models (registry includes former **local-only** VLMs where the router serves them: `qwen3-vl-2b`, `qwen3-vl-4b`, `qwen3.5-0.8b`, `qwen3.5-4b`, `smolvlm`, plus larger Qwen3.5 / Llama4 Scout). **`internvl` is not registered remotely** by default — `OpenGVLab/InternVL3-1B-hf` often returns `model_not_supported` on the HF router; add a `REMOTE_MODELS` entry when your account exposes a compatible ID.
 - `scripts/run_local.py` — local GPU models (`stimuli_per_stl_packages` benchmark only)
 
+### Using levante-bench runtime in local runs
+
+You can route local ShapeBias inference through the sibling `levante-bench` runtime:
+
+```bash
+pip install -e <path-to-levante-bench>
+python scripts/run_local.py \
+  --models levante-runtime \
+  --levante-model-name qwen35 \
+  --ordering shape_first
+```
+
+Optional flags:
+- `--levante-model-config-path` to pass a custom model YAML
+- `--levante-configs-root` to resolve `models/*.yaml` from a custom config tree
+
+For complete setup/troubleshooting, see `../LEVANTE_RUNTIME_INTEGRATION.md`.
+
 ## Hugging Face Inference Providers (why some `model_id`s work and others don’t)
 
 `run_remote.py` talks to the **OpenAI-compatible router** (`router.huggingface.co/v1` for most keys, and `router.huggingface.co/groq/openai/v1` for `llama4-scout`). The router does **not** run every Hugging Face checkpoint itself: it **dispatches** each request to **Inference Providers** you have set up (API keys and/or HF-billed routing).
