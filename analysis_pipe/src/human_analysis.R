@@ -25,7 +25,18 @@ load_human_results <- function(path = NULL) {
     return(tibble())
   }
 
-  read_csv(existing_paths[[1]], show_col_types = FALSE) |>
+  df <- read_csv(existing_paths[[1]], show_col_types = FALSE)
+
+  if (!"design" %in% names(df) && "raw_trial.design" %in% names(df)) {
+    ordering_mode_col <- if ("raw_trial.ordering_mode" %in% names(df)) "raw_trial.ordering_mode" else NULL
+    df <- df |>
+      mutate(
+        design = `raw_trial.design`,
+        ordering_mode = if (!is.null(ordering_mode_col)) .data[[ordering_mode_col]] else NA_character_
+      )
+  }
+
+  df |>
     mutate(
       design = ifelse(is.na(design), "", design),
       condition = ifelse(is.na(condition), "noun_label", condition),
