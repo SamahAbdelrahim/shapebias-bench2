@@ -6,6 +6,8 @@ stimuli_pipe to create stimuli + evaluation and model pipeline + analysis_pipe
 
 Remote evaluation (benchmark vs human-matched stimuli/words) is documented in `evaluation_pipe/README.md`. Model validity, selection rationale, and local vs remote prompt parity are in `interpret/model_choice_decision_log.md` (see also `interpret/models_validity.md`).
 
+Local integration with exported `levante-bench` runtime APIs (`load_model`, `run_trials`) is documented in `LEVANTE_RUNTIME_INTEGRATION.md`.
+
 Stimuli onboarding:
 - Start with `STIMULI_GUIDE.md` (repo root/stimuli_pipe)
 - Then read:
