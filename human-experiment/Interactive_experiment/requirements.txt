@@ -1,0 +1,7 @@
+torch
+transformers
+Pillow
+python-dotenv
+accelerate
+requests
+openai

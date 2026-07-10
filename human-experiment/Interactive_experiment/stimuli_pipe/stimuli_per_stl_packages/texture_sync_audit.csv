@@ -1,0 +1,61 @@
+mode,stl_id,forced_texture_set,consistent_in_logs,observed_texture_sets
+stimuli_A_auto_contrast,1,PaintedMetal005_4K-JPG,1,PaintedMetal005_4K-JPG
+stimuli_A_auto_contrast,2,PaintedMetal005_4K-JPG,1,PaintedMetal005_4K-JPG
+stimuli_A_auto_contrast,3,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_A_auto_contrast,4,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_A_auto_contrast,5,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_A_auto_contrast,6,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,7,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,8,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,9,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,10,Metal007_4K-JPG,1,Metal007_4K-JPG
+stimuli_A_auto_contrast,11,Metal007_4K-JPG,1,Metal007_4K-JPG
+stimuli_A_auto_contrast,12,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_A_auto_contrast,13,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,14,PaintedMetal005_4K-JPG,1,PaintedMetal005_4K-JPG
+stimuli_A_auto_contrast,15,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_A_auto_contrast,16,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_A_auto_contrast,17,Metal007_4K-JPG,1,Metal007_4K-JPG
+stimuli_A_auto_contrast,18,PaintedMetal005_4K-JPG,1,PaintedMetal005_4K-JPG
+stimuli_A_auto_contrast,19,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,20,Metal007_4K-JPG,1,Metal007_4K-JPG
+stimuli_A_auto_contrast,21,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,22,PaintedMetal005_4K-JPG,1,PaintedMetal005_4K-JPG
+stimuli_A_auto_contrast,23,PaintedMetal005_4K-JPG,1,PaintedMetal005_4K-JPG
+stimuli_A_auto_contrast,24,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,25,Metal007_4K-JPG,1,Metal007_4K-JPG
+stimuli_A_auto_contrast,26,PaintedMetal005_4K-JPG,1,PaintedMetal005_4K-JPG
+stimuli_A_auto_contrast,27,Metal007_4K-JPG,1,Metal007_4K-JPG
+stimuli_A_auto_contrast,28,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_A_auto_contrast,29,corrugatedsteel,1,corrugatedsteel
+stimuli_A_auto_contrast,30,PaintedMetal007_4K-JPG,1,PaintedMetal007_4K-JPG
+stimuli_B_controlled_simple,1,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,2,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,3,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,4,Fabric047_4K-JPG,1,Fabric047_4K-JPG
+stimuli_B_controlled_simple,5,brown_fabric_53-4K,1,brown_fabric_53-4K
+stimuli_B_controlled_simple,6,Fabric031_4K-JPG,1,Fabric031_4K-JPG
+stimuli_B_controlled_simple,7,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,8,Fabric047_4K-JPG,1,Fabric047_4K-JPG
+stimuli_B_controlled_simple,9,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,10,Fabric047_4K-JPG,1,Fabric047_4K-JPG
+stimuli_B_controlled_simple,11,Fabric031_4K-JPG,1,Fabric031_4K-JPG
+stimuli_B_controlled_simple,12,Fabric047_4K-JPG,1,Fabric047_4K-JPG
+stimuli_B_controlled_simple,13,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,14,brown_fabric_53-4K,1,brown_fabric_53-4K
+stimuli_B_controlled_simple,15,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,16,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,17,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,18,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,19,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,20,brown_fabric_53-4K,1,brown_fabric_53-4K
+stimuli_B_controlled_simple,21,Fabric047_4K-JPG,1,Fabric047_4K-JPG
+stimuli_B_controlled_simple,22,brown_fabric_53-4K,1,brown_fabric_53-4K
+stimuli_B_controlled_simple,23,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,24,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,25,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,26,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,27,Fabric047_4K-JPG,1,Fabric047_4K-JPG
+stimuli_B_controlled_simple,28,NO - Fabric048_4K-JPG,1,NO - Fabric048_4K-JPG
+stimuli_B_controlled_simple,29,denim_fabric,1,denim_fabric
+stimuli_B_controlled_simple,30,Fabric047_4K-JPG,1,Fabric047_4K-JPG
