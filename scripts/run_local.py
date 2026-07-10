@@ -14,9 +14,6 @@ Usage:
     # Multiple repeats with temperature
     python scripts/run_local.py --models smolvlm --ordering shape_first --repeats 3 --temperature 0.7
 
-    # Use levante_bench runtime wrapper (model selected by id)
-    python scripts/run_local.py --models levante-runtime --ordering shape_first --levante-model-name qwen35
-
     # Append results to existing CSV
     python scripts/run_local.py --models smolvlm --ordering shape_first -o results/run.csv
     python scripts/run_local.py --models smolvlm --ordering texture_first -o results/run.csv
@@ -76,21 +73,22 @@ def run_local(model, images: list[Image.Image], prompt: str,
     }
 
 
-def run_local_logit_forced(model, images: list[Image.Image], prompt: str) -> dict:
+def run_local_logit_forced(model, images: list[Image.Image], prompt: str, choice_texts: tuple[str, str]) -> dict:
     if not hasattr(model, "score_choices"):
         raise RuntimeError(
             f"Model {getattr(model, 'name', '<unknown>')} does not support logit scoring."
         )
-    return model.score_choices(images=images, prompt=prompt, choice_texts=("1", "2"))
+    return model.score_choices(images=images, prompt=prompt, choice_texts=choice_texts)
 
 
-def run_trial_logit_forced_12(
+def run_trial_logit_forced(
     run_score_fn,
     stimulus: dict,
     word: str,
     word_type: str,
     word_length: int = 0,
     *,
+    choice_texts=("1", "2"),
     ordering: str = "both",
     prompt_condition: str = "noun_label",
     swap_correct: bool = False,
@@ -120,35 +118,52 @@ def run_trial_logit_forced_12(
     results = []
     for ord_name, img_a, img_b, a_is, b_is in configs:
         base = run_score_fn([ref, img_a, img_b], prompt)
-        p1, p2 = base["choice_probs"]
+        p1_abs, p2_abs = base["choice_probs_absolute"]
         l1, l2 = base["choice_logits"]
         total_t = float(base["generation_time_s"])
+        decision_a_abs = p1_abs
+        decision_b_abs = p2_abs
+
+        sp1_abs, sp2_abs = None, None
+        swap_corrected_a_abs, swap_corrected_b_abs = None, None
 
         if swap_correct:
             sw = run_score_fn([ref, img_b, img_a], prompt)
-            sp1, sp2 = sw["choice_probs"]  # 1->b, 2->a (relative to base semantics)
+            sp1_abs, sp2_abs = sw["choice_probs_absolute"]  # 1->b, 2->a (relative to base semantics)
             sl1, sl2 = sw["choice_logits"]
-            p_a = 0.5 * (p1 + sp2)
-            p_b = 0.5 * (p2 + sp1)
+            decision_a_abs = 0.5 * (p1_abs + sp2_abs)
+            decision_b_abs = 0.5 * (p2_abs + sp1_abs)
+            swap_corrected_a_abs = decision_a_abs
+            swap_corrected_b_abs = decision_b_abs
             total_t += float(sw["generation_time_s"])
             raw_text = (
-                f"base[p1={p1:.4f},p2={p2:.4f},l1={l1:.3f},l2={l2:.3f}] "
-                f"swap[p1={sp1:.4f},p2={sp2:.4f},l1={sl1:.3f},l2={sl2:.3f}] "
-                f"corr[p_a={p_a:.4f},p_b={p_b:.4f}]"
+                f"base[p1_abs={p1_abs:.4f},p2_abs={p2_abs:.4f},l1={l1:.3f},l2={l2:.3f}] "
+                f"swap[p1_abs={sp1_abs:.4f},p2_abs={sp2_abs:.4f},l1={sl1:.3f},l2={sl2:.3f}] "
+                f"corr[a={swap_corrected_a_abs:.4f},b={swap_corrected_b_abs:.4f}]"
             )
         else:
-            p_a, p_b = p1, p2
-            raw_text = f"p1={p1:.4f},p2={p2:.4f},l1={l1:.3f},l2={l2:.3f}"
+            raw_text = f"p1_abs={p1_abs:.4f},p2_abs={p2_abs:.4f},l1={l1:.3f},l2={l2:.3f}"
 
-        if p_a > p_b:
-            parsed = "1"
+        # under swapped condition, 'parsed' is relative to the original prompt
+        if decision_a_abs > decision_b_abs:
+            parsed = choice_texts[0]
             choice = a_is
-        elif p_b > p_a:
-            parsed = "2"
+        elif decision_b_abs > decision_a_abs:
+            parsed = choice_texts[1]
             choice = b_is
         else:
             parsed = None
             choice = "unclear"
+
+        print(
+            "DEBUG:",
+            p1_abs,
+            p2_abs,
+            sp1_abs,
+            sp2_abs,
+            swap_corrected_a_abs,
+            swap_corrected_b_abs
+        )
 
         results.append(
             {
@@ -168,6 +183,13 @@ def run_trial_logit_forced_12(
                 "a_is": a_is,
                 "b_is": b_is,
                 "choice": choice,
+
+                "prob_1_abs": p1_abs,
+                "prob_2_abs": p2_abs,
+                "swap_prob_1_abs": sp1_abs,
+                "swap_prob_2_abs": sp2_abs,
+                "swap_corrected_a_abs": swap_corrected_a_abs,
+                "swap_corrected_b_abs": swap_corrected_b_abs,
             }
         )
     return results
@@ -192,7 +214,9 @@ def main():
     parser.add_argument("--prompt-condition", default="noun_label",
                         choices=[
                             "noun_label",
+                            "noun_label_AB",
                             "no_word_category",
+                            "no_word_category_AB",
                             "binary_yes_no",
                             "binary_yes_no_conservative",
                             "binary_score",
@@ -201,38 +225,18 @@ def main():
                         ],
                         help="Prompt variant to use (default: noun_label)")
     parser.add_argument("--decision-mode", default="2afc",
-                        choices=["2afc", "binary_pair", "binary_pair_conservative", "binary_rank_forced", "logit_forced_12"],
-                        help="Decision policy: standard 2AFC, binary_pair, binary_pair_conservative, binary_rank_forced, or logit_forced_12.")
+                        choices=["2afc", "binary_pair", "binary_pair_conservative", "binary_rank_forced", "logit_forced"],
+                        help="Decision policy: standard 2AFC, binary_pair, binary_pair_conservative, binary_rank_forced, or logit_forced.")
+    parser.add_argument("--choice-texts", nargs=2, default=("1", "2"),
+                        help="Requires two arguments, one for each text option. Only necessary if running logit_forced (default: 1 2)")
     parser.add_argument("--swap-correct", action="store_true",
-                        help="For logit_forced_12, average with swapped candidate order to reduce position bias.")
+                        help="For logit_forced, average with swapped candidate order to reduce position bias.")
     parser.add_argument("--resume", default=None, metavar="CSV",
                         help="Resume from a partial CSV — skip already-completed trials and append new results")
-    parser.add_argument(
-        "--levante-model-name",
-        default="qwen35",
-        help=(
-            "Model ID passed to levante_bench.runtime.load_model when using "
-            "--models levante-runtime (default: qwen35)."
-        ),
-    )
-    parser.add_argument(
-        "--levante-model-config-path",
-        default=None,
-        help=(
-            "Optional model config YAML path passed to levante runtime when using "
-            "--models levante-runtime."
-        ),
-    )
-    parser.add_argument(
-        "--levante-configs-root",
-        default=None,
-        help=(
-            "Optional configs root containing models/*.yaml for levante runtime "
-            "lookups."
-        ),
-    )
     add_common_args(parser)
     args = parser.parse_args()
+
+
 
     if args.decision_mode == "binary_pair" and args.prompt_condition not in {
         "binary_yes_no",
@@ -254,12 +258,15 @@ def main():
                 "--prompt-condition rank_forced."
             )
         args.prompt_condition = "rank_forced"
-    if args.decision_mode == "logit_forced_12" and args.prompt_condition not in {"noun_label", "no_word_category"}:
+    if args.decision_mode == "logit_forced" and args.prompt_condition not in {"noun_label", "no_word_category"}:
         print(
-            "Info: --decision-mode logit_forced_12 expects a 2AFC prompt; "
+            "Info: --decision-mode logit_forced expects a 2AFC prompt; "
             "using --prompt-condition noun_label."
         )
         args.prompt_condition = "noun_label"
+    choice_texts_was_set = "--choice-texts" in sys.argv
+    if choice_texts_was_set and args.decision_mode != "logit_forced":
+        print("Info: --choice-texts has no effect unless using --decision-mode logit_forced.")
 
     random.seed(args.seed)
 
@@ -289,7 +296,7 @@ def main():
     print(f"Temperature: {args.temperature}")
     print(f"Prompt cond: {args.prompt_condition}")
     print(f"Decision:    {args.decision_mode}")
-    if args.decision_mode == "logit_forced_12":
+    if args.decision_mode == "logit_forced":
         print(f"Swap corr:   {args.swap_correct}")
     print(f"Stimuli:     {len(stimuli)} from {BENCHMARK_STIM_PACKAGE}/{stim_set_label}")
     print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
@@ -313,16 +320,7 @@ def main():
         print(f"Local model: {model_key}")
         print(f"{'='*60}")
 
-        create_kwargs = {"device": args.device}
-        if model_key == "levante-runtime":
-            create_kwargs.update(
-                {
-                    "model_id": args.levante_model_name,
-                    "model_config_path": args.levante_model_config_path,
-                    "configs_root": args.levante_configs_root,
-                }
-            )
-        model = create_model(model_key, **create_kwargs)
+        model = create_model(model_key, device=args.device)
         print(f"  Loaded: {model.name}")
 
         def run_fn(images, prompt, _m=model):
@@ -372,13 +370,14 @@ def main():
                             ordering=args.ordering,
                             prompt_condition=args.prompt_condition,
                         )
-                    elif args.decision_mode == "logit_forced_12":
-                        trial_results = run_trial_logit_forced_12(
-                            lambda images, p, _m=model: run_local_logit_forced(_m, images, p),
+                    elif args.decision_mode == "logit_forced":
+                        trial_results = run_trial_logit_forced(
+                            lambda images, p, _m=model, ct=args.choice_texts: run_local_logit_forced(_m, images, p, ct),
                             stim,
                             word,
                             word_type,
                             word_length,
+                            choice_texts=args.choice_texts,
                             ordering=args.ordering,
                             prompt_condition=args.prompt_condition,
                             swap_correct=args.swap_correct,
