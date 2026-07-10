@@ -90,8 +90,8 @@ PROMPT_TEMPLATES = {
         "Your response must be exactly one character: 1 or 2. No other text."
     ),
     "no_word_category_AB": (
-        "The first image is a {word}. "
-        "Which of the following two images (A or B) is also a {word}? "
+        "See this object in the first image. "
+        "Can you find another one of the two (A or B)? "
         "Your response must be exactly one character: A or B. No other text."
     ),
     "binary_yes_no": (
