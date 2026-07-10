@@ -34,7 +34,7 @@ class SmolVLM(BaseVLM):
     ) -> None:
         self._model_id = model_id
         self._device = device
-        load_dtype = torch.bfloat16 if device.startswith("cuda") else torch.float32
+        load_dtype = torch.bfloat16 if device.startswith(("cuda", "mps")) else torch.float32
 
         def _load_model(dtype: torch.dtype):
             # Newer transformers releases can fail to auto-detect the image processor
@@ -78,7 +78,7 @@ class SmolVLM(BaseVLM):
         content = build_transformers_vision_user_content(images, prompt)
         messages = [{"role": "user", "content": content}]
 
-        input_dtype = torch.bfloat16 if self._device.startswith("cuda") else torch.float32
+        input_dtype = torch.bfloat16 if self._device.startswith(("cuda", "mps")) else torch.float32
         # Two-step encode avoids kwargs warnings emitted by SmolVLMProcessor
         # when tokenization kwargs are forwarded through apply_chat_template.
         text = self._processor.tokenizer.apply_chat_template(
@@ -127,7 +127,7 @@ class SmolVLM(BaseVLM):
         """Return next-token probabilities/logits for two one-token choices."""
         content = build_transformers_vision_user_content(images, prompt)
         messages = [{"role": "user", "content": content}]
-        input_dtype = torch.bfloat16 if self._device.startswith("cuda") else torch.float32
+        input_dtype = torch.bfloat16 if self._device.startswith(("cuda", "mps")) else torch.float32
 
         text = self._processor.tokenizer.apply_chat_template(
             messages,
@@ -150,17 +150,20 @@ class SmolVLM(BaseVLM):
         t0 = time.perf_counter()
         with torch.inference_mode():
             out = self._model(**inputs)
+
         elapsed = time.perf_counter() - t0
 
         next_logits = out.logits[:, -1, :].float()
-        sel = next_logits[:, choice_ids].squeeze(0)
-        probs = torch.softmax(sel, dim=-1)
+        choice_logits = next_logits[0, choice_ids]
+
+        all_probs = torch.softmax(next_logits, dim=-1)
+        probs_absolute = all_probs[0, choice_ids]
 
         return {
             "choice_texts": list(choice_texts),
             "choice_token_ids": choice_ids,
-            "choice_logits": [float(sel[0].item()), float(sel[1].item())],
-            "choice_probs": [float(probs[0].item()), float(probs[1].item())],
+            "choice_logits": [float(choice_logits[0].item()), float(choice_logits[1].item())],
+            "choice_probs_absolute": [float(probs_absolute[0].item()), float(probs_absolute[1].item())],
             "generation_time_s": elapsed,
             "model_name": self.name,
             "num_tokens_generated": 0,

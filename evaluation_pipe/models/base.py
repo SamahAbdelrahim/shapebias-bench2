@@ -59,6 +59,16 @@ class BaseVLM(ABC):
         """
         ...
 
+    def score_choices(
+        self,
+        images: list[Image.Image],
+        prompt: str,
+        choice_texts: tuple[str, str] = ("A", "B"),
+    ) -> dict:
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement score_chioces()."
+        )
+
     def unload(self) -> None:
         """Release GPU memory. Override in subclasses for cleanup."""
         pass

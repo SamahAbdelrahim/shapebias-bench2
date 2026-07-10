@@ -79,10 +79,20 @@ PROMPT_TEMPLATES = {
         "Which of the following two images (1 or 2) is also a {word}? "
         "Your response must be exactly one character: 1 or 2. No other text."
     ),
+    "noun_label_AB": (
+        "The first image is a {word}. "
+        "Which of the following two images (A or B) is also a {word}? "
+        "Your response must be exactly one character: A or B. No other text."
+    ),
     "no_word_category": (
         "See this object in the first image. "
         "Can you find another one of the two (1 or 2)? "
         "Your response must be exactly one character: 1 or 2. No other text."
+    ),
+    "no_word_category_AB": (
+        "The first image is a {word}. "
+        "Which of the following two images (A or B) is also a {word}? "
+        "Your response must be exactly one character: A or B. No other text."
     ),
     "binary_yes_no": (
         "The first image is a {word}. "
@@ -194,12 +204,12 @@ CSV_FIELDS = [
     "prompt_condition",
     "decision_mode", "swap_correct",
     "ordering", "order_method", "a_is", "b_is", "raw_text", "parsed_answer", "choice",
+    "prob_1_abs", "prob_2_abs", "swap_prob_1_abs", "swap_prob_2_abs", "swap_corrected_a_abs", "swap_corrected_b_abs",
     "generation_time_s", "num_tokens_generated", "attempts",
     "repeat", "temperature",
     "eval_mode", "stim_pkg", "stim_set", "human_word_seed", "stimulus_shuffle_condition",
     "word_mode", "word_min_len", "word_max_len", "sudo_threshold", "trial_limit",
 ]
-
 
 # ---------------------------------------------------------------------------
 # Human-eval: hash / RNG (match experiment.js)
