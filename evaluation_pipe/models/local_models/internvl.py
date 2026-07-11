@@ -140,3 +140,15 @@ class InternVL(BaseVLM):
 class InternVL_2B(InternVL):
     def __init__(self, model_id: str = "OpenGVLab/InternVL3-2B-hf", device: str = "cuda", **kwargs):
         super().__init__(model_id=model_id, device=device, **kwargs)
+
+
+@register_model("internvl-8b")
+class InternVL_8B(InternVL):
+    def __init__(self, model_id: str = "OpenGVLab/InternVL3-8B-hf", device: str = "cuda", **kwargs):
+        super().__init__(model_id=model_id, device=device, **kwargs)
+
+
+@register_model("internvl-14b")
+class InternVL_14B(InternVL):
+    def __init__(self, model_id: str = "OpenGVLab/InternVL3-14B-hf", device: str = "cuda", **kwargs):
+        super().__init__(model_id=model_id, device=device, **kwargs)
