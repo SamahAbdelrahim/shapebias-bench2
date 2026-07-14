@@ -52,6 +52,7 @@ from evaluation_pipe.eval_core import (
     run_trial,
     run_trial_binary_pair,
     run_trial_rank_forced,
+    run_trial_logit_scoring,
     write_results,
 )
 
@@ -76,116 +77,12 @@ def run_local(model, images: list[Image.Image], prompt: str,
     }
 
 
-def run_local_logit_forced(model, images: list[Image.Image], prompt: str, choice_texts: tuple[str, str]) -> dict:
+def score_local_choices(model, images: list[Image.Image], prompt: str, choice_texts: tuple[str, str]) -> dict:
     if not hasattr(model, "score_choices"):
         raise RuntimeError(
             f"Model {getattr(model, 'name', '<unknown>')} does not support logit scoring."
         )
     return model.score_choices(images=images, prompt=prompt, choice_texts=choice_texts)
-
-
-def run_trial_logit_forced(
-    run_score_fn,
-    stimulus: dict,
-    word: str,
-    word_type: str,
-    word_length: int = 0,
-    *,
-    choice_texts=("1", "2"),
-    ordering: str = "both",
-    prompt_condition: str = "noun_label",
-    swap_correct: bool = False,
-) -> list[dict]:
-    ref = stimulus["reference"]
-    shape = stimulus["shape_match"]
-    texture = stimulus["texture_match"]
-    prompt = make_prompt(word, prompt_condition=prompt_condition)
-
-    orderings_config = {
-        "shape_first": [("shape_first", shape, texture, "shape", "texture")],
-        "texture_first": [("texture_first", texture, shape, "texture", "shape")],
-        "both": [
-            ("shape_first", shape, texture, "shape", "texture"),
-            ("texture_first", texture, shape, "texture", "shape"),
-        ],
-    }
-    if ordering == "random":
-        configs = list(orderings_config["both"])
-        random.shuffle(configs)
-        configs = configs[:1]
-        order_method = "random"
-    else:
-        configs = orderings_config[ordering]
-        order_method = "deterministic"
-
-    results = []
-    for ord_name, img_a, img_b, a_is, b_is in configs:
-        base = run_score_fn([ref, img_a, img_b], prompt)
-        p1_abs, p2_abs = base["choice_probs_absolute"]
-        l1, l2 = base["choice_logits"]
-        total_t = float(base["generation_time_s"])
-        decision_a_abs = p1_abs
-        decision_b_abs = p2_abs
-
-        sp1_abs, sp2_abs = None, None
-        swap_corrected_a_abs, swap_corrected_b_abs = None, None
-
-        if swap_correct:
-            sw = run_score_fn([ref, img_b, img_a], prompt)
-            sp1_abs, sp2_abs = sw["choice_probs_absolute"]  # 1->b, 2->a (relative to base semantics)
-            sl1, sl2 = sw["choice_logits"]
-            decision_a_abs = 0.5 * (p1_abs + sp2_abs)
-            decision_b_abs = 0.5 * (p2_abs + sp1_abs)
-            swap_corrected_a_abs = decision_a_abs
-            swap_corrected_b_abs = decision_b_abs
-            total_t += float(sw["generation_time_s"])
-            raw_text = (
-                f"base[p1_abs={p1_abs:.4f},p2_abs={p2_abs:.4f},l1={l1:.3f},l2={l2:.3f}] "
-                f"swap[p1_abs={sp1_abs:.4f},p2_abs={sp2_abs:.4f},l1={sl1:.3f},l2={sl2:.3f}] "
-                f"corr[a={swap_corrected_a_abs:.4f},b={swap_corrected_b_abs:.4f}]"
-            )
-        else:
-            raw_text = f"p1_abs={p1_abs:.4f},p2_abs={p2_abs:.4f},l1={l1:.3f},l2={l2:.3f}"
-
-        # under swapped condition, 'parsed' is relative to the original prompt
-        if decision_a_abs > decision_b_abs:
-            parsed = choice_texts[0]
-            choice = a_is
-        elif decision_b_abs > decision_a_abs:
-            parsed = choice_texts[1]
-            choice = b_is
-        else:
-            parsed = None
-            choice = "unclear"
-
-        results.append(
-            {
-                "raw_text": raw_text,
-                "generation_time_s": round(total_t, 2),
-                "model_name": base.get("model_name", ""),
-                "num_tokens_generated": 0,
-                "parsed_answer": parsed,
-                "attempts": 1,
-                "stim_id": stimulus["stim_id"],
-                "word": word,
-                "word_type": word_type,
-                "word_length": word_length,
-                "prompt_condition": prompt_condition,
-                "ordering": ord_name,
-                "order_method": "logit_forced_swap_corrected" if swap_correct else "logit_forced",
-                "a_is": a_is,
-                "b_is": b_is,
-                "choice": choice,
-
-                "prob_1_abs": p1_abs,
-                "prob_2_abs": p2_abs,
-                "swap_prob_1_abs": sp1_abs,
-                "swap_prob_2_abs": sp2_abs,
-                "swap_corrected_a_abs": swap_corrected_a_abs,
-                "swap_corrected_b_abs": swap_corrected_b_abs,
-            }
-        )
-    return results
 
 
 # ---------------------------------------------------------------------------
@@ -397,8 +294,8 @@ def main():
                             prompt_condition=args.prompt_condition,
                         )
                     elif args.decision_mode == "logit_forced":
-                        trial_results = run_trial_logit_forced(
-                            lambda images, p, _m=model, ct=args.choice_texts: run_local_logit_forced(_m, images, p, ct),
+                        trial_results = run_trial_logit_scoring(
+                            lambda images, p, _m=model, ct=args.choice_texts: score_local_choices(_m, images, p, ct),
                             stim,
                             word,
                             word_type,

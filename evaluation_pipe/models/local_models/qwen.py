@@ -91,6 +91,7 @@ class _Qwen3VLBase(BaseVLM):
         images: list[Image.Image],
         prompt: str,
         choice_texts: tuple[str, str] = ("1", "2"),
+        top_k: int = 0
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
         content = build_transformers_vision_user_content(images, prompt)
@@ -114,6 +115,13 @@ class _Qwen3VLBase(BaseVLM):
         t0 = time.perf_counter()
         with torch.inference_mode():
             out = self._model(**inputs)
+            
+            next_logits = out.logits[:, -1, :]
+            probs = torch.softmax(next_logits, dim=-1)
+            topk = None
+            if top_k > 0:
+                topk = torch.topk(probs, top_k)
+
         elapsed = time.perf_counter() - t0
 
         next_logits = out.logits[:, -1, :].float()
@@ -129,7 +137,7 @@ class _Qwen3VLBase(BaseVLM):
             "choice_probs_absolute": [float(probs_absolute[0].item()), float(probs_absolute[1].item())],
             "generation_time_s": elapsed,
             "model_name": self.name,
-            "num_tokens_generated": 0,
+            "topk": topk
         }
 
     def unload(self) -> None:

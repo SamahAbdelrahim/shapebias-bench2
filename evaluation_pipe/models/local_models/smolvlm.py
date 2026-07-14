@@ -79,6 +79,7 @@ class SmolVLM(BaseVLM):
         messages = [{"role": "user", "content": content}]
 
         input_dtype = torch.bfloat16 if self._device.startswith(("cuda", "mps")) else torch.float32
+
         # Two-step encode avoids kwargs warnings emitted by SmolVLMProcessor
         # when tokenization kwargs are forwarded through apply_chat_template.
         text = self._processor.tokenizer.apply_chat_template(
@@ -112,6 +113,7 @@ class SmolVLM(BaseVLM):
         num_tokens = new_ids.shape[1]
 
         return ModelResponse(
+            #TODO SmolVLM likes tokens to start with a space, so this is making logit scoring confusing
             raw_text=raw_text.strip(),
             generation_time_s=elapsed,
             model_name=self.name,
@@ -123,6 +125,7 @@ class SmolVLM(BaseVLM):
         images: list[Image.Image],
         prompt: str,
         choice_texts: tuple[str, str] = ("1", "2"),
+        top_k: int = 0
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
         content = build_transformers_vision_user_content(images, prompt)
@@ -151,6 +154,13 @@ class SmolVLM(BaseVLM):
         with torch.inference_mode():
             out = self._model(**inputs)
 
+            next_logits = out.logits[:, -1, :]
+
+            probs = torch.softmax(next_logits, dim=-1)
+            topk = None
+            if top_k > 0:
+                topk = torch.topk(probs, top_k)
+
         elapsed = time.perf_counter() - t0
 
         next_logits = out.logits[:, -1, :].float()
@@ -166,7 +176,7 @@ class SmolVLM(BaseVLM):
             "choice_probs_absolute": [float(probs_absolute[0].item()), float(probs_absolute[1].item())],
             "generation_time_s": elapsed,
             "model_name": self.name,
-            "num_tokens_generated": 0,
+            "topk": topk
         }
 
     def unload(self) -> None:
