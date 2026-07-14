@@ -66,7 +66,7 @@ class BaseVLM(ABC):
         choice_texts: tuple[str, str] = ("A", "B"),
     ) -> dict:
         raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement score_chioces()."
+            f"{self.__class__.__name__} does not implement score_choices()."
         )
 
     def unload(self) -> None:

@@ -1,0 +1,13 @@
+{
+  "pair_mode": "random",
+  "trial_count": 15,
+  "shuffle_trials": true,
+  "allow_repeat_pairs": false,
+  "fixed_pairs": [
+    { "left": "22 1.stl", "right": "22 10.stl" },
+    { "left": "22 2.stl", "right": "22 20.stl" },
+    { "left": "22 5.stl", "right": "22 15.stl" }
+  ],
+  "model_sources": ["stl", "glb"],
+  "prompt": "Which object looks more complex?"
+}
