@@ -109,6 +109,60 @@ class InternVL(BaseVLM):
             choice_logits = choice_logits,
             choice_probs = choice_probs
         )
+    
+    def score_choices(
+        self,
+        images: list[Image.Image],
+        prompt: str,
+        choice_texts: tuple[str, str] = ("1", "2"),
+        top_k: int = 0
+    ) -> dict:
+        """Return next-token probabilities/logits for two one-token choices."""
+        content = build_transformers_vision_user_content(images, prompt)
+        messages = [{"role": "user", "content": content}]
+
+        inputs = self._processor.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
+        ).to(self._device, dtype=torch.bfloat16)
+
+        choice_ids: list[int] = []
+        for ch in choice_texts:
+            toks = self._processor.tokenizer.encode(ch, add_special_tokens=False)
+            if len(toks) != 1:
+                raise ValueError(f"Choice {ch!r} must map to one token; got ids={toks}")
+            choice_ids.append(toks[0])
+
+        t0 = time.perf_counter()
+        with torch.inference_mode():
+            out = self._model(**inputs)
+
+            next_logits = out.logits[:, -1, :]
+            probs = torch.softmax(next_logits, dim=-1)
+            topk = None
+            if top_k > 0:
+                topk = torch.topk(probs, top_k)
+
+        elapsed = time.perf_counter() - t0
+
+        next_logits = out.logits[:, -1, :].float()
+        choice_logits = next_logits[0, choice_ids]
+
+        all_probs = torch.softmax(next_logits, dim=-1)
+        probs_absolute = all_probs[0, choice_ids]
+
+        return {
+            "choice_texts": list(choice_texts),
+            "choice_token_ids": choice_ids,
+            "choice_logits": [float(choice_logits[0].item()), float(choice_logits[1].item())],
+            "choice_probs_absolute": [float(probs_absolute[0].item()), float(probs_absolute[1].item())],
+            "generation_time_s": elapsed,
+            "model_name": self.name,
+            "topk": topk
+        }
 
     def unload(self) -> None:
         del self._model

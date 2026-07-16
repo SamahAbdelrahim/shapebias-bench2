@@ -66,6 +66,7 @@ class BaseVLM(ABC):
         images: list[Image.Image],
         prompt: str,
         choice_texts: tuple[str, str] = ("A", "B"),
+        top_k: int = 0
     ) -> dict:
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement score_choices()."

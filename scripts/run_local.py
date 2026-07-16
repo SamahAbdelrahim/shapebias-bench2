@@ -231,8 +231,8 @@ def main():
     parser.add_argument("--decision-mode", default="2afc",
                         choices=["2afc", "binary_pair", "binary_pair_conservative", "binary_rank_forced", "logit_forced"],
                         help="Decision policy: standard 2AFC, binary_pair, binary_pair_conservative, binary_rank_forced, or logit_forced.")
-    parser.add_argument("--choice-texts", nargs=2, default=("1", "2"),
-                        help="Two choice strings for logit_forced (default: 1 2). Use A B with *_AB prompts.")
+    parser.add_argument("--choice-texts", nargs=2, default=None,
+                        help="Two choice strings for logit scoring (e.g. A B or 1 2)."
     parser.add_argument("--swap-correct", action="store_true",
                         help="For logit_forced, average with swapped candidate order to reduce position bias.")
     parser.add_argument("--resume", default=None, metavar="CSV",
