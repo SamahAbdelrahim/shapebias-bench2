@@ -17,6 +17,8 @@ class ModelResponse:
     generation_time_s: float
     model_name: str
     num_tokens_generated: int
+    choice_logits: tuple[float, float] | None = None
+    choice_probs: tuple[float, float] | None = None
 
 
 class BaseVLM(ABC):
