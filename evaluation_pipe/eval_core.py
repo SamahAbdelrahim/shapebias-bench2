@@ -103,10 +103,20 @@ PROMPT_TEMPLATES = {
         "Can you find another one of the two (1 or 2)? "
         "Your response must be exactly one character: 1 or 2. No other text."
     ),
+    "no_word_category_similar": (
+        "You are given three images. The first image is the reference. "
+        "Which of the other two images (1 or 2) is more similar to the reference? "
+        "Answer with just '1' or '2'."
+    ),
     "no_word_category_AB": (
         "See this object in the first image. "
         "Can you find another one of the two (A or B)? "
         "Your response must be exactly one character: A or B. No other text."
+    ),
+    "no_word_category_similar_AB": (
+        "You are given three images. The first image is the reference. "
+        "Which of the other two images (A or B) is more similar to the reference? "
+        "Answer with just 'A' or 'B'."
     ),
     "binary_yes_no": (
         "The first image is a {word}. "
