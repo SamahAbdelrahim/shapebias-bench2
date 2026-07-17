@@ -220,7 +220,7 @@ def run_remote(model_name: str, images: list[Image.Image], prompt: str) -> dict:
 # ---------------------------------------------------------------------------
 # Local model inference
 # ---------------------------------------------------------------------------
-def run_local(model, images: list[Image.Image], prompt: str) -> dict:
+def run_local(model, images: list[Image.Image], prompt: str, choice_texts: tuple[str, str] | None = None) -> dict:
     from evaluation_pipe.models.base import ModelResponse
     resp: ModelResponse = model.generate(
         images=images, prompt=prompt,

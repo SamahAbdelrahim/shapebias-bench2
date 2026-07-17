@@ -477,17 +477,20 @@ def load_stimuli_human_package(stim_pkg: str, stim_set: str | None = None) -> li
 # ---------------------------------------------------------------------------
 # Answer parsing with retry
 # ---------------------------------------------------------------------------
-def parse_answer(raw_text: str) -> str | None:
-    has_1 = "1" in raw_text
-    has_2 = "2" in raw_text
-    if has_1 and has_2:
-        return None
-    if has_1:
-        return "1"
-    if has_2:
-        return "2"
-    return None
+def parse_answer(raw_text: str, choice_texts: tuple[str, str]) -> str | None:
+    t = raw_text.strip()
 
+    found = []
+
+    for choice in choice_texts:
+        # Escape in case labels ever contain regex chars
+        if re.search(rf"\b{re.escape(choice)}\b", t, re.IGNORECASE):
+            found.append(choice)
+
+    if len(found) != 1:
+        return None
+
+    return found[0]
 
 def parse_yes_no(raw_text: str) -> str | None:
     txt = (raw_text or "").strip().lower()
@@ -547,11 +550,11 @@ def parse_rank_forced(raw_text: str) -> str | None:
     return better
 
 
-def run_with_retry(run_fn, images: list[Image.Image], prompt: str) -> dict:
+def run_with_retry(run_fn, images: list[Image.Image], prompt: str, choice_texts: tuple[str, str] | None = None) -> dict:
     result = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            result = run_fn(images, prompt)
+            result = run_fn(images, prompt, choice_texts=choice_texts)
         except Exception as e:
             print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
             continue
@@ -573,7 +576,7 @@ def run_with_retry_yes_no(run_fn, images: list[Image.Image], prompt: str) -> dic
     result = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            result = run_fn(images, prompt)
+            result = run_fn(images, prompt, choice_texts=choice_texts)
         except Exception as e:
             print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
             continue
@@ -662,7 +665,7 @@ def run_with_retry_rank_forced(run_fn, images: list[Image.Image], prompt: str) -
 # ---------------------------------------------------------------------------
 def run_trial(run_fn, stimulus: dict, word: str, word_type: str,
               word_length: int = 0, ordering: str = "both",
-              prompt_condition: str = "noun_label") -> list[dict]:
+              prompt_condition: str = "noun_label", choice_texts: tuple[str, str] | None = None) -> list[dict]:
     """Run one stimulus in specified ordering(s). Returns list of result dicts.
 
     ordering: "shape_first", "texture_first", "random", or "both" (default).
@@ -692,7 +695,7 @@ def run_trial(run_fn, stimulus: dict, word: str, word_type: str,
 
     results = []
     for ord_name, img_a, img_b, a_is, b_is in configs:
-        res = run_with_retry(run_fn, [ref, img_a, img_b], prompt)
+        res = run_with_retry(run_fn, [ref, img_a, img_b], prompt, choice_texts=choice_texts)
         answer = res.get("parsed_answer")
         if answer == "1":
             choice = a_is

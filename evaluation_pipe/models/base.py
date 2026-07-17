@@ -45,6 +45,7 @@ class BaseVLM(ABC):
         prompt: str,
         max_new_tokens: int = 128,
         temperature: float = 0.0,
+        choice_texts: tuple[str, str] | None = None
     ) -> ModelResponse:
         """Run inference on *images* conditioned on *prompt*.
 

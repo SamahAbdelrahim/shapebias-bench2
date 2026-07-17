@@ -118,6 +118,12 @@ class SmolVLM(BaseVLM):
         choice_probs = None
         # Storing logits
         if choice_texts is not None:
+            # Temporary patch to account for SmolVLM starting tokens with a space
+            choice_texts = (
+                choice_texts[0] if choice_texts[0].startswith(" ") else " " + choice_texts[0],
+                choice_texts[1] if choice_texts[1].startswith(" ") else " " + choice_texts[1],
+            )
+
             logits = output_ids.scores[0]
             
             # Token ids for the given text options
