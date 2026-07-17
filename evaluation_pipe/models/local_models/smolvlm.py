@@ -13,7 +13,10 @@ from transformers import (
     SmolVLMProcessor,
 )
 
-from evaluation_pipe.eval_core import build_transformers_vision_user_content
+from evaluation_pipe.eval_core import (
+    LOCAL_VLM_SYSTEM_PROMPT,
+    build_transformers_vision_user_content,
+)
 
 from ..base import BaseVLM, ModelResponse
 from .. import register_model
@@ -25,6 +28,8 @@ _DEFAULT_MODEL_ID_256M = "HuggingFaceTB/SmolVLM-256M-Instruct"
 @register_model("smolvlm")
 class SmolVLM(BaseVLM):
     """Wrapper for SmolVLM2-2.2B-Instruct (multi-image native)."""
+
+    _system_prompt = LOCAL_VLM_SYSTEM_PROMPT
 
     def __init__(
         self,
@@ -77,7 +82,10 @@ class SmolVLM(BaseVLM):
         choice_texts: tuple[str, str] | None = None
     ) -> ModelResponse:
         content = build_transformers_vision_user_content(images, prompt)
-        messages = [{"role": "user", "content": content}]
+        messages = [
+            {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
+            {"role": "user", "content": content},
+        ]
 
         input_dtype = torch.bfloat16 if self._device.startswith(("cuda", "mps")) else torch.float32
 
@@ -153,7 +161,10 @@ class SmolVLM(BaseVLM):
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
         content = build_transformers_vision_user_content(images, prompt)
-        messages = [{"role": "user", "content": content}]
+        messages = [
+            {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
+            {"role": "user", "content": content},
+        ]
         input_dtype = torch.bfloat16 if self._device.startswith(("cuda", "mps")) else torch.float32
 
         text = self._processor.tokenizer.apply_chat_template(

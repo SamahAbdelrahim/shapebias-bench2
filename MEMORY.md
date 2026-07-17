@@ -2,6 +2,24 @@
 
 Local-only (gitignored). Read at the start of every session; add an entry after any significant decision. Newest entries first.
 
+## 2026-07-17, Unify Adam's one-pass + system prompt across local VLMs; results layout 3C; dual-path smoke
+
+**What was decided:**
+- Shared `LOCAL_VLM_SYSTEM_PROMPT` (alias `QWEN35_VLM_SYSTEM_PROMPT`) on all four Transformers local wrappers (`qwen35`, `qwen`, `smolvlm`, `internvl`) for both `generate` and `score_choices`, so logit scoring cannot drift from generation the way qwen3.5-0.8b did before Adam's fix.
+- One-pass `generate(..., choice_texts=...)` already present on all four; left in place. `score_choices` kept for debugging / `run_trial_logit_scoring`.
+- Standardized local rerun no longer monkey-patches `generate`; it only sets `_system_prompt = REMOTE_UNIFORM_SYSTEM_PROMPT` on each class.
+- Results layout (option 3C): defaults write under `results/model.results/`, `results/playground.results/session_YYYY-MM-DD_farmshare/`, `results/probe.results/session_*/`. Documented in `results/README.md`. Migrated July 10 scattered files into that layout.
+- Smoke (options 1C + 2C): `playgrounds/smoke_test_playground.py` runs two_pass and one_pass, both orderings. Slurm job `scripts/run_smoke_dual_path.sbatch`.
+
+**Why:** Adam fixed qwen3.5 by putting the system prompt on logit scoring and merging generate+score into one pass. Extending the same contract to every local Transformers VLM avoids the same inconsistency elsewhere. Unified gitignored results paths let collaborators reproduce without sharing data dumps.
+
+**What was rejected:**
+- Leaving SmolVLM / InternVL / Qwen3-VL without a system message (would keep generate vs score_choices asymmetric only on families that never had one).
+- Keeping the standardized runner's full `generate` monkey-patches (would drop one-pass logits and fight the unified `_system_prompt` attribute).
+- Dumping new smoke logs at `results/` root (conflicts with the July 11 probe.results decision).
+
+**Open:** tinyllava (deprecated) and levante-runtime left without one-pass/score_choices. qwen3.5 `score_choices` tokenization aligned to generate (`enable_thinking=False`); re-smoke 1642264: qwen3.5-0.8b and 4b are 10/10 gen==two_pass==one_pass on both orderings.
+
 ## 2026-07-11, Probe-era results organized; audit + sensitivity analyses; manuscript started
 
 **What was decided:**

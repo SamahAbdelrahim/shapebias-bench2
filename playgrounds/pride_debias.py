@@ -120,12 +120,15 @@ def main() -> int:
         "--inputs",
         nargs="+",
         default=[
-            "results/session_2026-07-10/probe_experiment.json",
-            "results/session_2026-07-10/probe_scaling_noun.json",
+            "results/probe.results/session_2026-07-10_farmshare/probe_experiment.json",
+            "results/probe.results/session_2026-07-10_farmshare/probe_scaling_noun.json",
         ],
     )
     ap.add_argument("--n-est", type=int, default=10, help="stimuli used for PriDe prior")
-    ap.add_argument("--out-prefix", default="results/session_2026-07-10/pride_debias")
+    ap.add_argument(
+        "--out-prefix",
+        default="results/probe.results/session_2026-07-10_farmshare/pride_debias",
+    )
     args = ap.parse_args()
 
     root = Path(__file__).resolve().parent.parent

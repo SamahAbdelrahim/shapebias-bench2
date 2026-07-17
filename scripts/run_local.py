@@ -22,8 +22,8 @@ Usage:
         --decision-mode logit_forced --choice-texts 1 2
 
     # Append results to existing CSV
-    python scripts/run_local.py --models smolvlm --ordering shape_first -o results/run.csv
-    python scripts/run_local.py --models smolvlm --ordering texture_first -o results/run.csv
+    python scripts/run_local.py --models smolvlm --ordering shape_first -o results/model.results/run.csv
+    python scripts/run_local.py --models smolvlm --ordering texture_first -o results/model.results/run.csv
 """
 
 from __future__ import annotations
@@ -338,7 +338,9 @@ def main():
         print(f"Resume file: {output_path}")
         print(f"Completed trial rows detected: {len(done_keys)}")
     else:
-        output_path = resolve_output_path(args.output, prefix="local")
+        output_path = resolve_output_path(
+            args.output, prefix="local", default_subdir="model.results"
+        )
     all_results = []
 
     for model_key in model_names:

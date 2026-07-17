@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Benchmark local evaluation with standardized prompts (isolated copy).
 
-Patches registered local VLM wrappers **at runtime** (no edits to
-``evaluation_pipe/models/local_models/*``) so the **system** message matches
-``REMOTE_UNIFORM_SYSTEM_PROMPT`` (same as human-matched remote). User prompts
-still come from ``run_trial`` / ``make_prompt`` (noun_label by default).
+Patches registered local VLM wrappers **at runtime** by setting
+``_system_prompt = REMOTE_UNIFORM_SYSTEM_PROMPT`` on each Transformers
+wrapper class (same system line as human-matched remote). Generate and
+``score_choices`` both read that attribute, so they stay consistent.
+User prompts still come from ``run_trial`` / ``make_prompt`` (noun_label by default).
 
 Default output:
 ``results/model.results/benchmark_standardized_rerun/local_eval_standardized.csv``
@@ -27,7 +28,6 @@ import random
 import sys
 from pathlib import Path
 
-import torch
 from dotenv import load_dotenv
 from PIL import Image
 
@@ -42,7 +42,6 @@ from evaluation_pipe.eval_core import (
     REMOTE_UNIFORM_SYSTEM_PROMPT,
     add_common_args,
     benchmark_csv_meta,
-    build_transformers_vision_user_content,
     load_completed_trial_keys,
     load_stimuli,
     load_words,
@@ -72,133 +71,17 @@ STANDARDIZED_LOCAL_MODEL_KEYS = frozenset(
 
 
 def _apply_standardized_system_prompts() -> None:
-    """Monkey-patch local wrappers so system message matches remote/human-matched."""
+    """Point all local wrappers at REMOTE_UNIFORM for generate + score_choices."""
     from evaluation_pipe.models.local_models import internvl as internvl_mod
     from evaluation_pipe.models.local_models import qwen as qwen_mod
     from evaluation_pipe.models.local_models import qwen35 as qwen35_mod
     from evaluation_pipe.models.local_models import smolvlm as smolvlm_mod
 
-    qwen35_mod._Qwen35Base._system_prompt = REMOTE_UNIFORM_SYSTEM_PROMPT
-
-    U = REMOTE_UNIFORM_SYSTEM_PROMPT
-
-    def _smolvlm_generate(self, images, prompt, max_new_tokens=128, temperature=0.0):
-        content = build_transformers_vision_user_content(images, prompt)
-        messages = [
-            {"role": "system", "content": [{"type": "text", "text": U}]},
-            {"role": "user", "content": content},
-        ]
-        inputs = self._processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(self._device, dtype=torch.bfloat16)
-        input_len = inputs["input_ids"].shape[1]
-        gen_kwargs: dict = dict(max_new_tokens=max_new_tokens)
-        if temperature == 0.0:
-            gen_kwargs["do_sample"] = False
-        else:
-            gen_kwargs["do_sample"] = True
-            gen_kwargs["temperature"] = temperature
-
-        def _run():
-            with torch.inference_mode():
-                return self._model.generate(**inputs, **gen_kwargs)
-
-        output_ids, elapsed = self._timed_generate(_run)
-        new_ids = output_ids[:, input_len:]
-        raw_text = self._processor.batch_decode(new_ids, skip_special_tokens=True)[0]
-        num_tokens = new_ids.shape[1]
-        from evaluation_pipe.models.base import ModelResponse
-
-        return ModelResponse(
-            raw_text=raw_text.strip(),
-            generation_time_s=elapsed,
-            model_name=self.name,
-            num_tokens_generated=num_tokens,
-        )
-
-    def _internvl_generate(self, images, prompt, max_new_tokens=128, temperature=0.0):
-        content = build_transformers_vision_user_content(images, prompt)
-        messages = [
-            {"role": "system", "content": [{"type": "text", "text": U}]},
-            {"role": "user", "content": content},
-        ]
-        inputs = self._processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(self._device, dtype=torch.bfloat16)
-        input_len = inputs["input_ids"].shape[1]
-        gen_kwargs: dict = dict(max_new_tokens=max_new_tokens)
-        if temperature == 0.0:
-            gen_kwargs["do_sample"] = False
-        else:
-            gen_kwargs["do_sample"] = True
-            gen_kwargs["temperature"] = temperature
-
-        def _run():
-            with torch.inference_mode():
-                return self._model.generate(**inputs, **gen_kwargs)
-
-        output_ids, elapsed = self._timed_generate(_run)
-        new_ids = output_ids[:, input_len:]
-        raw_text = self._processor.batch_decode(new_ids, skip_special_tokens=True)[0]
-        num_tokens = new_ids.shape[1]
-        from evaluation_pipe.models.base import ModelResponse
-
-        return ModelResponse(
-            raw_text=raw_text.strip(),
-            generation_time_s=elapsed,
-            model_name=self.name,
-            num_tokens_generated=num_tokens,
-        )
-
-    def _qwen3vl_generate(self, images, prompt, max_new_tokens=128, temperature=0.0):
-        content = build_transformers_vision_user_content(images, prompt)
-        messages = [
-            {"role": "system", "content": [{"type": "text", "text": U}]},
-            {"role": "user", "content": content},
-        ]
-        inputs = self._processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(self._model.device)
-        input_len = inputs["input_ids"].shape[1]
-        gen_kwargs: dict = dict(max_new_tokens=max_new_tokens)
-        if temperature == 0.0:
-            gen_kwargs["do_sample"] = False
-        else:
-            gen_kwargs["do_sample"] = True
-            gen_kwargs["temperature"] = temperature
-
-        def _run():
-            with torch.inference_mode():
-                return self._model.generate(**inputs, **gen_kwargs)
-
-        output_ids, elapsed = self._timed_generate(_run)
-        new_ids = output_ids[:, input_len:]
-        raw_text = self._processor.batch_decode(new_ids, skip_special_tokens=True)[0]
-        num_tokens = new_ids.shape[1]
-        from evaluation_pipe.models.base import ModelResponse
-
-        return ModelResponse(
-            raw_text=raw_text.strip(),
-            generation_time_s=elapsed,
-            model_name=self.name,
-            num_tokens_generated=num_tokens,
-        )
-
-    smolvlm_mod.SmolVLM.generate = _smolvlm_generate
-    internvl_mod.InternVL.generate = _internvl_generate
-    qwen_mod._Qwen3VLBase.generate = _qwen3vl_generate
+    u = REMOTE_UNIFORM_SYSTEM_PROMPT
+    qwen35_mod._Qwen35Base._system_prompt = u
+    smolvlm_mod.SmolVLM._system_prompt = u
+    internvl_mod.InternVL._system_prompt = u
+    qwen_mod._Qwen3VLBase._system_prompt = u
 
 
 def run_local(model, images: list[Image.Image], prompt: str, temperature: float = 0.0) -> dict:

@@ -104,8 +104,19 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=LADDER_MODELS)
     ap.add_argument("--n-stimuli", type=int, default=30)
-    ap.add_argument("--out-prefix", default="results/embedding_readout")
+    ap.add_argument(
+        "--out-prefix",
+        default=None,
+        help="Output prefix (default: results/probe.results/session_*/embedding_readout)",
+    )
     args = ap.parse_args()
+
+    if args.out_prefix is None:
+        from evaluation_pipe.eval_core import default_session_results_dir
+
+        args.out_prefix = str(
+            default_session_results_dir("probe") / "embedding_readout"
+        )
 
     if not torch.cuda.is_available():
         print("ERROR: CUDA not available. Run inside an srun GPU allocation.")

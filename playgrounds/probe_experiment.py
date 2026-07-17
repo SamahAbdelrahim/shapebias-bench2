@@ -90,8 +90,20 @@ def main() -> int:
     ap.add_argument("--conditions", nargs="+", default=CONDITIONS, choices=CONDITIONS)
     ap.add_argument("--n-stimuli", type=int, default=30)
     ap.add_argument("--word", default=DEFAULT_WORD)
-    ap.add_argument("--out-prefix", default="results/probe_experiment")
+    ap.add_argument(
+        "--out-prefix",
+        default=None,
+        help="Output prefix without extension "
+        "(default: results/probe.results/session_YYYY-MM-DD_farmshare/probe_experiment)",
+    )
     args = ap.parse_args()
+
+    if args.out_prefix is None:
+        from evaluation_pipe.eval_core import default_session_results_dir
+
+        args.out_prefix = str(
+            default_session_results_dir("probe") / "probe_experiment"
+        )
 
     conditions = args.conditions
 
