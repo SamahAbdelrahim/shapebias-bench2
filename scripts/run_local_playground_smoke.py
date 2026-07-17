@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 load_dotenv(REPO_ROOT / ".env")
 
 from evaluation_pipe.data import load_trials
+from evaluation_pipe.eval_core import make_prompt
 from evaluation_pipe.models import create_model, list_models
 
 IMAGE_DATASET = REPO_ROOT / os.environ["IMAGE_DATASET"]
@@ -27,11 +28,7 @@ elif getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
 else:
     DEVICE = "cpu"
 
-PROMPT = (
-    "You are given three images. The first image is the reference. "
-    "Which of the other two images (A or B) is more similar to the reference? "
-    "Answer with just 'A' or 'B'."
-)
+PROMPT = make_prompt(prompt_condition="no_word_category_AB")
 
 MODEL_KEY = os.environ.get("PLAYGROUND_MODEL", "smolvlm")
 NUM_TRIALS = int(os.environ.get("PLAYGROUND_NUM_TRIALS", "3"))

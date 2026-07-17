@@ -1,0 +1,7 @@
+# Playground / smoke prompt: always eval_core no_word_category_AB
+# (see playgrounds/smoke_test_playground.py and local_model_playground.ipynb)
+
+sbatch scripts/run_smoke_dual_path.sbatch
+# or interactively on a GPU node:
+python playgrounds/smoke_test_playground.py --order shape_first
+python playgrounds/smoke_test_playground.py --order texture_first

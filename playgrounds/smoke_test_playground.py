@@ -27,14 +27,12 @@ sys.path.insert(0, str(REPO_ROOT))
 load_dotenv(REPO_ROOT / ".env")
 
 from evaluation_pipe.data import load_trials
-from evaluation_pipe.eval_core import default_session_results_dir
+from evaluation_pipe.eval_core import default_session_results_dir, make_prompt
 from evaluation_pipe.models import create_model, list_models
 
-PROMPT = (
-    "You are given three images. The first image is the reference. "
-    "Which of the other two images (A or B) is more similar to the reference? "
-    "Answer with just 'A' or 'B'."
-)
+# Keep playground / smoke aligned with eval_core PROMPT_TEMPLATES.
+PLAYGROUND_PROMPT_CONDITION = "no_word_category_AB"
+PROMPT = make_prompt(prompt_condition=PLAYGROUND_PROMPT_CONDITION)
 
 # Models present in local_model_playground.ipynb
 NOTEBOOK_MODELS = [
@@ -221,6 +219,8 @@ def main() -> int:
     print(f"Testing models: {args.models}")
     print(f"Trials: {args.n_trials} (order={args.order})")
     print(f"Paths: {args.paths}")
+    print(f"Prompt condition: {PLAYGROUND_PROMPT_CONDITION}")
+    print(f"Prompt: {PROMPT}")
     print(f"Writing results to: {args.out}")
     print(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 

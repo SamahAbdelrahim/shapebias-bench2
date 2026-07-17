@@ -2,6 +2,14 @@
 
 Local-only (gitignored). Read at the start of every session; add an entry after any significant decision. Newest entries first.
 
+## 2026-07-17 (later), Playground prompt unified to no_word_category_AB
+
+**What was decided:** All local playground / smoke entry points now use `make_prompt(prompt_condition="no_word_category_AB")` from `eval_core.PROMPT_TEMPLATES` (notebook, `smoke_test_playground.py`, `run_local_playground_smoke.py`, `test_local_models.py`). The July 17 dual-path smoke used the older hardcoded similarity prompt ("Which of the other two images ... more similar ..."), not this template.
+
+**Why:** Notebook already had the AB no-word wording hardcoded; smoke and sibling scripts still used a different similarity string, so results were not comparable to the notebook.
+
+**What was rejected:** Leaving separate hardcoded prompt strings per file (drifts again).
+
 ## 2026-07-17, Unify Adam's one-pass + system prompt across local VLMs; results layout 3C; dual-path smoke
 
 **What was decided:**
