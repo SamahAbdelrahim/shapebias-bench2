@@ -26,6 +26,20 @@ RESULTS_DIR = REPO_ROOT / "results"
 HUMAN_MATCHED_REMOTE_CSV_SUBDIR = Path("model.results") / "human_matched"
 ENV_PATH = REPO_ROOT / ".env"
 
+
+def default_session_results_dir(kind: str, *, date: str | None = None, host: str | None = None) -> Path:
+    """Dated session folder under ``results/{kind}.results/``.
+
+    ``kind`` is typically ``playground`` or ``probe``. Host defaults to
+    ``$RESULTS_SESSION_HOST`` or ``farmshare``.
+    """
+    import time as _time
+
+    day = date or _time.strftime("%Y-%m-%d")
+    label = host or os.environ.get("RESULTS_SESSION_HOST", "farmshare")
+    return RESULTS_DIR / f"{kind}.results" / f"session_{day}_{label}"
+
+
 # Human-friendly stimulus packages (must match human-experiment/server.js).
 HUMAN_STIM_PACKAGES = frozenset(
     {"stimuli_unique_texture_per_stl_v1", "stimuli_unique_texture_per_stl_v2"}
@@ -134,8 +148,11 @@ PROMPT_TEMPLATE = PROMPT_TEMPLATES["noun_label"]
 VISION_USER_IMAGE_LABELS_3 = ("Reference image:", "Image 1:", "Image 2:")
 VISION_USER_IMAGE_LABELS_2 = ("Reference image:", "Candidate image:")
 
-# Used for Qwen3.5 VLM **local** wrappers (`qwen35.py`) only.
-QWEN35_VLM_SYSTEM_PROMPT = "Answer concisely. Do not explain your reasoning."
+# Shared system line for **local** Transformers VLM wrappers (generate + score_choices).
+# Keep generate and logit scoring on the same messages so the two paths stay consistent.
+LOCAL_VLM_SYSTEM_PROMPT = "Answer concisely. Do not explain your reasoning."
+# Backward-compatible alias (older Qwen3.5-only name).
+QWEN35_VLM_SYSTEM_PROMPT = LOCAL_VLM_SYSTEM_PROMPT
 
 # **Remote** (`run_remote.py`): one uniform system line for every `REMOTE_MODELS` entry.
 # See `interpret/remote_eval_prompt_policy.md`.

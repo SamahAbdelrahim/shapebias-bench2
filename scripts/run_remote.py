@@ -492,7 +492,10 @@ def main():
             print(f"Warning: --resume file {output_path} not found, starting fresh")
     else:
         prefix = "remote_human" if args.eval_mode == "human_matched" else "remote"
-        hm_sub = HUMAN_MATCHED_REMOTE_CSV_SUBDIR if args.eval_mode == "human_matched" else None
+        if args.eval_mode == "human_matched":
+            hm_sub = HUMAN_MATCHED_REMOTE_CSV_SUBDIR
+        else:
+            hm_sub = "model.results"
         output_path = resolve_output_path(args.output, prefix=prefix, default_subdir=hm_sub)
 
     all_results = []

@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Export session JSON results to tidy CSVs (results/session_2026-07-10/csv/)."""
+"""Export session JSON results to tidy CSVs (results/probe.results/session_*/csv/)."""
 
 import csv
 import json
 from pathlib import Path
 
-SESSION = Path(__file__).resolve().parent.parent / "results" / "session_2026-07-10"
+SESSION = (
+    Path(__file__).resolve().parent.parent
+    / "results"
+    / "probe.results"
+    / "session_2026-07-10_farmshare"
+)
 OUT = SESSION / "csv"
-OUT.mkdir(exist_ok=True)
+OUT.mkdir(parents=True, exist_ok=True)
 
 
 def write_csv(name: str, rows: list[dict]) -> None:

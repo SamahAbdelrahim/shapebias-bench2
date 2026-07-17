@@ -9,7 +9,7 @@ from PIL import Image
 from transformers import AutoProcessor, Qwen3_5ForConditionalGeneration
 
 from evaluation_pipe.eval_core import (
-    QWEN35_VLM_SYSTEM_PROMPT,
+    LOCAL_VLM_SYSTEM_PROMPT,
     build_transformers_vision_user_content,
 )
 
@@ -21,7 +21,7 @@ class _Qwen35Base(BaseVLM):
     """Shared loading/inference logic for Qwen3.5 vision-language models."""
 
     _default_model_id: str  # set by subclasses
-    _system_prompt = QWEN35_VLM_SYSTEM_PROMPT
+    _system_prompt = LOCAL_VLM_SYSTEM_PROMPT
 
     def __init__(
         self,
@@ -139,11 +139,16 @@ class _Qwen35Base(BaseVLM):
             {"role": "user", "content": content},
         ]
 
-        inputs = self._processor.apply_chat_template(
+        # Same two-step path as generate (enable_thinking=False via tokenizer).
+        text = self._processor.tokenizer.apply_chat_template(
             messages,
             add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
+            tokenize=False,
+            enable_thinking=False,
+        )
+        inputs = self._processor(
+            text=[text],
+            images=list(images),
             return_tensors="pt",
         ).to(self._model.device)
 

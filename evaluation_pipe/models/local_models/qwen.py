@@ -8,7 +8,10 @@ import torch
 from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
-from evaluation_pipe.eval_core import build_transformers_vision_user_content
+from evaluation_pipe.eval_core import (
+    LOCAL_VLM_SYSTEM_PROMPT,
+    build_transformers_vision_user_content,
+)
 
 from ..base import BaseVLM, ModelResponse
 from .. import register_model
@@ -18,6 +21,7 @@ class _Qwen3VLBase(BaseVLM):
     """Shared loading/inference logic for Qwen3-VL vision-language models."""
 
     _default_model_id: str  # set by subclasses
+    _system_prompt = LOCAL_VLM_SYSTEM_PROMPT
 
     def __init__(
         self,
@@ -50,7 +54,10 @@ class _Qwen3VLBase(BaseVLM):
         choice_texts: tuple[str, str] | None = None
     ) -> ModelResponse:
         content = build_transformers_vision_user_content(images, prompt)
-        messages = [{"role": "user", "content": content}]
+        messages = [
+            {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
+            {"role": "user", "content": content},
+        ]
 
         inputs = self._processor.apply_chat_template(
             messages,
@@ -119,7 +126,10 @@ class _Qwen3VLBase(BaseVLM):
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
         content = build_transformers_vision_user_content(images, prompt)
-        messages = [{"role": "user", "content": content}]
+        messages = [
+            {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
+            {"role": "user", "content": content},
+        ]
 
         inputs = self._processor.apply_chat_template(
             messages,

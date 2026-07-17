@@ -1,8 +1,12 @@
-# Environment
+# --- Environment / secrets ---
 .env
 .venv/
+human-experiment/mongo_auth.json
 
-# Python
+# --- OS junk ---
+.DS_Store
+
+# --- Python ---
 __pycache__/
 *.pyc
 *.pyo
@@ -10,45 +14,50 @@ __pycache__/
 dist/
 build/
 
-# IDE
+# --- IDE ---
 .vscode/
 .idea/
 
-# HuggingFace cache
+# --- HuggingFace cache ---
 .cache/
 
-# Claude Code
-CLAUDE.md
-
-# Evaluation results
-results/
-
-# Stimuli archive artifacts (prevent accidental large-file commits)
-stimuli_pipe/**/*.zip
-stimuli_pipe/**/*.tar
-stimuli_pipe/**/*.tar.gz
-stimuli_pipe/**/*.tgz
-stimuli_pipe/**/*.7z
-
-# R / renv
+# --- R / renv ---
 analysis_pipe/renv/library/
 analysis_pipe/renv/staging/
 analysis_pipe/.Rprofile
 analysis_pipe/*_files/
 analysis_pipe/*.html
+*.Rhistory
+.RData
 
-# human experiment
-human-experiment/mongo_auth.json
+# --- Data and results (never public) ---
+results/
 
-# shapebias-bench-2
-shapebias-bench-2/mongo_auth.json
-
+# --- Internal / private documents (never public) ---
+# Theoretical interpretation, drafts, writeups, brainstorming, mentoring notes
 interpret/
+# Grant drafts and feedback
+ai-impact-grant/
+# Internal working docs kept at repo root
+CLAUDE.md
+MEMORY.md
+REPORT.md
 PROJECT_CHECKLIST.md
 
-shapebias-bench-2/MEMORY.md
-shapebias-bench-2/PROJECT_CHECKLIST.md
-shapebias-bench-2/CLAUDE.md
+# Manuscript drafts (private until submission)
+manuscript/
+# Local archive of superseded files
+archive/
+farmshare/
+/Users/samahabdelrahim/git-repos/shapebias-bench-2/farmshare
 
-/Users/samahabdelrahim/git-repos/shapebias-bench-2/ai-impact-grant
-ai-impact-grant/
+# --- Human experiment runtime artifacts ---
+human-experiment/output.log
+human-experiment/reports/
+
+# --- Stimuli archive artifacts (prevent accidental large-file commits) ---
+stimuli_pipe/**/*.zip
+stimuli_pipe/**/*.tar
+stimuli_pipe/**/*.tar.gz
+stimuli_pipe/**/*.tgz
+stimuli_pipe/**/*.7z

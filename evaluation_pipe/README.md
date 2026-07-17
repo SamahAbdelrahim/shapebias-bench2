@@ -123,7 +123,7 @@ After a run, stdout includes **Shape%(dec)** = shape / (shape + texture) and **S
 
 Local VLMs and `run_remote.py` share the same **image-slot labels** (`Reference image:`, `Image 1:`, `Image 2:`) and the same task string from `eval_core.make_prompt`.
 
-**System message:** **Remote** runs use one uniform **`REMOTE_UNIFORM_SYSTEM_PROMPT`** for every `REMOTE_MODELS` entry (task-aligned 1/2 output); **local** Qwen3.5 still uses **`QWEN35_VLM_SYSTEM_PROMPT`**. Rationale and exact wording: **`interpret/remote_eval_prompt_policy.md`**.
+**System message:** **Remote** runs use one uniform **`REMOTE_UNIFORM_SYSTEM_PROMPT`** for every `REMOTE_MODELS` entry (task-aligned 1/2 output); **local** Transformers VLMs use **`LOCAL_VLM_SYSTEM_PROMPT`** in both ``generate`` and ``score_choices`` (alias: ``QWEN35_VLM_SYSTEM_PROMPT``). The standardized local rerun patches ``_system_prompt`` to ``REMOTE_UNIFORM_SYSTEM_PROMPT``. Rationale: **`interpret/remote_eval_prompt_policy.md`**.
 
 Remote calls still **resize/JPEG-encode** images (max side 768) for upload; local runs use raw PIL inputs — so numerical parity is not guaranteed even for the same Hugging Face model ID. See **`interpret/model_choice_decision_log.md`** for the full decision trail and residual differences.
 

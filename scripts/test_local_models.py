@@ -12,6 +12,7 @@ from PIL import Image
 # Load .env from repo root (sets HF_API_TOKEN for gated model downloads)
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
+from evaluation_pipe.eval_core import make_prompt
 from evaluation_pipe.models import create_model, list_models  # noqa: E402
 
 
@@ -24,11 +25,7 @@ def make_dummy_images() -> list[Image.Image]:
     ]
 
 
-PROMPT = (
-    "The first image is a shiple. "
-    "Which of the following two images (Image 1 or Image 2) is also a shiple? "
-    "Answer with just 'Image 1' or 'Image 2'."
-)
+PROMPT = make_prompt(prompt_condition="no_word_category_AB")
 
 MODELS_TO_TEST = ["smolvlm", "internvl", "tinyllava"]
 

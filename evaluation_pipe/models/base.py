@@ -45,7 +45,7 @@ class BaseVLM(ABC):
         prompt: str,
         max_new_tokens: int = 128,
         temperature: float = 0.0,
-        choice_texts: tuple[str, str] | None = None
+        choice_texts: tuple[str, str] | None = None,
     ) -> ModelResponse:
         """Run inference on *images* conditioned on *prompt*.
 
@@ -59,6 +59,10 @@ class BaseVLM(ABC):
             Maximum tokens to generate.
         temperature : float
             Sampling temperature (0.0 = greedy).
+        choice_texts : tuple[str, str] | None
+            When set, local Transformers wrappers also return next-token
+            logits/probs for these one-token choices from the same generate
+            pass (see ``ModelResponse.choice_logits`` / ``choice_probs``).
         """
         ...
 
@@ -67,8 +71,13 @@ class BaseVLM(ABC):
         images: list[Image.Image],
         prompt: str,
         choice_texts: tuple[str, str] = ("A", "B"),
-        top_k: int = 0
+        top_k: int = 0,
     ) -> dict:
+        """Debug/eval helper: next-token logits for *choice_texts* (no decode).
+
+        Local Transformers wrappers should use the same system+user messages
+        as ``generate`` so logit scoring stays consistent with generation.
+        """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement score_choices()."
         )
