@@ -68,6 +68,14 @@ Registry names as used in the results CSVs. "Local" = run on our GPU from downlo
 - **Forced choice vs logits dissociate.** SmolVLM: generation looks like noise (habitual first-option answering); logits + swap correction reveal a stable slight texture preference. This is the motivation for peeking at internal probabilities wherever we can and checking whether they match the language response.
 - Figures live in `results/model.results/figures/` (described in `analysis_pipe/PLOT_DESCRIPTIONS.md`).
 
+**Probe era (FarmShare, July 2026; full record in `farmshare/`, data in `results/probe.results/`, dashboard `farmshare/probe-experiment-results.html`):**
+- **Probe experiment (24 cells, 6 sub-4B models):** 23/24 cells fail the image-tracking gate; the one pass (qwen3.5-4b, noun, 1/2) is a generation-logit dissociation (gen 0.82, swap-corrected logit 0.50). Letter labels (A/B) are a confound: numeric tracks far better; never pool label sets.
+- **Scaling (Point 1):** Qwen3-VL crosses the gate at 8B (tracking 0.80; shape 0.83 gen / 0.81 logit, agreeing); InternVL3 never passes by 14B. Scale necessary, family matters.
+- **Embedding dissociation (Point 2):** all models at chance in embedding space on the same stimuli, all 4 read-outs, including the behaviorally-biased 8B; probe sensitivity proven by retrieval@1 (0.77-1.00 vs 0.03 chance) and by recovering texture preference on Geirhos cue-conflict stimuli. The behavioral shape bias is made downstream of the vision encoder.
+- **Debiasing (Point 5):** swap, full permutation, and PriDe agree within 0.07; raw single-order reads are misleading in 16/38 cells; the 8B positive is estimator-invariant.
+- **Threshold sensitivity (2026-07-11, this checkout):** at every gate threshold 0.50-0.80 the passing cells are noun+numeric only; looser thresholds admit only chance-level cells. The 0.70 gate is a power dial, not a conclusion dial. Analysis: `results/probe.results/analysis/`, script `playgrounds/threshold_sensitivity.py`.
+- **Literature audit table** (measurement locus x bias exposure across Geirhos / Tartaglini / Gavrikov / selection-bias papers): `results/probe.results/analysis/audit_table.csv` + notes. Core claim: shape-bias numbers are locus-bound; only the positioned-choice locus carries option/position artifacts, and it is the only locus matching the developmental task.
+
 ## 6. Roadmap: phases and where we are
 
 **Phase 0 — Stimuli (done).** Reproducible 3D STL rendering pipeline with texture audit trails; benchmark package + two human packages (v1/v2).
@@ -94,4 +102,5 @@ Registry names as used in the results CSVs. "Local" = run on our GPU from downlo
 
 ## 8. Update log
 
+- **2026-07-11** — Probe-era results integrated (section 5). New: `results/probe.results/` (FarmShare session data + threshold sensitivity + audit table), `results/README.md` (layout guide), `farmshare/README.md` + `farmshare/probe-experiment-results.html` (browser-readable replacement for the Cursor canvas), `manuscript/` (draft: intro/background, current studies, Part 1; venue memo recommends CogSci 2027 then Open Mind; gitignored). Still on FarmShare only: `probe_experiment.json`, `pride_debias.csv` (sync command in `results/README.md`).
 - **2026-07-10** — First version of this report, written during the repo reorganization (see `MEMORY.md`). Reflects: 11-model gate (4 valid), completed no-word trio, SmolVLM logit-forced result, human experiment pre-pilot, Summer 2026 team plans from `interpret/RA_mentoring/discussions.txt`, and the updated grant framing (validity gating + AI norming as reusable tools).
