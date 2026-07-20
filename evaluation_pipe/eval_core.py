@@ -143,10 +143,12 @@ PROMPT_TEMPLATES = {
     ),
     "rank_forced": (
         "Image 1 is the reference object. Image 2 and Image 3 are candidates. "
-        "Rank the candidates by similarity to Image 1. "
-        "Your response must be exactly: BETTER=<1 or 2>; WORSE=<1 or 2>. "
+        "Rank the candidates by similarity to Image 1."
+        "Respond exactly in this format:"
+        "BETTER=<candidate label>; WORSE=<candidate label>"
+        "The candidate labels are 2 and 3."
         "BETTER and WORSE must be different."
-    ),
+    )
 }
 
 # Backward compat for scripts that import a single noun_label template string.
@@ -504,8 +506,12 @@ def load_stimuli_human_package(stim_pkg: str, stim_set: str | None = None) -> li
 # ---------------------------------------------------------------------------
 # Answer parsing with retry
 # ---------------------------------------------------------------------------
-def parse_answer(raw_text: str, choice_texts: tuple[str, str]) -> str | None:
+def parse_answer(raw_text: str, choice_texts: tuple[str, str] | None) -> str | None:
     t = raw_text.strip()
+
+    # Default, holdover from earlier iteration of parse_answer
+    if choice_texts is None:
+        choice_texts = ("1", "2")
 
     found = []
 
@@ -560,11 +566,11 @@ def parse_score_0_3(raw_text: str) -> int | None:
 
 
 def parse_rank_forced(raw_text: str) -> str | None:
-    """Return BETTER label ('1' or '2') from strict rank output."""
+    """Return BETTER label ('2' or '3') from strict rank output."""
     txt = (raw_text or "").strip().lower()
-    m = re.search(r"better\s*=\s*([12])\s*;\s*worse\s*=\s*([12])", txt)
+    m = re.search(r"better\s*=\s*([23])\s*;\s*worse\s*=\s*([23])", txt)
     if not m:
-        m = re.search(r"worse\s*=\s*([12])\s*;\s*better\s*=\s*([12])", txt)
+        m = re.search(r"worse\s*=\s*([23])\s*;\s*better\s*=\s*([23])", txt)
         if m:
             worse, better = m.group(1), m.group(2)
             if better != worse:
@@ -585,7 +591,7 @@ def run_with_retry(run_fn, images: list[Image.Image], prompt: str, choice_texts:
         except Exception as e:
             print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
             continue
-        answer = parse_answer(result["raw_text"])
+        answer = parse_answer(result["raw_text"], choice_texts=choice_texts)
         if answer is not None:
             result["parsed_answer"] = answer
             result["attempts"] = attempt
@@ -599,7 +605,7 @@ def run_with_retry(run_fn, images: list[Image.Image], prompt: str, choice_texts:
     return result
 
 
-def run_with_retry_yes_no(run_fn, images: list[Image.Image], prompt: str) -> dict:
+def run_with_retry_yes_no(run_fn, images: list[Image.Image], prompt: str, choice_texts: tuple[str, str] | None = None) -> dict:
     result = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -673,7 +679,7 @@ def run_with_retry_rank_forced(run_fn, images: list[Image.Image], prompt: str) -
         except Exception as e:
             print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
             continue
-        better = parse_rank_forced(result["raw_text"])
+        better = parse_rank_forced(result.get("raw_text", ""))
         if better is not None:
             result["parsed_answer"] = better
             result["attempts"] = attempt
@@ -782,8 +788,8 @@ def run_trial_binary_pair(
         else:
             choice = "unclear"
     else:
-        shape_res = run_with_retry_yes_no(run_fn, [ref, shape], prompt)
-        texture_res = run_with_retry_yes_no(run_fn, [ref, texture], prompt)
+        shape_res = run_with_retry_yes_no(run_fn, [ref, shape], prompt, choice_texts=("YES", "NO"))
+        texture_res = run_with_retry_yes_no(run_fn, [ref, texture], prompt, choice_texts=("YES", "NO"))
         shape_ans = shape_res.get("parsed_answer")
         texture_ans = texture_res.get("parsed_answer")
         if shape_ans == "yes" and texture_ans == "no":
@@ -834,7 +840,6 @@ def run_trial_binary_pair(
         f"shape={shape_res.get('parsed_answer') or 'none'};"
         f"texture={texture_res.get('parsed_answer') or 'none'}"
     )
-
     return [
         {
             "raw_text": raw_text,
@@ -861,6 +866,10 @@ def run_trial_binary_pair(
             "a_is": "shape",
             "b_is": "texture",
             "choice": choice,
+            "shape_choice_logits": shape_res.get("choice_logits"),
+            "shape_choice_probs": shape_res.get("choice_probs"),
+            "texture_choice_logits": texture_res.get("choice_logits"),
+            "texture_choice_probs": texture_res.get("choice_probs"),
         }
     ]
 
@@ -904,9 +913,9 @@ def run_trial_rank_forced(
     for ord_name, img_a, img_b, a_is, b_is in configs:
         res = run_with_retry_rank_forced(run_fn, [ref, img_a, img_b], prompt)
         answer = res.get("parsed_answer")
-        if answer == "1":
+        if answer == "2":
             choice = a_is
-        elif answer == "2":
+        elif answer == "3":
             choice = b_is
         else:
             choice = "unclear"

@@ -293,7 +293,7 @@ def main():
             "using --prompt-condition noun_label."
         )
         args.prompt_condition = "noun_label"
-    if "--choice-texts" in sys.argv and args.decision_mode != "logit_forced":
+    if "--choice-texts" in sys.argv and args.decision_mode != "logit_forced" and args.decision_mode != "2afc":
         print("Info: --choice-texts has no effect unless using --decision-mode logit_forced.")
 
     random.seed(args.seed)
@@ -440,12 +440,29 @@ def main():
                         r["decision_mode"] = args.decision_mode
                         r["swap_correct"] = "true" if args.swap_correct else "false"
                         r.update(csv_meta)
-                        print(
-                            f"    {r['ordering']:15s} -> {r['raw_text']!r:10s} "
-                            f"choice={r['choice']} "
-                            f"logits={r.get('choice_logits', "not logit-scored")} "
-                            f"probs={r.get('choice_probs', "not logit-scored")}"
+                    logit_info = ""
+
+                    if r.get("choice_logits") is not None:
+                        logit_info = (
+                            f"\n      logits={r['choice_logits']}"
+                            f"\n      probs={r['choice_probs']}"
                         )
+
+                    elif r.get("shape_choice_logits") is not None:
+                        logit_info = (
+                            f"\n      shape YES/NO:"
+                            f"\n        logits={r['shape_choice_logits']}"
+                            f"\n        probs={r['shape_choice_probs']}"
+                            f"\n      texture YES/NO:"
+                            f"\n        logits={r['texture_choice_logits']}"
+                            f"\n        probs={r['texture_choice_probs']}"
+                        )
+
+                    print(
+                        f"    {r['ordering']:15s} -> {r['raw_text']!r:10s} "
+                        f"choice={r['choice']}"
+                        f"{logit_info}"
+                    )
                     # Save incrementally after each stimulus+word trial
                     write_results(trial_results, output_path, append=True, quiet=True)
                     for r in trial_results:
