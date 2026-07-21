@@ -74,17 +74,20 @@ _LOGIT_PROMPT_CONDITIONS = {
 # Local inference
 # ---------------------------------------------------------------------------
 def run_local(model, images: list[Image.Image], prompt: str,
-              temperature: float = 0.0) -> dict:
+              temperature: float = 0.0, choice_texts: tuple[str, str] | None = None) -> dict:
     from evaluation_pipe.models.base import ModelResponse
     resp: ModelResponse = model.generate(
         images=images, prompt=prompt,
         max_new_tokens=MAX_TOKENS_LOCAL, temperature=temperature,
+        choice_texts=choice_texts
     )
     return {
         "raw_text": resp.raw_text,
         "generation_time_s": round(resp.generation_time_s, 2),
         "model_name": resp.model_name,
         "num_tokens_generated": resp.num_tokens_generated,
+        "choice_logits": resp.choice_logits,
+        "choice_probs": resp.choice_probs,
     }
 
 
@@ -232,7 +235,7 @@ def main():
                         choices=["2afc", "binary_pair", "binary_pair_conservative", "binary_rank_forced", "logit_forced"],
                         help="Decision policy: standard 2AFC, binary_pair, binary_pair_conservative, binary_rank_forced, or logit_forced.")
     parser.add_argument("--choice-texts", nargs=2, default=None,
-                        help="Two choice strings for logit scoring (e.g. A B or 1 2)."
+                        help="Two choice strings for logit scoring (e.g. A B or 1 2).")
     parser.add_argument("--swap-correct", action="store_true",
                         help="For logit_forced, average with swapped candidate order to reduce position bias.")
     parser.add_argument("--resume", default=None, metavar="CSV",
@@ -290,7 +293,7 @@ def main():
             "using --prompt-condition noun_label."
         )
         args.prompt_condition = "noun_label"
-    if "--choice-texts" in sys.argv and args.decision_mode != "logit_forced":
+    if "--choice-texts" in sys.argv and args.decision_mode != "logit_forced" and args.decision_mode != "2afc":
         print("Info: --choice-texts has no effect unless using --decision-mode logit_forced.")
 
     random.seed(args.seed)
@@ -360,8 +363,8 @@ def main():
         model = create_model(model_key, **create_kwargs)
         print(f"  Loaded: {model.name}")
 
-        def run_fn(images, prompt, _m=model):
-            return run_local(_m, images, prompt, temperature=args.temperature)
+        def run_fn(images, prompt, _m=model, choice_texts=None):
+            return run_local(_m, images, prompt, temperature=args.temperature, choice_texts=choice_texts)
 
         for repeat in range(1, args.repeats + 1):
             if args.repeats > 1:
@@ -409,7 +412,7 @@ def main():
                         )
                     elif args.decision_mode == "logit_forced":
                         trial_results = run_trial_logit_scoring(
-                            lambda images, p, _m=model, ct=args.choice_texts: score_local_choices(_m, images, p, ct),
+                            lambda images, p, _m=model, ct=args.choice_texts: run_local_logit_forced(_m, images, p, ct),
                             stim,
                             word,
                             word_type,
@@ -428,6 +431,7 @@ def main():
                             word_length,
                             ordering=args.ordering,
                             prompt_condition=args.prompt_condition,
+                            choice_texts=args.choice_texts
                         )
                     for r in trial_results:
                         r["model"] = model_key
@@ -436,8 +440,29 @@ def main():
                         r["decision_mode"] = args.decision_mode
                         r["swap_correct"] = "true" if args.swap_correct else "false"
                         r.update(csv_meta)
-                        print(f"    {r['ordering']:15s} -> {r['raw_text']!r:10s}  choice={r['choice']}")
-                        all_results.append(r)
+                    logit_info = ""
+
+                    if r.get("choice_logits") is not None:
+                        logit_info = (
+                            f"\n      logits={r['choice_logits']}"
+                            f"\n      probs={r['choice_probs']}"
+                        )
+
+                    elif r.get("shape_choice_logits") is not None:
+                        logit_info = (
+                            f"\n      shape YES/NO:"
+                            f"\n        logits={r['shape_choice_logits']}"
+                            f"\n        probs={r['shape_choice_probs']}"
+                            f"\n      texture YES/NO:"
+                            f"\n        logits={r['texture_choice_logits']}"
+                            f"\n        probs={r['texture_choice_probs']}"
+                        )
+
+                    print(
+                        f"    {r['ordering']:15s} -> {r['raw_text']!r:10s} "
+                        f"choice={r['choice']}"
+                        f"{logit_info}"
+                    )
                     # Save incrementally after each stimulus+word trial
                     write_results(trial_results, output_path, append=True, quiet=True)
                     for r in trial_results:

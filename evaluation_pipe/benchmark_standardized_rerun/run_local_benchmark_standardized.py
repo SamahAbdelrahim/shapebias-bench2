@@ -84,7 +84,7 @@ def _apply_standardized_system_prompts() -> None:
     qwen_mod._Qwen3VLBase._system_prompt = u
 
 
-def run_local(model, images: list[Image.Image], prompt: str, temperature: float = 0.0) -> dict:
+def run_local(model, images: list[Image.Image], prompt: str, temperature: float = 0.0, choice_texts: tuple[str, str] | None = None) -> dict:
     from evaluation_pipe.models.base import ModelResponse
 
     resp: ModelResponse = model.generate(
