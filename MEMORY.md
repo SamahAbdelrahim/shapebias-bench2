@@ -2,6 +2,106 @@
 
 Local-only (gitignored). Read at the start of every session; add an entry after any significant decision. Newest entries first.
 
+## 2026-07-17 (late night), encoder fill + vision-vs-language report
+
+**What was decided:** Ran embedding robust + Geirhos cue-conflict + simple readout for the three playground models missing July-10 encoder probes (`smolvlm`, `qwen3.5-0.8b`, `qwen3.5-4b`) as job 1645483 on oat-02 (`scripts/run_embedding_fill_qwen35.sbatch`). Outputs in `results/probe.results/session_2026-07-17_farmshare/embedding_*_fill.*`. Built `scripts/build_vision_vs_language_report.py` → `results/playground.results/vision_vs_language_2026-07-17.html`, which keeps vision-tower and language-side results in separate sections and evaluates the downstream claim.
+
+**Encoder fill:** qwen3.5-4b proj_mean centred shape = 0.53 [0.37, 0.70], vit_penult = 0.50 with retrieval@1 = 1.00. Against today's gate-passing generation shape 0.82–0.95, gap ≈ 0.35. Matches the July-10 qwen3-vl-8b dissociation (behavior 0.83 vs embed 0.53). qwen3.5-0.8b leans texture (0.27); SmolVLM proj_mean = 0.10 and its ViT hidden-state path failed (`vit__err` unpack). Geirhos control for the fill recovers texture preference where retrieval is informative.
+
+**Why:** Completes the encoder claim for the model that now carries every gate-passing playground result. Language-side naming and format effects cannot be attributed to vision-tower geometry.
+
+## 2026-07-17 (late night), gated naming contrast
+
+**What was decided:** Implemented `playgrounds/gated_naming_contrast.py`: pairs numeric `noun_label` (each of the five words) against numeric `no_word_similarity` (no word) per model, per stimulus, across both orders. Generation-level contrast interpreted only where both cells pass the tracking gate; latent contrast is per-stimulus swap-corrected P(shape) differences with 5000-resample bootstrap CIs and an exact sign test, reported for all 35 cells with gate status flagged. Outputs `gated_naming_contrast_2026-07-17.{csv,html}`. Reuses `playground_pride_debias.parse_log`.
+
+**Findings:** Only qwen3.5-4b has a gate-passing no-word similarity baseline, so the strict comparison is qwen3.5-4b × its 4 passing words. Direction is the opposite of the category-baseline contrast: adding the noun LOWERS swap-corrected P(shape) from 0.88 to 0.68-0.80 (all four sign tests p < .001; e.g. shiple 1/29 stimuli favoring noun) and generation shape moves -0.12 to +0.02 (only shiple's CI excludes zero, at -0.117). So relative to the label-free similarity framing this model's shape preference is at or near its ceiling and the word subtracts slightly; the earlier "label raises latent shape" result holds only against the category ("find another one") baseline, whose own latent signal is depressed (0.56). In qwen3-vl-8b and 4b the latent noun-minus-similarity delta is positive (+0.09 to +0.17, bootstrap CIs mostly excluding zero) but per-stimulus sign tests are flat (13-16 of ~29), meaning a confidence shift on already-shape stimuli rather than flipped items; their similarity baselines also fail the generation gate, so these are latent-only observations.
+
+**Why it matters:** The naming contrast is baseline-dependent. The word's effect looks facilitative against a degraded framing and null-to-negative against the best label-free framing. This is more consistent with the word re-engaging task compliance than with a child-like naming-specific shift toward shape.
+
+## 2026-07-17 (late night), resume support + word-generality readout
+
+**What was decided:** Added `--resume` to `playgrounds/smoke_test_playground.py` and to every playground sbatch script. On resume, the runner parses the existing log, treats a model as complete when its block has all `n_trials` "Results for trial" lines plus the `Unloaded <model>` marker and no load failure, skips those models, and appends the rest to the same log under a `===== RESUMED ... =====` marker. If every requested model is complete it exits 0 without touching the log. The HTML builder already keeps the last block per model, so a rerun of a half-finished model overrides the partial block. Verified the completeness parser against the finished 2026-07-17 session logs (all 7 models detected; n=31 probe returns empty).
+
+**Why:** Job 1645405 ran 8+ hours; an interruption would previously have forced a full restart because logs were opened in write mode.
+
+**What was rejected:** Per-trial resume within a model block (would need structured intermediate state; model loading, not trials, dominates runtime) and skipping via bash file-existence tests in sbatch (cannot distinguish complete from truncated logs).
+
+**Word-generality readout (job 1645405 + PriDe rebuild, 98 cells):** The shiple pattern generalizes to all five sudo words. (1) A/B noun: 0/35 model-word cells pass the tracking gate; the letter-format collapse is word-general. (2) Numeric noun: passes concentrate in the largest Qwens (qwen3.5-4b 4/5 words, qwen3-vl-8b 4/5, qwen3-vl-4b 2/5; the four small models 0/5, qwen3.5-0.8b hard first-option locked at Pos1=1.00 for every word). (3) Among gate-passing cells, generated shape choice is uniformly high (0.82-0.95, mean 0.88) and does not vary meaningfully by word; word identity affects validity (tracking), not shape preference. (4) Debiased logits: qwen3-vl-8b keeps corrected P(shape) 0.74-0.97 across all words and both label sets even where generation is locked; qwen3.5-4b's latent signal is attenuated under letters (0.53-0.68 vs 0.59-0.83 numeric), so its letter collapse is not purely a response-format artifact; small models sit at ~0.50 corrected everywhere, so their failures reflect absent latent signal, not masking. (5) Naming contrast on matched framing (numeric noun vs numeric no-word category), swap-corrected mean P(shape): qwen3.5-4b 0.56 to 0.69 across words, qwen3-vl-8b 0.69 to 0.83; the novel label raises latent shape evidence relative to the same wording without a word, consistent across all five words.
+
+## 2026-07-17 (late night), prompt PriDe + five-word generality
+
+**What was decided:** Implemented `playgrounds/playground_pride_debias.py`, which parses saved one-pass probabilities from paired 30-trial logs and writes `prompt_pride_debias_2026-07-17.{csv,json,html}`. Method matches existing `pride_debias.py`: swap/full permutation on all 30; PriDe prior from first 10 and held-out estimates on 20. Added mean P(shape) as well as above-0.5 rates. Submitted job 1645405 (oat-02): remaining curated sudo words (`clapher`, `plailass`, `procation`, `adinefults`) × numeric/A-B noun prompts × 7 models × both orders. Shiple is reused. Builder will write `local_models_sudo_word_generality_30trials_2026-07-17.html`.
+
+**Initial debias result:** All three gate-passing qwen3.5-4b cells retain shape evidence across estimators: numeric similarity swap/perm/PriDe mean P(shape)=.88/.89/.90(SF),.83(TF); AB similarity=.73/.74/.72,.73; numeric shiple=.69/.70/.71,.67. Qwen3-VL-8B has strong corrected latent shape probabilities despite generation gate failures (e.g. numeric noun swap .79, perm .83, PriDe .91/.79), but first-option priors are extreme (.01–.11), so order-specific PriDe disagreement and prior instability must be reported.
+
+**Why:** Tests whether corrected latent choice evidence survives option bias and whether the noun-condition validity pattern is specific to `shiple`.
+
+## 2026-07-17 (late night), numeric + qwen8 results
+
+**What was decided/found:** Job 1645340 completed. Numeric labels change the picture in three ways. (1) qwen3.5-4b now passes the gate in two cells: numeric similarity (trk 0.87, shp 0.93) and numeric noun+shiple (trk 0.77, shp 0.82); the numeric no-word category cell still fails (trk 0.13, second-option lock). (2) Adding the noun raised tracking relative to the same-wording no-word category cell in 6 of 7 models (e.g. qwen3.5-4b 0.13→0.77, qwen3-vl-4b 0.07→0.63, qwen3-vl-8b 0.40→0.67); the label appears to re-engage the images. (3) qwen3-vl-8b passed no cell under playground prompts; best is numeric noun at trk 0.67, just under the 0.70 gate that the July 10 probe protocol had it passing (0.80). Numeric beats letters for qwen8 in all three framings. The category framing's second-option lock survives the label-set change (qwen3.5-4b catAB PosA 0.02, cat12 Pos1 0.07), so that lock is option-position, not letter identity. SmolVLM's gen-vs-logit dissociation persists numerically (sim 1/60, cat 0/60) but mostly resolves under the noun (43/60); all other models agree 60/60 everywhere.
+
+**Why it matters:** The naming contrast is now partially interpretable in qwen3.5-4b, and the direction is unexpected relative to children: the word's clearest effect is on validity (image tracking), not on shape preference, and shape preference is slightly lower with the word (0.82) than under label-free similarity (0.93).
+
+## 2026-07-17 (night), numeric labels + Qwen3-VL-8B follow-up
+
+**What was decided:** Use the efficient design: run the three numeric conditions (`no_word_similarity`, `no_word_category`, `noun_label` + fixed `shiple`) on seven models, then fill only qwen3-vl-8b's three missing A/B cells. Job 1645340 runs 30 trials × both orders × both scoring paths on oat-02. The runner now infers A/B vs 1/2 from the prompt key, scores the actual labels, parses either set, and maps A/B stimulus ground truth to 1/2. Qwen8 A/B logs use distinct filenames so they cannot overwrite the completed six-model logs.
+
+**Why:** This tests whether the locks are letter-specific and asks the naming contrast in qwen3-vl-8b, the Qwen-family gate-passer from the July 10 scaling ladder, without rerunning completed A/B cells.
+
+**What was rejected:** Rerunning all six conditions on all seven models (duplicates 1,080 completed model-trials).
+
+**Report:** `build_playground_results_html.py` will write `local_models_numeric_and_qwen8_30trials_2026-07-17.html` after all logs land: numeric condition tables, numeric wording/naming contrasts, and A/B-vs-1/2 comparisons for all three framings.
+
+## 2026-07-17 (night), three-way prompt interpretation
+
+**What was decided:** Wrote `results/playground.results/prompt_wording_interpretation_2026-07-17.html` interpreting the n=30 three-way (similarity / no_word_category_AB / noun_label_AB+shiple). Reading: only interpretable shape-bias cell is qwen3.5-4b under similarity (trk 0.73, shp 0.87, gen==logit 60/60, a genuine agreed pass unlike the July 10 dissociated near-pass). The noun condition collapses every model into letter locks (qwen3.5-4b trk 0.73 → 0.13, PosA 0.93), so the naming-linked-bias question is unanswerable at these scales; wording flips which letter models lock to (SmolVLM PosA 0.97 → 0.00 across conditions), supporting the language-side-artifact claim. SmolVLM gen-vs-logit agreement is itself prompt-dependent (60/60 shiple, 27/60 similarity, 2/60 no-word AB).
+
+**Why:** Samah asked what the comparison means against the project's theoretical questions and what to do next.
+
+**Next steps proposed:** numeric-label rerun of the three-way; add qwen3-vl-8b; swap/PriDe on saved one-pass logits; other four sudo words; fold wording manipulation into the manuscript audit section.
+
+## 2026-07-17 (later), fixed-word noun_label_AB comparison
+
+**What was decided:** Use option 1: one fixed curated sudo word, `shiple`, for all 30 stimuli. Job 1645318 runs the existing playground code with `noun_label_AB`, 30 trials, both orders, both scoring paths, and the same six local models. The smoke runner now accepts `--word`; word-bearing templates require it and include it in the result filename. The powered HTML report adds the shiple condition and pairwise comparisons when both logs finish.
+
+**Why:** This isolates the effect of adding a novel category label from variation among words while matching the two completed n=30 prompt runs in every other respect.
+
+**What was rejected:** Cycling the five sudo words (mixes prompt-word variation into the comparison); running all five (fivefold larger and unnecessary for this first test).
+
+## 2026-07-17 (later), n=30 prompt compare results
+
+**What was decided:** Job 1645312 completed (17 min, oat-05). Powered comparison in `local_models_prompt_compare_30trials_2026-07-17.html`. Finding: the wording change is not neutral. Under `no_word_category_AB`, every model fails the tracking gate; qwen3.5-4b drops from PASS (trk 0.73, shp 0.87) to trk 0.03 with PosA 0.02 (B-lock); smolvlm and qwen3-vl-2b move to near-total A-lock (PosA 0.97, 1.00). Similarity wording keeps qwen3.5-4b as the only gate pass, consistent with the n=5 smoke. SmolVLM gen-vs-logit dissociation worsens under AB (gen==two 2/60 vs 27/60 under similarity); two_pass==one_pass stays 60/60 everywhere. The follow-up HTML-rebuild job 1645313 failed (exit 127, `--wrap` env); rebuilt locally instead.
+
+**Why:** n=5 hinted at gate flips; n=30 confirms the AB "find another one of the two" wording pushes small local models into letter/position locks rather than image-based choices.
+
+## 2026-07-17 (late), n=30 dual no-word prompt compare
+
+**What was decided:** Registered `no_word_similarity_AB` in `PROMPT_TEMPLATES` (exact July 17 similarity wording). Smoke accepts `--prompt-condition`. Submitted `scripts/run_prompt_compare_30.sbatch` (30 trials × 2 orders × similarity + category_AB × 6 models; scratch HF; exclude oat-01). HTML builder writes `local_models_prompt_compare_30trials_2026-07-17.html` when both n=30 log pairs exist.
+
+**Why:** n=5 suggested prompt wording moves gate outcomes; need a powered comparison with a confirmed shared system prompt.
+
+**Prompt contract confirmed:** local VLMs share `LOCAL_VLM_SYSTEM_PROMPT` in generate + score_choices; both user prompts are no-word A/B.
+
+## 2026-07-17 (evening), AB smoke HTML + similarity comparison
+
+**What was decided:** Built `local_models_smoke_no_word_category_AB_2026-07-17.html` from job 1645305 logs, with a side-by-side gen-path comparison to the similarity-prompt smoke. Updated similarity HTML section 2 to link there.
+
+**Why:** Samah asked whether unifying to `no_word_category_AB` changed smoke validity / shape rates vs the earlier similarity wording.
+
+## 2026-07-17 (late), AB smoke hang = oat-01 NFS + home I/O
+
+**What was decided:** Cancelled 1645294 and 1645299. Keep scratch `HF_HOME` + offline Hub in `run_smoke_dual_path.sbatch`, and add `#SBATCH --exclude=oat-01`.
+
+**Why:** 1645299 had scratch HF_HOME set correctly but still printed nothing for ~20 min: python stuck in `D` / `rpc_wait_bit_killable` importing home `.venv` (not model load yet). Both hung AB jobs landed on oat-01; completed similarity smoke was oat-02 (~16 min).
+
+**What was rejected:** Waiting on oat-01; copying full `.venv` to scratch in this pass (larger follow-up).
+
+## 2026-07-17 (evening), Playground HTML results report
+
+**What was decided:** Added `scripts/build_playground_results_html.py` writing `results/playground.results/local_models_smoke_similarity_2026-07-17.html` (shape_first + texture_first picks, shape rates SF/TF/avg, tracking, PosA, gate) plus a copy of `probe-experiment-results.html`, embedding readout, and PriDe tables. AB-prompt companion HTML auto-builds when job 1644290 logs appear. Re-run: `python scripts/build_playground_results_html.py`.
+
+**Why:** Samah asked for probe-style HTML covering smoke validity + probe-era readouts in one browseable folder under `playground.results`.
+
 ## 2026-07-17 (later), Playground prompt unified to no_word_category_AB
 
 **What was decided:** All local playground / smoke entry points now use `make_prompt(prompt_condition="no_word_category_AB")` from `eval_core.PROMPT_TEMPLATES` (notebook, `smoke_test_playground.py`, `run_local_playground_smoke.py`, `test_local_models.py`). The July 17 dual-path smoke used the older hardcoded similarity prompt ("Which of the other two images ... more similar ..."), not this template.

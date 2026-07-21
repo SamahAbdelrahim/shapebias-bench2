@@ -108,6 +108,17 @@ PROMPT_TEMPLATES = {
         "Can you find another one of the two (A or B)? "
         "Your response must be exactly one character: A or B. No other text."
     ),
+    "no_word_similarity": (
+        "You are given three images. The first image is the reference. "
+        "Which of the other two images (1 or 2) is more similar to the reference? "
+        "Answer with just '1' or '2'."
+    ),
+    # No novel word; A/B choices. Playground July 2026 similarity wording (pre-unification).
+    "no_word_similarity_AB": (
+        "You are given three images. The first image is the reference. "
+        "Which of the other two images (A or B) is more similar to the reference? "
+        "Answer with just 'A' or 'B'."
+    ),
     "binary_yes_no": (
         "The first image is a {word}. "
         "The second image is one candidate object. "
