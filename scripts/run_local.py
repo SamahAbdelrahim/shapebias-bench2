@@ -67,6 +67,10 @@ _LOGIT_PROMPT_CONDITIONS = {
     "noun_label_AB",
     "no_word_category",
     "no_word_category_AB",
+    "no_word_category_similar",
+    "no_word_category_similar_AB",
+    "no_word_similarity",
+    "no_word_similarity_AB",
 }
 
 
@@ -224,6 +228,10 @@ def main():
                             "noun_label_AB",
                             "no_word_category",
                             "no_word_category_AB",
+                            "no_word_category_similar",
+                            "no_word_category_similar_AB",
+                            "no_word_similarity",
+                            "no_word_similarity_AB",
                             "binary_yes_no",
                             "binary_yes_no_conservative",
                             "binary_score",
