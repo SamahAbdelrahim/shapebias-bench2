@@ -4,8 +4,9 @@ For example:
 /all_smith_stimuli_sets.zip
 
 folder structure:
-
-previous-lit-stimuli/                                                                                                                                      
-  ├── README.md                    
+                                            
+  previous-lit-stimuli/                                                                                                                                     
+  ├── README.md                                                                                                                                                                                        
   ├── geirhos_cueconflict/
+  │   
   ├── all_smith_stimuli_sets.zip
