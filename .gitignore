@@ -43,7 +43,6 @@ CLAUDE.md
 MEMORY.md
 REPORT.md
 PROJECT_CHECKLIST.md
-
 # Manuscript drafts (private until submission)
 manuscript/
 # Local archive of superseded files
@@ -61,3 +60,11 @@ stimuli_pipe/**/*.tar
 stimuli_pipe/**/*.tar.gz
 stimuli_pipe/**/*.tgz
 stimuli_pipe/**/*.7z
+
+# Large previous-lit stimuli (keep local; document in readme only)
+previous-lit-stimuli/geirhos_cueconflict/
+previous-lit-stimuli/all_smith_stimuli_sets.zip
+previous-lit-stimuli/**/*.zip
+# Local AI / agent instructional files (keep private; not for remote)
+TODO.md
+PLAN.md
