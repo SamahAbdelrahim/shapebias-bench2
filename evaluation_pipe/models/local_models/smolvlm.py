@@ -49,6 +49,7 @@ class SmolVLM(BaseVLM):
                 model = SmolVLMForConditionalGeneration.from_pretrained(
                     model_id,
                     torch_dtype=dtype,
+                    device_map=device,
                     **kwargs,
                 )
             except Exception:
@@ -59,13 +60,13 @@ class SmolVLM(BaseVLM):
                 model = AutoModelForImageTextToText.from_pretrained(
                     model_id,
                     torch_dtype=dtype,
+                    device_map=device,
                     trust_remote_code=True,
                     **kwargs,
                 )
             return processor, model
 
         self._processor, self._model = _load_model(load_dtype)
-        self._model = self._model.to(device)
         self._device = device
         self._model.eval()
 
