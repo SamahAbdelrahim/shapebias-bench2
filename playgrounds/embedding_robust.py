@@ -294,11 +294,6 @@ def main() -> int:
         help="Path to Linda Smith probe-shapematch-colormatch dataset; if set, run the familiar-category "
         "positive control on these stimuli instead of IMAGE_DATASET.",
     )
-    ap.add_argument(
-        "--metric",
-        choices=["cosine", "cka"],
-        default="cosine",
-    )
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
