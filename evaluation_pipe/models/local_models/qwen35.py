@@ -6,7 +6,11 @@ import time
 
 import torch
 from PIL import Image
-from transformers import AutoProcessor, Qwen3_5ForConditionalGeneration
+from transformers import (
+    AutoProcessor,
+    BitsAndBytesConfig,
+    Qwen3_5ForConditionalGeneration,
+)
 
 from evaluation_pipe.eval_core import (
     LOCAL_VLM_SYSTEM_PROMPT,
@@ -22,6 +26,13 @@ class _Qwen35Base(BaseVLM):
 
     _default_model_id: str  # set by subclasses
     _system_prompt = LOCAL_VLM_SYSTEM_PROMPT
+    # Override with "auto" on subclasses too large for one GPU so accelerate
+    # shards the weights across all visible GPUs (bf16, no quantization).
+    _device_map: str | None = None
+    # Set True on subclasses that must be loaded in 4-bit (nf4) to fit one GPU.
+    # The Gated-DeltaNet hybrid goes numerically unstable when sharded across
+    # GPUs in bf16, so large variants run quantized on a single GPU instead.
+    _quantization_4bit: bool = False
 
     def __init__(
         self,
@@ -32,11 +43,21 @@ class _Qwen35Base(BaseVLM):
         model_id = model_id or self._default_model_id
         self._model_id = model_id
         self._device = device
+        device_map = self._device_map or device
+        quantization_config = None
+        if self._quantization_4bit:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_use_double_quant=True,
+            )
         self._processor = AutoProcessor.from_pretrained(model_id)
         self._model = Qwen3_5ForConditionalGeneration.from_pretrained(
             model_id,
             torch_dtype=torch.bfloat16,
-            device_map=device,
+            device_map=device_map,
+            quantization_config=quantization_config,
             **kwargs,
         )
         self._model.eval()
@@ -211,3 +232,25 @@ class Qwen35_17B(_Qwen35Base):
     """Qwen3.5-1.7B-Instruct wrapper."""
 
     _default_model_id = "Qwen/Qwen3.5-1.7B-Instruct"
+
+
+@register_model("qwen3.5-9b")
+class Qwen35_9B(_Qwen35Base):
+    """Qwen3.5-9B wrapper (next dense step above 4B in the passing family)."""
+
+    _default_model_id = "Qwen/Qwen3.5-9B"
+
+
+@register_model("qwen3.5-27b")
+class Qwen35_27B(_Qwen35Base):
+    """Qwen3.5-27B wrapper.
+
+    Loaded in 4-bit (nf4) on a single GPU (~16 GB): bf16 needs ~55 GB, which
+    only fits by sharding across GPUs, and sharding this Gated-DeltaNet hybrid
+    is numerically unstable (nan logits). Results carry a quantization caveat
+    relative to the bf16 rungs (4B / 9B).
+    """
+
+    _default_model_id = "Qwen/Qwen3.5-27B"
+    _device_map = "auto"
+    _quantization_4bit = True
