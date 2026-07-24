@@ -223,6 +223,55 @@ def build_cueconflict_triplets(root: Path, n: int, seed: int):
             break
     return triplets
 
+_SMITH_PAT = re.compile(
+    r"^smith_bg(\d+)_(\d+)(probe|color_match|shape_match)\.jpg$"
+)
+
+def build_smith_probe_triplets(root: Path, n: int, seed: int):
+    """Build triplets from the Smith probe set.
+
+    Each triplet uses the same background and trial:
+      ref          = smith_bgX_Yprobe.jpg
+      shape match  = smith_bgX_Yshape_match.jpg
+      color match  = smith_bgX_Ycolor_match.jpg
+
+    The evaluation tests whether the probe representation is closer to the
+    shape-preserving or color-preserving match.
+    """
+    items: dict[tuple[str, str], dict[str, Path]] = {}
+
+    for f in sorted(root.iterdir()):
+        m = _SMITH_PAT.match(f.name)
+        if not m:
+            continue
+
+        bg, trial, kind = m.groups()
+        items.setdefault((bg, trial), {})[kind] = f
+
+    rng = random.Random(seed)
+    keys = list(items.keys())
+    rng.shuffle(keys)
+
+    triplets = []
+    for bg, trial in keys:
+        imgs = items[(bg, trial)]
+
+        if not all(k in imgs for k in ("probe", "shape_match", "color_match")):
+            continue
+
+        triplets.append(
+            (
+                f"bg:{bg}|trial:{trial}",
+                Image.open(imgs["probe"]).convert("RGB"),
+                Image.open(imgs["shape_match"]).convert("RGB"),
+                Image.open(imgs["color_match"]).convert("RGB"),
+            )
+        )
+
+        if len(triplets) >= n:
+            break
+
+    return triplets
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -239,17 +288,28 @@ def main() -> int:
         help="Path to Geirhos cue-conflict dir; if set, run the familiar-category "
         "positive control on these stimuli instead of IMAGE_DATASET.",
     )
+    ap.add_argument(
+        "--smith-probe",
+        default=None,
+        help="Path to Linda Smith probe-shapematch-colormatch dataset; if set, run the familiar-category "
+        "positive control on these stimuli instead of IMAGE_DATASET.",
+    )
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
     if args.out_prefix is None:
         from evaluation_pipe.eval_core import default_session_results_dir
 
-        name = "embedding_cueconflict" if args.cue_conflict else "embedding_robust"
+        if args.cue_conflict:
+            name = "embedding_cueconflict"
+        elif args.smith_probe:
+            name = "embedding_smith_probe"
+        else:
+            name = "embedding_robust"
         args.out_prefix = str(default_session_results_dir("probe") / name)
 
-    if not torch.cuda.is_available():
-        print("ERROR: CUDA not available. Run inside an srun GPU allocation.")
+    if not torch.backends.mps.is_available() and not torch.cuda.is_available():
+        print("No GPU available")
         return 1
 
     out_txt = Path(f"{args.out_prefix}.txt")
@@ -275,7 +335,8 @@ def main() -> int:
     fh = open(out_txt, "w", encoding="utf-8")
     sys.stdout = _Tee(sys.__stdout__, fh)
 
-    print(f"Device: cuda ({torch.cuda.get_device_name(0)})")
+    device = "cuda" if torch.cuda.is_available() else "mps"
+    print(f"Device: {device}")
     print(f"Models: {args.models}")
 
     if args.cue_conflict:
@@ -284,6 +345,12 @@ def main() -> int:
         print(f"POSITIVE CONTROL: {len(triplets)} familiar-category cue-conflict triplets from {cc_root}")
         for tid, *_ in triplets[:5]:
             print(f"  e.g. {tid}")
+    elif args.smith_probe:
+        triplets = build_smith_probe_triplets(
+            Path(args.smith_probe),
+            args.n_stimuli,
+            args.seed,
+        )
     else:
         dataset = Path(os.environ["IMAGE_DATASET"])
         if not dataset.is_absolute():
@@ -314,8 +381,8 @@ def main() -> int:
         wrapper = None
         model_out: dict = {}
         try:
-            wrapper = create_model(name, device="cuda")
-            print(f"Loaded: {wrapper.name}")
+            device = "cuda" if torch.cuda.is_available() else "mps"
+            wrapper = create_model(name, device=device)
 
             # Collect per-image reps: rep_name -> {'ref':[...],'shape':[...],'texture':[...]}
             by_rep: dict[str, dict[str, list]] = {}
@@ -373,7 +440,8 @@ def main() -> int:
                     pass
                 del wrapper
             gc.collect()
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         all_results["models"][name] = model_out
 
     _print_summary(all_results)
