@@ -163,18 +163,14 @@ class _Qwen35Base(BaseVLM):
         with torch.inference_mode():
             out = self._model(**inputs)
 
-            next_logits = out.logits[:, -1, :]
-            probs = torch.softmax(next_logits, dim=-1)
-            topk = None
-            if top_k > 0:
-                topk = torch.topk(probs, top_k)
+        next_logits = out.logits[:, -1, :].float()
+        all_probs = torch.softmax(next_logits, dim=-1)
+
+        topk = torch.topk(all_probs, top_k) if top_k > 0 else None
 
         elapsed = time.perf_counter() - t0
 
-        next_logits = out.logits[:, -1, :].float()
         choice_logits = next_logits[0, choice_ids]
-
-        all_probs = torch.softmax(next_logits, dim=-1)
         probs_absolute = all_probs[0, choice_ids]
 
         return {
@@ -199,6 +195,11 @@ class Qwen35_08B(_Qwen35Base):
 
     _default_model_id = "Qwen/Qwen3.5-0.8B"
 
+@register_model("qwen3.5-2b")
+class Qwen35_2B(_Qwen35Base):
+    """Qwen3.5-2B-Instruct wrapper."""
+
+    _default_model_id = "Qwen/Qwen3.5-2B"
 
 @register_model("qwen3.5-4b")
 class Qwen35_4B(_Qwen35Base):
@@ -206,8 +207,8 @@ class Qwen35_4B(_Qwen35Base):
 
     _default_model_id = "Qwen/Qwen3.5-4B"
 
-@register_model("qwen3.5-1.7b")
-class Qwen35_17B(_Qwen35Base):
-    """Qwen3.5-1.7B-Instruct wrapper."""
+@register_model("qwen3.5-9b")
+class Qwen35_9B(_Qwen35Base):
+    """Qwen3.5-9B wrapper."""
 
-    _default_model_id = "Qwen/Qwen3.5-1.7B-Instruct"
+    _default_model_id = "Qwen/Qwen3.5-9B"

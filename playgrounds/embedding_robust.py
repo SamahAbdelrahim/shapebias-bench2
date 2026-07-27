@@ -12,9 +12,9 @@ Representations (each tried independently; failures are recorded, not fatal):
   vit_pooler      : vision-tower pooler_output when present (CLS-style summary)
 
 For every representation we report, with and without mean-centering:
-  - shape rate with a bootstrap 95% CI over stimuli (n=30)
+  - shape rate with a bootstrap 95% CI over stimuli
   - a POSITIVE CONTROL: object-identity retrieval. For each reference, rank all
-    shape-match images by cosine; is its own stimulus top-1? (chance = 1/30).
+    shape-match images by cosine; is its own stimulus top-1? (chance = 1/n_stimuli).
     Same for texture matches. High retrieval => the read-out resolves these
     images, so a ~0.5 shape-vs-texture rate is a real null, not a blind probe.
 
@@ -469,9 +469,13 @@ def _print_model(name, rep_results, errs):
 
 
 def _print_summary(res):
+    n = res["config"]["n_stimuli"]
     print("\n" + "=" * 78)
     print("SUMMARY — embedding shape rate (centered, 95% CI) across read-outs")
-    print("retr@1 = object-identity retrieval (chance=1/30=0.03); high => probe is sensitive")
+    print(
+        f"retr@1 = matching-stimulus retrieval (chance=1/{n}={1/n:.2f}); "
+        "high => probe is sensitive"
+    )   
     print("=" * 78)
     print(f"{'model':14} {'readout':16} {'shape':>5} {'ci95':>13} {'retrS':>6} {'retrT':>6}")
     for name, mo in res["models"].items():

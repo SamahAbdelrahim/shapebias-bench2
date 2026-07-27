@@ -151,20 +151,16 @@ class InternVL(BaseVLM):
         with torch.inference_mode():
             out = self._model(**inputs)
 
-            next_logits = out.logits[:, -1, :]
-            probs = torch.softmax(next_logits, dim=-1)
-            topk = None
-            if top_k > 0:
-                topk = torch.topk(probs, top_k)
-
         elapsed = time.perf_counter() - t0
 
         next_logits = out.logits[:, -1, :].float()
-        choice_logits = next_logits[0, choice_ids]
-
         all_probs = torch.softmax(next_logits, dim=-1)
-        probs_absolute = all_probs[0, choice_ids]
 
+        topk = torch.topk(all_probs, top_k) if top_k > 0 else None
+
+        choice_logits = next_logits[0, choice_ids]
+        probs_absolute = all_probs[0, choice_ids]
+        
         return {
             "choice_texts": list(choice_texts),
             "choice_token_ids": choice_ids,

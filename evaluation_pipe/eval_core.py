@@ -517,7 +517,7 @@ def load_stimuli_human_package(stim_pkg: str, stim_set: str | None = None) -> li
 # ---------------------------------------------------------------------------
 # Answer parsing with retry
 # ---------------------------------------------------------------------------
-def parse_answer(raw_text: str, choice_texts: tuple[str, str] | None) -> str | None:
+def parse_answer(raw_text: str, choice_texts: tuple[str, str] | None = None) -> str | None:
     t = raw_text.strip()
 
     # Default, holdover from earlier iteration of parse_answer
@@ -598,7 +598,10 @@ def run_with_retry(run_fn, images: list[Image.Image], prompt: str, choice_texts:
     result = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            result = run_fn(images, prompt, choice_texts=choice_texts)
+            if choice_texts is None:
+                result = run_fn(images, prompt)
+            else:
+                result = run_fn(images, prompt, choice_texts=choice_texts)
         except Exception as e:
             print(f"    [retry {attempt}/{MAX_RETRIES}] error: {e}")
             continue
@@ -738,12 +741,16 @@ def run_trial(run_fn, stimulus: dict, word: str, word_type: str,
         order_method = "deterministic"
 
     results = []
+    
+    if choice_texts is None:
+        choice_texts = ("1", "2")
+
     for ord_name, img_a, img_b, a_is, b_is in configs:
         res = run_with_retry(run_fn, [ref, img_a, img_b], prompt, choice_texts=choice_texts)
         answer = res.get("parsed_answer")
-        if answer == "1":
+        if answer == choice_texts[0]:
             choice = a_is
-        elif answer == "2":
+        elif answer == choice_texts[1]:
             choice = b_is
         else:
             choice = "unclear"
@@ -954,7 +961,7 @@ def run_trial_logit_scoring(
     word_type: str,
     word_length: int = 0,
     *,
-    choice_texts=("1", "2"),
+    choice_texts: tuple[str, str] | None = None,
     ordering: str = "both",
     prompt_condition: str = "noun_label",
     swap_correct: bool = False,
@@ -1009,6 +1016,9 @@ def run_trial_logit_scoring(
             )
         else:
             raw_text = f"p1_abs={p1_abs:.4f},p2_abs={p2_abs:.4f},l1={l1:.3f},l2={l2:.3f}"
+
+        if choice_texts is None:
+            choice_texts = ("1", "2")
 
         # under swapped condition, 'parsed' is relative to the original prompt
         if decision_a_abs > decision_b_abs:
