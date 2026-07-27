@@ -216,12 +216,15 @@ class Qwen35_08B(_Qwen35Base):
 
     _default_model_id = "Qwen/Qwen3.5-0.8B"
 
+<<<<<<< Updated upstream
 @register_model("qwen3.5-2b")
 class Qwen35_2B(_Qwen35Base):
     """Qwen3.5-2B-Instruct wrapper."""
 
     _default_model_id = "Qwen/Qwen3.5-2B"
 
+=======
+>>>>>>> Stashed changes
 @register_model("qwen3.5-4b")
 class Qwen35_4B(_Qwen35Base):
     """Qwen3.5-4B wrapper."""
@@ -234,6 +237,7 @@ class Qwen35_9B(_Qwen35Base):
 
     _default_model_id = "Qwen/Qwen3.5-1.7B-Instruct"
 
+<<<<<<< Updated upstream
 
 @register_model("qwen3.5-9b")
 class Qwen35_9B(_Qwen35Base):
@@ -255,3 +259,10 @@ class Qwen35_27B(_Qwen35Base):
     _default_model_id = "Qwen/Qwen3.5-27B"
     _device_map = "auto"
     _quantization_4bit = True
+=======
+@register_model("qwen3.5-27b")
+class Qwen35_27B(_Qwen35Base):
+    """Qwen3.5-27B-Instruct wrapper."""
+
+    _default_model_id = "Qwen/Qwen3.5-27B-Instruct"
+>>>>>>> Stashed changes
