@@ -216,6 +216,12 @@ class Qwen35_08B(_Qwen35Base):
 
     _default_model_id = "Qwen/Qwen3.5-0.8B"
 
+@register_model("qwen3.5-2b")
+class Qwen35_2B(_Qwen35Base):
+    """Qwen3.5-2B wrapper."""
+
+    _default_model_id = "Qwen/Qwen3.5-2B"
+
 @register_model("qwen3.5-4b")
 class Qwen35_4B(_Qwen35Base):
     """Qwen3.5-4B wrapper."""
@@ -226,10 +232,10 @@ class Qwen35_4B(_Qwen35Base):
 class Qwen35_9B(_Qwen35Base):
     """Qwen3.5-9B wrapper."""
 
-    _default_model_id = "Qwen/Qwen3.5-1.7B-Instruct"
+    _default_model_id = "Qwen/Qwen3.5-9B"
 
 @register_model("qwen3.5-27b")
 class Qwen35_27B(_Qwen35Base):
-    """Qwen3.5-27B-Instruct wrapper."""
+    """Qwen3.5-27B wrapper."""
 
-    _default_model_id = "Qwen/Qwen3.5-27B-Instruct"
+    _default_model_id = "Qwen/Qwen3.5-27B"
