@@ -168,7 +168,8 @@ PROMPT_TEMPLATE = PROMPT_TEMPLATES["noun_label"]
 # ===========================================================================
 # Vision turn layout (shared: local Transformers + remote OpenAI-compatible API)
 # ===========================================================================
-VISION_USER_IMAGE_LABELS_3 = ("Reference image:", "Image 1:", "Image 2:")
+VISION_USER_IMAGE_LABELS_3_NUMERIC = ("Reference image:", "Image 1:", "Image 2:")
+VISION_USER_IMAGE_LABELS_3_ALPHABETIC = ("Reference image:", "Image A:", "Image B:")
 VISION_USER_IMAGE_LABELS_2 = ("Reference image:", "Candidate image:")
 
 # Shared system line for **local** Transformers VLM wrappers (generate + score_choices).
@@ -188,10 +189,14 @@ REMOTE_UNIFORM_SYSTEM_PROMPT = (
 def build_transformers_vision_user_content(
     images: list[Image.Image],
     prompt: str,
+    choice_texts: tuple[str, str] | None = None
 ) -> list[dict]:
     """Content block for a single user message (Transformers chat templates)."""
     if len(images) == 3:
-        labels = VISION_USER_IMAGE_LABELS_3
+        if choice_texts == ("A", "B"):
+            labels = VISION_USER_IMAGE_LABELS_3_ALPHABETIC
+        else:
+            labels = VISION_USER_IMAGE_LABELS_3_NUMERIC
     elif len(images) == 2:
         labels = VISION_USER_IMAGE_LABELS_2
     else:
@@ -216,7 +221,7 @@ def build_openai_compatible_vision_messages(
     *image_to_url* maps each PIL image to a URL string (e.g. data:image/jpeg;base64,...).
     """
     if len(images) == 3:
-        labels = VISION_USER_IMAGE_LABELS_3
+        labels = VISION_USER_IMAGE_LABELS_3_NUMERIC
     elif len(images) == 2:
         labels = VISION_USER_IMAGE_LABELS_2
     else:

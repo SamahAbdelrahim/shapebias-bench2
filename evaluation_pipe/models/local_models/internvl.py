@@ -54,7 +54,7 @@ class InternVL(BaseVLM):
         temperature: float = 0.0,
         choice_texts: tuple[str, str] | None = None,
     ) -> ModelResponse:
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -126,7 +126,7 @@ class InternVL(BaseVLM):
         top_k: int = 0
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -160,7 +160,7 @@ class InternVL(BaseVLM):
 
         choice_logits = next_logits[0, choice_ids]
         probs_absolute = all_probs[0, choice_ids]
-        
+
         return {
             "choice_texts": list(choice_texts),
             "choice_token_ids": choice_ids,

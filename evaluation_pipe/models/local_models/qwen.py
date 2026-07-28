@@ -53,7 +53,7 @@ class _Qwen3VLBase(BaseVLM):
         temperature: float = 0.0,
         choice_texts: tuple[str, str] | None = None
     ) -> ModelResponse:
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -125,7 +125,7 @@ class _Qwen3VLBase(BaseVLM):
         top_k: int = 0
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},

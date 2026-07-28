@@ -224,6 +224,18 @@ def main():
     # Load stimuli and words
     words = load_words()
 
+    if args.prompt_condition in {
+        "no_word_category",
+        "no_word_category_AB",
+        "no_word_similarity",
+        "no_word_similarity_AB",
+    }:
+        words = [{
+            "name": "",
+            "type": "none",
+            "length": 0,
+        }]
+
     if args.smith_probe:
         smith_triplets = build_smith_probe_triplets(
             Path(args.smith_probe),
@@ -377,29 +389,30 @@ def main():
                         r["decision_mode"] = args.decision_mode
                         r["swap_correct"] = "true" if args.swap_correct else "false"
                         r.update(csv_meta)
-                    logit_info = ""
 
-                    if r.get("choice_logits") is not None:
-                        logit_info = (
-                            f"\n      logits={r['choice_logits']}"
-                            f"\n      probs={r['choice_probs']}"
+                        logit_info = ""
+
+                        if r.get("choice_logits") is not None:
+                            logit_info = (
+                                f"\n      logits={r['choice_logits']}"
+                                f"\n      probs={r['choice_probs']}"
+                            )
+                        elif r.get("shape_choice_logits") is not None:
+                            logit_info = (
+                                f"\n      shape YES/NO:"
+                                f"\n        logits={r['shape_choice_logits']}"
+                                f"\n        probs={r['shape_choice_probs']}"
+                                f"\n      texture YES/NO:"
+                                f"\n        logits={r['texture_choice_logits']}"
+                                f"\n        probs={r['texture_choice_probs']}"
+                            )
+
+                        print(
+                            f"    {r['ordering']:15s} -> {r['raw_text']!r:10s} "
+                            f"choice={r['choice']}"
+                            f"{logit_info}"
                         )
 
-                    elif r.get("shape_choice_logits") is not None:
-                        logit_info = (
-                            f"\n      shape YES/NO:"
-                            f"\n        logits={r['shape_choice_logits']}"
-                            f"\n        probs={r['shape_choice_probs']}"
-                            f"\n      texture YES/NO:"
-                            f"\n        logits={r['texture_choice_logits']}"
-                            f"\n        probs={r['texture_choice_probs']}"
-                        )
-
-                    print(
-                        f"    {r['ordering']:15s} -> {r['raw_text']!r:10s} "
-                        f"choice={r['choice']}"
-                        f"{logit_info}"
-                    )
                     # Save incrementally after each stimulus+word trial
                     write_results(trial_results, output_path, append=True, quiet=True)
                     all_results.extend(trial_results)
