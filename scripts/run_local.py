@@ -39,7 +39,10 @@ from PIL import Image
 # Ensure repo root is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from playgrounds.embedding_robust import build_smith_probe_triplets
+from playgrounds.embedding_robust import (
+    build_geirhos_unaltered_triplets,
+    build_smith_probe_triplets
+)
 
 from evaluation_pipe.eval_core import (
     BENCHMARK_STIM_PACKAGE,
@@ -149,6 +152,7 @@ def main():
     parser.add_argument("--resume", default=None, metavar="CSV",
                         help="Resume from a partial CSV — skip already-completed trials and append new results")
     parser.add_argument("--smith-probe", default=None, help="Path to Linda Smith probe-shapematch-colormatch dataset")
+    parser.add_argument("--geirhos-unaltered", default=None, help="Path to Geirhos unaltered dataset (cue_conflict/original/texture).")
     parser.add_argument(
         "--levante-model-name",
         default="qwen35",
@@ -236,7 +240,29 @@ def main():
             "length": 0,
         }]
 
-    if args.smith_probe:
+    if args.geirhos_unaltered:
+        geirhos_triplets = build_geirhos_unaltered_triplets(
+            Path(args.geirhos_unaltered),
+            args.num_stimuli,
+            args.seed,
+        )
+
+        stimuli = []
+        for sid, ref, shape, texture in geirhos_triplets:
+            stimuli.append(
+                {
+                    "stim_id": sid,
+                    "reference": ref,
+                    "shape_match": shape,
+                    "texture_match": texture,
+                }
+            )
+
+        stim_set_label = "geirhos_unaltered"
+        csv_meta = benchmark_csv_meta(stim_set_label)
+
+        print(f"Using Geirhos unaltered dataset: {len(stimuli)} stimuli")
+    elif args.smith_probe:
         smith_triplets = build_smith_probe_triplets(
             Path(args.smith_probe),
             args.num_stimuli,
@@ -258,7 +284,6 @@ def main():
         csv_meta = benchmark_csv_meta(stim_set_label)
 
         print(f"Using Smith probe dataset: {len(stimuli)} stimuli")
-
     else:
         stimuli = load_stimuli(args.stim_set, args.num_stimuli)
         stim_set_label = resolve_stim_set_name(args.stim_set)
