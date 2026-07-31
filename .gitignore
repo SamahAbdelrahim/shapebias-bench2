@@ -65,6 +65,7 @@ stimuli_pipe/**/*.7z
 previous-lit-stimuli/geirhos_cueconflict/
 previous-lit-stimuli/all_smith_stimuli_sets.zip
 previous-lit-stimuli/**/*.zip
+previous-lit-stimuli/
 # Local AI / agent instructional files (keep private; not for remote)
 TODO.md
 PLAN.md

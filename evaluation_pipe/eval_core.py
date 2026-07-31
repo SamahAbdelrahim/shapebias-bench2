@@ -35,7 +35,8 @@ def default_session_results_dir(kind: str, *, date: str | None = None, host: str
     """
     import time as _time
 
-    day = date or _time.strftime("%Y-%m-%d")
+#   day = date or _time.strftime("%Y-%m-%d")
+    day = date or os.environ.get("RESULTS_SESSION_DATE") or _time.strftime("%Y-%m-%d")
     label = host or os.environ.get("RESULTS_SESSION_HOST", "farmshare")
     return RESULTS_DIR / f"{kind}.results" / f"session_{day}_{label}"
 
@@ -89,18 +90,18 @@ ENGLISH_BIGRAM_WEIGHTS: dict[str, float] = {
 # ===========================================================================
 PROMPT_TEMPLATES = {
     "noun_label": (
-        "The first image is a {word}. "
+        "You are given three images. The first image is a {word}. "
         "Which of the following two images (1 or 2) is also a {word}? "
         "Your response must be exactly one character: 1 or 2. No other text."
     ),
     "noun_label_AB": (
-        "The first image is a {word}. "
+        "You are given three images.The first image is a {word}. "
         "Which of the following two images (A or B) is also a {word}? "
         "Your response must be exactly one character: A or B. No other text."
     ),
     "no_word_category": (
-        "See this object in the first image. "
-        "Can you find another one of the two (1 or 2)? "
+        "You are given three images. This first image is an object. "
+        "Which of the following two images (1 or 2) is another one? "
         "Your response must be exactly one character: 1 or 2. No other text."
     ),
     "no_word_category_similar": (
@@ -109,8 +110,8 @@ PROMPT_TEMPLATES = {
         "Answer with just '1' or '2'."
     ),
     "no_word_category_AB": (
-        "See this object in the first image. "
-        "Can you find another one of the two (A or B)? "
+        "You are given three images. This first image is an object. "
+        "Which of the following two images (A or B) is another one? "
         "Your response must be exactly one character: A or B. No other text."
     ),
     "no_word_similarity": (

@@ -14,6 +14,10 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 PLAY = REPO / "results" / "playground.results"
 SESS_SMOKE = PLAY / "session_2026-07-17_farmshare"
+# Revised no_word_category / _AB wording (July 24). Prefer these over July-17
+# old-prompt logs when rebuilding canonical HTML. Old logs stay on disk as baseline.
+SESS_CAT_REVISED = PLAY / "session_2026-07-24_farmshare"
+SESS_SMITH = PLAY / "session_2026-07-25_smith_farmshare"
 SESS_PROBE = REPO / "results" / "probe.results" / "session_2026-07-10_farmshare"
 FARM_HTML = REPO / "farmshare" / "probe-experiment-results.html"
 
@@ -377,7 +381,7 @@ def build_similarity_report() -> str:
         section2 = """
 <h2>2 · Powered prompt compare (n=30)</h2>
 <div class="callout good"><b class="t">Ready.</b>
-<a href="local_models_prompt_compare_30trials_2026-07-17.html"><code>local_models_prompt_compare_30trials_2026-07-17.html</code></a>
+<a href="local_models_prompt_compare_30trials_2026-07-24.html"><code>local_models_prompt_compare_30trials_2026-07-24.html</code></a>
 compares <code>no_word_similarity_AB</code> vs <code>no_word_category_AB</code> on all 30 trials.
 n=5 AB smoke:
 <a href="local_models_smoke_no_word_category_AB_2026-07-17.html"><code>local_models_smoke_no_word_category_AB_2026-07-17.html</code></a>.
@@ -482,9 +486,13 @@ def find_smoke_pair(prompt_condition: str, n_trials: int | None = None) -> tuple
     When ``n_trials`` is set, only exact
     ``playground_smoke_{n}trials_*_{condition}.txt`` filenames match.
     Legacy similarity n=5 files omit the condition suffix (n_trials=None only).
+
+    Prefers the newest session folder (e.g. revised July-24 category over
+    July-17 old-prompt category) when both exist.
     """
     sf_path = tf_path = None
-    for sess in sorted(PLAY.glob("session_*")):
+    # Newest session first so revised-prompt logs win over older baselines.
+    for sess in sorted(PLAY.glob("session_*"), reverse=True):
         if n_trials is not None:
             sf_c = sess / f"playground_smoke_{n_trials}trials_shape_first_{prompt_condition}.txt"
             tf_c = sess / f"playground_smoke_{n_trials}trials_texture_first_{prompt_condition}.txt"
@@ -501,7 +509,7 @@ def find_smoke_pair(prompt_condition: str, n_trials: int | None = None) -> tuple
                 and "Prompt condition:" not in text
                 and "resmoke" not in p.name
             )
-            if name_ok or meta_ok or legacy_sim:
+            if (name_ok or meta_ok or legacy_sim) and sf_path is None:
                 sf_path = p
         for p in sess.glob("playground_smoke_*texture_first*.txt"):
             text = p.read_text(encoding="utf-8", errors="replace")
@@ -513,7 +521,7 @@ def find_smoke_pair(prompt_condition: str, n_trials: int | None = None) -> tuple
                 and "Prompt condition:" not in text
                 and "resmoke" not in p.name
             )
-            if name_ok or meta_ok or legacy_sim:
+            if (name_ok or meta_ok or legacy_sim) and tf_path is None:
                 tf_path = p
     if sf_path and tf_path:
         return sf_path, tf_path
@@ -650,14 +658,17 @@ def try_build_powered_prompt_compare() -> Path | None:
         ab_rows,
         section_title="Comparison — no_word_similarity_AB vs no_word_category_AB (n=30)",
         blurb=(
-            "Same 6 local models, full 30-trial set, both orderings, dual scoring paths. "
+            "Same models, full 30-trial set, both orderings, dual scoring paths. "
+            "Category uses the <b>July-24 revised</b> wording; similarity remains July-17. "
             "Shared system prompt: <code>LOCAL_VLM_SYSTEM_PROMPT</code> "
             "(\"Answer concisely. Do not explain your reasoning.\"). "
             "Δ = category_AB − similarity on the generation path."
         ),
         source_note=(
-            f"Similarity: <code>{sim_sf.name}</code>, <code>{sim_tf.name}</code>. "
-            f"AB: <code>{ab_sf.name}</code>, <code>{ab_tf.name}</code>."
+            f"Similarity: <code>{sim_sf.parent.name}/{sim_sf.name}</code>, "
+            f"<code>{sim_tf.name}</code>. "
+            f"AB category (revised): <code>{ab_sf.parent.name}/{ab_sf.name}</code>, "
+            f"<code>{ab_tf.name}</code>."
         ),
     )
 
@@ -757,10 +768,18 @@ Glossary: <a href="REPORT_GLOSSARY.md"><code>REPORT_GLOSSARY.md</code></a>.</p>
 </div>
 
 <div class="callout info"><b class="t">Prompt contract.</b>
-All conditions use A/B labels. The first two omit a novel word; the third uses
-the fixed sudo word <code>shiple</code>.
+All conditions use A/B labels. Similarity remains the July-17 wording; category
+uses the <b>July-24 revised</b> no_word_category_AB wording. The third condition
+uses the fixed sudo word <code>shiple</code>.
 System message is identical across SmolVLM / InternVL / Qwen3-VL / Qwen3.5
-(<code>LOCAL_VLM_SYSTEM_PROMPT</code>) for generate and score_choices.</div>
+(<code>LOCAL_VLM_SYSTEM_PROMPT</code>) for generate and score_choices.
+Old-vs-new category numbers:
+<a href="no_word_category_prompt_revision_2026-07-24.csv"><code>no_word_category_prompt_revision_2026-07-24.csv</code></a>
+·
+<a href="no_word_category_prompt_revision_2026-07-24.html">full audit page</a>.
+<b>Only category changed;</b> similarity and noun sections match the pre-revision report.</div>
+
+{category_revision_audit_html()}
 
 {smoke_section_html(
     "1 · no_word_similarity_AB (n=30)",
@@ -769,8 +788,12 @@ System message is identical across SmolVLM / InternVL / Qwen3-VL / Qwen3.5
     f"{sim_sf.parent.name}/{sim_sf.name}; {sim_tf.name}",
 )}
 {smoke_section_html(
-    "2 · no_word_category_AB (n=30)",
-    "User prompt: See this object… find another one of the two (A or B).",
+    "2 · no_word_category_AB (n=30) — revised July 24 wording",
+    (
+        "User prompt: This first image is an object… which of the following two "
+        "images (A or B) is another one? Replaces the July-17 “See this object… "
+        "find another one of the two” wording."
+    ),
     ab_rows,
     f"{ab_sf.parent.name}/{ab_sf.name}; {ab_tf.name}",
 )}
@@ -782,7 +805,7 @@ System message is identical across SmolVLM / InternVL / Qwen3-VL / Qwen3.5
 </body>
 </html>
 """
-    out = PLAY / "local_models_prompt_compare_30trials_2026-07-17.html"
+    out = PLAY / "local_models_prompt_compare_30trials_2026-07-24.html"
     out.write_text(body)
     return out
 
@@ -805,8 +828,8 @@ def try_build_ab_report() -> Path | None:
             blurb=(
                 "Same models, n=5 per order. Similarity columns use the July 17 similarity smoke "
                 "(qwen3.5 from post-fix resmoke when available). For the powered n=30 comparison see "
-                "<a href=\"local_models_prompt_compare_30trials_2026-07-17.html\">"
-                "<code>local_models_prompt_compare_30trials_2026-07-17.html</code></a> when ready."
+                "<a href=\"local_models_prompt_compare_30trials_2026-07-24.html\">"
+                "<code>local_models_prompt_compare_30trials_2026-07-24.html</code></a> when ready."
             ),
             source_note=(
                 f"AB: <code>{sf_path.name}</code>; <code>{tf_path.name}</code>."
@@ -870,29 +893,175 @@ def _append_rows(base: list[dict], extra: list[dict]) -> list[dict]:
     return list(by_model.values())
 
 
+def _load_category_pair(session: Path, ab: bool = False) -> list[dict] | None:
+    """Load no_word_category rows from a specific session folder."""
+    cond = "no_word_category_AB" if ab else "no_word_category"
+    sf = session / f"playground_smoke_30trials_shape_first_{cond}.txt"
+    tf = session / f"playground_smoke_30trials_texture_first_{cond}.txt"
+    if not sf.is_file() or not tf.is_file():
+        return None
+    return _rows_from_paths(sf, tf)
+
+
+def category_revision_audit_html() -> str:
+    """Old (July-17) vs new (July-24) category prompt — all models, both label sets."""
+    old_num = _load_category_pair(SESS_SMOKE, ab=False) or []
+    new_num = _load_category_pair(SESS_CAT_REVISED, ab=False) or []
+    old_ab = _load_category_pair(SESS_SMOKE, ab=True) or []
+    new_ab = _load_category_pair(SESS_CAT_REVISED, ab=True) or []
+
+    def gate(trk: float | None) -> str:
+        return "PASS" if (trk or 0) >= 0.70 else "fail"
+
+    blocks = []
+    for label, old_rows, new_rows in (
+        ("Numeric 1/2 (no_word_category)", old_num, new_num),
+        ("A/B (no_word_category_AB)", old_ab, new_ab),
+    ):
+        old_by = {r["model"]: r for r in old_rows}
+        new_by = {r["model"]: r for r in new_rows}
+        models = sorted(set(old_by) | set(new_by))
+        rows_html = []
+        n_flip = 0
+        for m in models:
+            og = old_by[m]["gen"] if m in old_by else None
+            ng = new_by[m]["gen"] if m in new_by else None
+            if og is None:
+                rows_html.append(
+                    f'<tr><td class="l">{html.escape(m)}</td>'
+                    f'<td colspan="3" class="dim">not in old log</td>'
+                    f'<td>{ng["trk"]:.2f}</td><td>{ng["shp_avg"]:.2f}</td>'
+                    f'<td>{gate(ng["trk"])}</td><td>new only</td></tr>'
+                )
+                continue
+            if ng is None:
+                rows_html.append(
+                    f'<tr><td class="l">{html.escape(m)}</td>'
+                    f'<td>{og["trk"]:.2f}</td><td>{og["shp_avg"]:.2f}</td>'
+                    f'<td>{gate(og["trk"])}</td>'
+                    f'<td colspan="3" class="dim">not in new log</td><td>—</td></tr>'
+                )
+                continue
+            og_gate, ng_gate = gate(og["trk"]), gate(ng["trk"])
+            cls = ""
+            change = "same"
+            if og_gate != ng_gate:
+                n_flip += 1
+                change = f"{og_gate}->{ng_gate}"
+                cls = "pass" if ng_gate == "PASS" else "fail"
+            rows_html.append(
+                f'<tr class="{cls}"><td class="l">{html.escape(m)}</td>'
+                f'<td>{og["trk"]:.2f}</td><td>{og["shp_avg"]:.2f}</td><td>{og_gate}</td>'
+                f'<td>{ng["trk"]:.2f}</td><td>{ng["shp_avg"]:.2f}</td><td>{ng_gate}</td>'
+                f'<td>{change}</td></tr>'
+            )
+        blocks.append(
+            f"<h3>{html.escape(label)}</h3>"
+            f'<p class="src">Old: <code>{SESS_SMOKE.name}</code> · '
+            f'New: <code>{SESS_CAT_REVISED.name}</code> · '
+            f"Gate flips: {n_flip}/{len(models)}</p>"
+            '<div class="tablewrap"><table>'
+            "<tr><th class=\"l\">Model</th>"
+            "<th>old trk</th><th>old shp</th><th>old gate</th>"
+            "<th>new trk</th><th>new shp</th><th>new gate</th>"
+            "<th>gate change</th></tr>"
+            + "".join(rows_html)
+            + "</table></div>"
+        )
+
+    q35_note = (
+        "<p><b>Qwen3.5 family (gate ≥ 0.70):</b> "
+        "Similarity and noun cells were <em>not</em> rerun and are unchanged from July-17. "
+        "Under the <b>old</b> category wording, 4b failed both category cells (numeric 0.13, "
+        "A/B 0.03), 9b passed numeric category but failed A/B similarity and A/B noun, "
+        "and 27b failed both category cells. "
+        "Under the <b>new</b> wording, the only Qwen3.5 gate flip is "
+        "<code>qwen3.5-4b</code> numeric category (0.13→0.93 PASS). "
+        "9b and 27b category tracking improved but 27b stays under the gate (0.63 numeric, "
+        "0.60 A/B). qwen3.5-27b is 4-bit; other Qwen3.5 rungs are bf16.</p>"
+    )
+
+    return (
+        '<h2 id="category-revision">Category prompt revision audit (July-17 → July-24)</h2>'
+        '<div class="callout good"><b class="t">Pipeline check.</b> '
+        "Only <code>no_word_category</code> and <code>no_word_category_AB</code> were rerun "
+        "with the revised prompt. Every other condition (similarity, noun, sudo-word runs) "
+        "still reads July-17 logs; verified byte-for-byte on tracking/shape for non-category cells. "
+        "No accidental cross-session contamination.</div>"
+        "<p><b>Prompt change:</b> old — "
+        "“See this object in the first image. Can you find another one of the two …”; "
+        "new — “You are given three images. This first image is an object. "
+        "Which of the following two images … is another one?”</p>"
+        + q35_note
+        + "".join(blocks)
+        + '<p class="src">CSV: '
+        '<a href="no_word_category_prompt_revision_2026-07-24.csv">'
+        "<code>no_word_category_prompt_revision_2026-07-24.csv</code></a></p>"
+    )
+
+
+def try_build_category_revision_report() -> Path | None:
+    """Standalone page documenting old vs new category prompt impact."""
+    if not SESS_CAT_REVISED.is_dir():
+        return None
+    if _load_category_pair(SESS_CAT_REVISED) is None:
+        return None
+    body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Category prompt revision audit — 2026-07-24</title>
+<style>{CSS}</style>
+</head>
+<body>
+<main>
+<h1>Category prompt revision audit</h1>
+<p class="sub">Old vs new <code>no_word_category</code> wording only. Canonical reports
+(<a href="local_models_numeric_and_qwen8_30trials_2026-07-24.html">numeric</a>,
+<a href="local_models_prompt_compare_30trials_2026-07-24.html">A/B compare</a>)
+embed this section and use July-24 category logs everywhere else unchanged.</p>
+{category_revision_audit_html()}
+<p class="src" style="margin-top:28px">Generated by
+<code>scripts/build_playground_results_html.py</code>.</p>
+</main>
+</body>
+</html>
+"""
+    out = PLAY / "no_word_category_prompt_revision_2026-07-24.html"
+    out.write_text(body)
+    return out
+
+
 def try_build_numeric_qwen8_report() -> Path | None:
     """Build numeric-label and Qwen3-VL-8B comparisons when all logs exist."""
-    def pair(condition: str, suffix: str = "") -> tuple[Path, Path]:
+    def pair(session: Path, condition: str, suffix: str = "") -> tuple[Path, Path]:
         return (
-            SESS_SMOKE
+            session
             / f"playground_smoke_30trials_shape_first_{condition}{suffix}.txt",
-            SESS_SMOKE
+            session
             / f"playground_smoke_30trials_texture_first_{condition}{suffix}.txt",
         )
 
+    # Category uses the July-24 revised-prompt session; similarity/noun stay July-17.
+    cat_sess = SESS_CAT_REVISED if SESS_CAT_REVISED.is_dir() else SESS_SMOKE
     numeric_paths = {
-        "similarity": pair("no_word_similarity"),
-        "category": pair("no_word_category"),
-        "noun": pair("noun_label", "_shiple"),
+        "similarity": pair(SESS_SMOKE, "no_word_similarity"),
+        "category": pair(cat_sess, "no_word_category"),
+        "noun": pair(SESS_SMOKE, "noun_label", "_shiple"),
     }
+    # July-24 category_AB already includes the full ladder (incl. 8b/9b/27b).
+    # Similarity/noun A/B still need the July-17 base + qwen3-vl-8b fill files.
     q8_ab_paths = {
-        "similarity": pair("no_word_similarity_AB", "_qwen3-vl-8b"),
-        "category": pair("no_word_category_AB", "_qwen3-vl-8b"),
-        "noun": pair("noun_label_AB", "_shiple_qwen3-vl-8b"),
+        "similarity": pair(SESS_SMOKE, "no_word_similarity_AB", "_qwen3-vl-8b"),
+        "noun": pair(SESS_SMOKE, "noun_label_AB", "_shiple_qwen3-vl-8b"),
     }
     if not all(path.is_file() for paths in numeric_paths.values() for path in paths):
         return None
     if not all(path.is_file() for paths in q8_ab_paths.values() for path in paths):
+        return None
+    cat_ab_paths = pair(cat_sess, "no_word_category_AB")
+    if not all(path.is_file() for path in cat_ab_paths):
         return None
 
     numeric = {
@@ -904,20 +1073,23 @@ def try_build_numeric_qwen8_report() -> Path | None:
             SESS_SMOKE / "playground_smoke_30trials_shape_first_no_word_similarity_AB.txt",
             SESS_SMOKE / "playground_smoke_30trials_texture_first_no_word_similarity_AB.txt",
         ),
-        "category": _rows_from_paths(
-            SESS_SMOKE / "playground_smoke_30trials_shape_first_no_word_category_AB.txt",
-            SESS_SMOKE / "playground_smoke_30trials_texture_first_no_word_category_AB.txt",
-        ),
+        "category": _rows_from_paths(*cat_ab_paths),
         "noun": _rows_from_paths(
             SESS_SMOKE / "playground_smoke_30trials_shape_first_noun_label_AB_shiple.txt",
             SESS_SMOKE / "playground_smoke_30trials_texture_first_noun_label_AB_shiple.txt",
         ),
     }
     ab = {
-        key: _append_rows(existing_ab[key], _rows_from_paths(*q8_ab_paths[key]))
-        for key in existing_ab
+        "similarity": _append_rows(
+            existing_ab["similarity"], _rows_from_paths(*q8_ab_paths["similarity"])
+        ),
+        "category": existing_ab["category"],
+        "noun": _append_rows(
+            existing_ab["noun"], _rows_from_paths(*q8_ab_paths["noun"])
+        ),
     }
 
+    cat_src = f"{cat_sess.name}/{numeric_paths['category'][0].name}"
     numeric_sections = "\n".join(
         [
             smoke_section_html(
@@ -927,10 +1099,14 @@ def try_build_numeric_qwen8_report() -> Path | None:
                 f"{numeric_paths['similarity'][0].name}; {numeric_paths['similarity'][1].name}",
             ),
             smoke_section_html(
-                "2 · Numeric category, no word (1/2)",
-                "See this object; find another one of the two.",
+                "2 · Numeric category, no word (1/2) — revised July 24 wording",
+                (
+                    "This first image is an object; which of the following two images "
+                    "is another one? (Replaces the July-17 “See this object… find "
+                    "another one of the two” wording.)"
+                ),
                 numeric["category"],
-                f"{numeric_paths['category'][0].name}; {numeric_paths['category'][1].name}",
+                f"{cat_src}; {numeric_paths['category'][1].name}",
             ),
             smoke_section_html(
                 "3 · Numeric noun label + shiple (1/2)",
@@ -947,8 +1123,13 @@ def try_build_numeric_qwen8_report() -> Path | None:
                 numeric["similarity"],
                 numeric["category"],
                 section_title="Numeric wording effect — similarity vs category",
-                blurb="Δ = no-word category − no-word similarity on generation.",
-                source_note="Both conditions use 1/2 and no novel word.",
+                blurb=(
+                    "Δ = revised no-word category − no-word similarity on generation. "
+                    "Category uses the July-24 prompt revision."
+                ),
+                source_note=(
+                    f"Similarity: July-17 session. Category: {cat_sess.name}."
+                ),
                 left_label="similarity",
                 right_label="category",
             ),
@@ -957,16 +1138,32 @@ def try_build_numeric_qwen8_report() -> Path | None:
                 numeric["noun"],
                 section_title="Numeric naming effect — no word vs shiple",
                 blurb=(
-                    "Δ = noun_label + shiple − no_word_category on generation. "
+                    "Δ = noun_label + shiple − revised no_word_category on generation. "
                     "Interpret shape-rate differences only where both tracking gates pass."
                 ),
-                source_note="Both conditions use 1/2; only the noun condition adds shiple.",
+                source_note=(
+                    f"Category: {cat_sess.name}. Noun: July-17 session."
+                ),
                 left_label="no word",
                 right_label="shiple",
             ),
         ]
     )
 
+    label_effect_notes = {
+        "similarity": (
+            "A/B rows combine the six-model July 17 runs with the "
+            "qwen3-vl-8b-only fill logs."
+        ),
+        "category": (
+            f"Both A/B and 1/2 category use the revised July-24 wording "
+            f"({cat_sess.name}); full ladder in each log."
+        ),
+        "noun": (
+            "A/B rows combine the six-model July 17 runs with the "
+            "qwen3-vl-8b-only fill logs."
+        ),
+    }
     label_effects = "\n".join(
         comparison_section_html(
             ab[key],
@@ -975,10 +1172,7 @@ def try_build_numeric_qwen8_report() -> Path | None:
             blurb=(
                 "Same framing and images. Δ = numeric 1/2 − letter A/B on generation."
             ),
-            source_note=(
-                "A/B rows combine the six-model July 17 runs with the new "
-                "qwen3-vl-8b-only logs."
-            ),
+            source_note=label_effect_notes[key],
             left_label="A/B",
             right_label="1/2",
         )
@@ -996,16 +1190,23 @@ def try_build_numeric_qwen8_report() -> Path | None:
 <body>
 <main>
 <h1>Numeric labels + Qwen3-VL-8B</h1>
-<p class="sub">30 trials × 2 orders · 7 local models · three framings · A/B vs 1/2.
-Companion A/B report:
-<a href="local_models_prompt_compare_30trials_2026-07-17.html">three-prompt comparison</a>.
+<p class="sub">30 trials × 2 orders · local ladder · three framings · A/B vs 1/2.
+Category cells use the <b>July-24 revised</b> no_word_category wording; similarity and
+noun remain July-17. Companion A/B report:
+<a href="local_models_prompt_compare_30trials_2026-07-24.html">three-prompt comparison</a>.
+Old-vs-new category CSV:
+<a href="no_word_category_prompt_revision_2026-07-24.csv"><code>no_word_category_prompt_revision_2026-07-24.csv</code></a>.
 Glossary: <a href="REPORT_GLOSSARY.md"><code>REPORT_GLOSSARY.md</code></a>.</p>
 
 <div class="callout info"><b class="t">Design.</b>
-The numeric runs use the same playground model order, images, generation call, two_pass,
-one_pass, and shared local system prompt as the completed A/B runs. Qwen3-VL-8B was added
-to all six prompt × label-set cells; the other six models were rerun only for the three
-new numeric cells.</div>
+Similarity and noun use the July-17 playground protocol. Category was rerun on
+2026-07-24 with the revised wording (“This first image is an object… which …
+is another one?”) after the July-17 “See this object… find another one of the two”
+framing suppressed tracking in large Qwen models. qwen3.5-27b is 4-bit (nf4);
+other Qwen3.5 rungs are bf16. <b>Only category cells changed;</b> similarity and
+noun numbers are identical to the pre-revision report.</div>
+
+{category_revision_audit_html()}
 
 {numeric_sections}
 {within_numeric}
@@ -1016,7 +1217,7 @@ new numeric cells.</div>
 </body>
 </html>
 """
-    out = PLAY / "local_models_numeric_and_qwen8_30trials_2026-07-17.html"
+    out = PLAY / "local_models_numeric_and_qwen8_30trials_2026-07-24.html"
     out.write_text(body)
     return out
 
@@ -1137,6 +1338,299 @@ Generated by <code>scripts/build_playground_results_html.py</code>.</p>
     return out
 
 
+def _pair(session: Path, condition: str, suffix: str = "") -> tuple[Path, Path]:
+    return (
+        session / f"playground_smoke_30trials_shape_first_{condition}{suffix}.txt",
+        session / f"playground_smoke_30trials_texture_first_{condition}{suffix}.txt",
+    )
+
+
+def _load_ladder_from_session(session: Path) -> tuple[dict[str, list], dict[str, list]] | None:
+    """Load similarity/category/noun cells from one session (all models in same logs)."""
+    numeric_paths = {
+        "similarity": _pair(session, "no_word_similarity"),
+        "category": _pair(session, "no_word_category"),
+        "noun": _pair(session, "noun_label", "_shiple"),
+    }
+    ab_paths = {
+        "similarity": _pair(session, "no_word_similarity_AB"),
+        "category": _pair(session, "no_word_category_AB"),
+        "noun": _pair(session, "noun_label_AB", "_shiple"),
+    }
+    if not all(path.is_file() for paths in numeric_paths.values() for path in paths):
+        return None
+    if not all(path.is_file() for paths in ab_paths.values() for path in paths):
+        return None
+    numeric = {key: _rows_from_paths(*paths) for key, paths in numeric_paths.items()}
+    ab = {key: _rows_from_paths(*paths) for key, paths in ab_paths.items()}
+    return numeric, ab
+
+
+def try_build_smith_numeric_report() -> Path | None:
+    """Smith stimuli: full numeric + A/B ladder (same columns as local report)."""
+    loaded = _load_ladder_from_session(SESS_SMITH)
+    if loaded is None:
+        return None
+    numeric, ab = loaded
+    numeric_paths = {
+        "similarity": _pair(SESS_SMITH, "no_word_similarity"),
+        "category": _pair(SESS_SMITH, "no_word_category"),
+        "noun": _pair(SESS_SMITH, "noun_label", "_shiple"),
+    }
+
+    numeric_sections = "\n".join(
+        [
+            smoke_section_html(
+                "1 · Numeric similarity (1/2) — Smith stimuli",
+                "No word; which candidate is more similar to the reference?",
+                numeric["similarity"],
+                f"{numeric_paths['similarity'][0].name}; {numeric_paths['similarity'][1].name}",
+            ),
+            smoke_section_html(
+                "2 · Numeric category (1/2) — Smith stimuli",
+                "Revised July-24 no_word_category wording on Linda Smith probe triplets.",
+                numeric["category"],
+                f"{numeric_paths['category'][0].name}; {numeric_paths['category'][1].name}",
+            ),
+            smoke_section_html(
+                "3 · Numeric noun + shiple (1/2) — Smith stimuli",
+                "First image is a shiple; which candidate is also a shiple?",
+                numeric["noun"],
+                f"{numeric_paths['noun'][0].name}; {numeric_paths['noun'][1].name}",
+            ),
+        ]
+    )
+
+    within_numeric = comparison_section_html(
+        numeric["similarity"],
+        numeric["category"],
+        section_title="Within numeric — similarity vs category (Smith)",
+        blurb="Δ = category − similarity on generation picks.",
+        source_note=f"Session: {SESS_SMITH.name}",
+        left_label="similarity",
+        right_label="category",
+    )
+    within_numeric += comparison_section_html(
+        numeric["category"],
+        numeric["noun"],
+        section_title="Within numeric — category vs noun + shiple",
+        blurb="Δ = noun − category on generation picks.",
+        source_note=f"Session: {SESS_SMITH.name}",
+        left_label="category",
+        right_label="noun",
+    )
+
+    label_effects = "\n".join(
+        comparison_section_html(
+            ab[key],
+            numeric[key],
+            section_title=f"Label-set effect — {key}: A/B vs 1/2 (Smith)",
+            blurb="Same framing and Smith images. Δ = numeric 1/2 − letter A/B on generation.",
+            source_note=f"Session: {SESS_SMITH.name}",
+            left_label="A/B",
+            right_label="1/2",
+        )
+        for key in ("similarity", "category", "noun")
+    )
+
+    body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smith stimuli — numeric ladder + Qwen8 — 30 trials</title>
+<style>{CSS}</style>
+</head>
+<body>
+<main>
+<h1>Smith stimuli — full numeric ladder</h1>
+<p class="sub">30 Smith probe triplets × 2 orders · 9 local models · three framings · A/B vs 1/2.
+Local benchmark counterpart:
+<a href="local_models_numeric_and_qwen8_30trials_2026-07-24.html">our stimuli report</a>.
+PriDe/swap:
+<a href="smith_prompt_pride_debias_2026-07-25.html"><code>smith_prompt_pride_debias_2026-07-25.html</code></a>.
+Glossary: <a href="REPORT_GLOSSARY.md"><code>REPORT_GLOSSARY.md</code></a>.</p>
+
+<div class="callout info"><b class="t">Stimuli.</b>
+Linda Smith probe set (<code>previous-lit-stimuli/smith_stimuli/</code>): each trial is
+probe + shape_match + color_match (color_match = texture distractor). Same prompts and
+validity gates as the local July-24 ladder.</div>
+
+{numeric_sections}
+{within_numeric}
+{label_effects}
+<p class="src" style="margin-top:28px">Generated by
+<code>scripts/build_playground_results_html.py</code>.</p>
+</main>
+</body>
+</html>
+"""
+    out = PLAY / "smith_numeric_and_qwen8_30trials_2026-07-25.html"
+    out.write_text(body)
+    return out
+
+
+def try_build_smith_prompt_compare() -> Path | None:
+    """Smith stimuli: A/B three-prompt comparison (n=30)."""
+    loaded = _load_ladder_from_session(SESS_SMITH)
+    if loaded is None:
+        return None
+    _, ab = loaded
+    ab_paths = {
+        "similarity": _pair(SESS_SMITH, "no_word_similarity_AB"),
+        "category": _pair(SESS_SMITH, "no_word_category_AB"),
+        "noun": _pair(SESS_SMITH, "noun_label_AB", "_shiple"),
+    }
+    sim_rows = ab["similarity"]
+    cat_rows = ab["category"]
+    noun_rows = ab["noun"]
+    if not sim_rows or sim_rows[0]["gen"]["n"] < 30:
+        return None
+
+    pass_sim = sum(1 for r in sim_rows if (r["gen"]["trk"] or 0) >= 0.70)
+    pass_cat = sum(1 for r in cat_rows if (r["gen"]["trk"] or 0) >= 0.70)
+    pass_noun = sum(1 for r in noun_rows if (r["gen"]["trk"] or 0) >= 0.70)
+
+    cmp_no_word = comparison_section_html(
+        sim_rows,
+        cat_rows,
+        section_title="Comparison — similarity vs category (Smith, n=30)",
+        blurb="Δ = category_AB − similarity_AB on generation.",
+        source_note=f"Session: {SESS_SMITH.name}",
+    )
+    noun_comparisons = comparison_section_html(
+        sim_rows,
+        noun_rows,
+        section_title="Comparison — similarity vs noun + shiple (Smith)",
+        blurb="Δ = noun − similarity on generation.",
+        source_note=f"Session: {SESS_SMITH.name}",
+        left_label="similarity",
+        right_label="shiple",
+    ) + comparison_section_html(
+        cat_rows,
+        noun_rows,
+        section_title="Comparison — category vs noun + shiple (Smith)",
+        blurb="Δ = noun − category on generation.",
+        source_note=f"Session: {SESS_SMITH.name}",
+        left_label="category",
+        right_label="shiple",
+    )
+
+    body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smith stimuli — A/B prompt compare — 30 trials</title>
+<style>{CSS}</style>
+</head>
+<body>
+<main>
+<h1>Smith stimuli — A/B prompt compare</h1>
+<p class="sub">30 trials × 3 AB prompts × 9 models. Numeric ladder:
+<a href="smith_numeric_and_qwen8_30trials_2026-07-25.html">Smith numeric report</a>.
+Local counterpart:
+<a href="local_models_prompt_compare_30trials_2026-07-24.html">our stimuli A/B compare</a>.</p>
+
+<div class="tiles">
+  <div class="tile"><div class="v">{len(sim_rows)}</div><div class="l">models</div></div>
+  <div class="tile"><div class="v">{pass_sim}/{len(sim_rows)}</div><div class="l">similarity gen PASS</div></div>
+  <div class="tile"><div class="v">{pass_cat}/{len(cat_rows)}</div><div class="l">category gen PASS</div></div>
+  <div class="tile"><div class="v">{pass_noun}/{len(noun_rows)}</div><div class="l">noun gen PASS</div></div>
+</div>
+
+{smoke_section_html(
+    "1 · no_word_similarity_AB (Smith)",
+    "Three images; more similar to the reference; A or B.",
+    sim_rows,
+    f"{ab_paths['similarity'][0].name}; {ab_paths['similarity'][1].name}",
+)}
+{smoke_section_html(
+    "2 · no_word_category_AB (Smith)",
+    "Revised July-24 category wording on Smith probe triplets.",
+    cat_rows,
+    f"{ab_paths['category'][0].name}; {ab_paths['category'][1].name}",
+)}
+{smoke_section_html(
+    "3 · noun_label_AB + shiple (Smith)",
+    "First image is a shiple; which A or B is also a shiple?",
+    noun_rows,
+    f"{ab_paths['noun'][0].name}; {ab_paths['noun'][1].name}",
+)}
+{cmp_no_word}
+{noun_comparisons}
+<p class="src" style="margin-top:28px">Generated by
+<code>scripts/build_playground_results_html.py</code>.</p>
+</main>
+</body>
+</html>
+"""
+    out = PLAY / "smith_prompt_compare_30trials_2026-07-25.html"
+    out.write_text(body)
+    return out
+
+
+def write_index_html() -> Path:
+    """Landing page grouping playground HTML reports by date/stimuli set."""
+    reports = [
+        ("2026-07-24 — local (revised category)", [
+            ("Numeric ladder + Qwen8", "local_models_numeric_and_qwen8_30trials_2026-07-24.html"),
+            ("A/B prompt compare (n=30)", "local_models_prompt_compare_30trials_2026-07-24.html"),
+            ("Category revision audit", "no_word_category_prompt_revision_2026-07-24.html"),
+            ("Category revision CSV", "no_word_category_prompt_revision_2026-07-24.csv"),
+        ]),
+        ("2026-07-25 — Smith stimuli", [
+            ("Numeric ladder", "smith_numeric_and_qwen8_30trials_2026-07-25.html"),
+            ("A/B prompt compare", "smith_prompt_compare_30trials_2026-07-25.html"),
+            ("PriDe / swap / full-perm", "smith_prompt_pride_debias_2026-07-25.html"),
+        ]),
+        ("2026-07-17 — local baseline", [
+            ("Similarity smoke (n=5) + probe readouts", "local_models_smoke_similarity_2026-07-17.html"),
+            ("no_word_category_AB smoke (n=5)", "local_models_smoke_no_word_category_AB_2026-07-17.html"),
+            ("Prompt wording interpretation", "prompt_wording_interpretation_2026-07-17.html"),
+            ("Sudo-word generality", "local_models_sudo_word_generality_30trials_2026-07-17.html"),
+            ("Gated naming contrast", "gated_naming_contrast_2026-07-17.html"),
+            ("Prompt PriDe", "prompt_pride_debias_2026-07-17.html"),
+            ("Vision vs language", "vision_vs_language_2026-07-17.html"),
+            ("July 10 probe (copy)", "probe-experiment-results.html"),
+        ]),
+    ]
+    sections = []
+    for heading, links in reports:
+        items = []
+        for label, href in links:
+            path = PLAY / href
+            status = "ready" if path.is_file() else "pending"
+            items.append(
+                f'<li><a href="{html.escape(href)}">{html.escape(label)}</a> '
+                f'<span class="dim">({status})</span></li>'
+            )
+        sections.append(f"<h2>{html.escape(heading)}</h2><ul>{''.join(items)}</ul>")
+    body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playground results index</title>
+<style>{CSS}</style>
+</head>
+<body>
+<main>
+<h1>Playground results</h1>
+<p class="sub">FarmShare local VLM smoke + probe readouts.
+Column glossary: <a href="REPORT_GLOSSARY.md"><code>REPORT_GLOSSARY.md</code></a>.
+Session logs: <code>session_*_farmshare/</code> · job stdout: <code>jobs/</code>.</p>
+{''.join(sections)}
+<p class="src">Generated by <code>scripts/build_playground_results_html.py</code>.</p>
+</main>
+</body>
+</html>
+"""
+    out = PLAY / "index.html"
+    out.write_text(body)
+    return out
+
+
 def main() -> None:
     PLAY.mkdir(parents=True, exist_ok=True)
     out = PLAY / "local_models_smoke_similarity_2026-07-17.html"
@@ -1171,6 +1665,27 @@ def main() -> None:
         print(f"wrote {word_report}")
     else:
         print("sudo-word generality report not ready yet")
+
+    cat_audit = try_build_category_revision_report()
+    if cat_audit:
+        print(f"wrote {cat_audit}")
+    else:
+        print("category revision audit not ready yet")
+
+    smith_num = try_build_smith_numeric_report()
+    if smith_num:
+        print(f"wrote {smith_num}")
+    else:
+        print("Smith numeric ladder not ready yet")
+
+    smith_ab = try_build_smith_prompt_compare()
+    if smith_ab:
+        print(f"wrote {smith_ab}")
+    else:
+        print("Smith A/B prompt compare not ready yet")
+
+    idx = write_index_html()
+    print(f"wrote {idx}")
 
 
 if __name__ == "__main__":
