@@ -53,7 +53,7 @@ class _Qwen3VLBase(BaseVLM):
         temperature: float = 0.0,
         choice_texts: tuple[str, str] | None = None
     ) -> ModelResponse:
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -125,7 +125,7 @@ class _Qwen3VLBase(BaseVLM):
         top_k: int = 0
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -149,19 +149,15 @@ class _Qwen3VLBase(BaseVLM):
         t0 = time.perf_counter()
         with torch.inference_mode():
             out = self._model(**inputs)
-            
-            next_logits = out.logits[:, -1, :]
-            probs = torch.softmax(next_logits, dim=-1)
-            topk = None
-            if top_k > 0:
-                topk = torch.topk(probs, top_k)
+
+        next_logits = out.logits[:, -1, :].float()
+        all_probs = torch.softmax(next_logits, dim=-1)
+
+        topk = torch.topk(all_probs, top_k) if top_k > 0 else None
 
         elapsed = time.perf_counter() - t0
 
-        next_logits = out.logits[:, -1, :].float()
         choice_logits = next_logits[0, choice_ids]
-
-        all_probs = torch.softmax(next_logits, dim=-1)
         probs_absolute = all_probs[0, choice_ids]
 
         return {
@@ -193,15 +189,14 @@ class Qwen3VL_4B(_Qwen3VLBase):
 
     _default_model_id = "Qwen/Qwen3-VL-4B-Instruct"
 
-@register_model("qwen3-vl-3b")
-class Qwen3VL_3B(_Qwen3VLBase):
-    """Qwen3-VL 3B Instruct wrapper."""
-
-    _default_model_id = "Qwen/Qwen3-VL-3B-Instruct"
-
-
 @register_model("qwen3-vl-8b")
 class Qwen3VL_8B(_Qwen3VLBase):
     """Qwen3-VL 8B Instruct wrapper."""
 
     _default_model_id = "Qwen/Qwen3-VL-8B-Instruct"
+
+@register_model("qwen3-vl-32b")
+class Qwen3VL_32B(_Qwen3VLBase):
+    """Qwen3-VL 32B Instruct wrapper."""
+
+    _default_model_id = "Qwen/Qwen3-VL-32B-Instruct"

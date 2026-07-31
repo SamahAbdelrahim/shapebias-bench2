@@ -74,7 +74,7 @@ class _Qwen35Base(BaseVLM):
         temperature: float = 0.0,
         choice_texts: tuple[str, str] | None = None,
     ) -> ModelResponse:
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages: list[dict] = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -154,7 +154,7 @@ class _Qwen35Base(BaseVLM):
         top_k: int = 0
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages: list[dict] = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -184,18 +184,14 @@ class _Qwen35Base(BaseVLM):
         with torch.inference_mode():
             out = self._model(**inputs)
 
-            next_logits = out.logits[:, -1, :]
-            probs = torch.softmax(next_logits, dim=-1)
-            topk = None
-            if top_k > 0:
-                topk = torch.topk(probs, top_k)
+        next_logits = out.logits[:, -1, :].float()
+        all_probs = torch.softmax(next_logits, dim=-1)
+
+        topk = torch.topk(all_probs, top_k) if top_k > 0 else None
 
         elapsed = time.perf_counter() - t0
 
-        next_logits = out.logits[:, -1, :].float()
         choice_logits = next_logits[0, choice_ids]
-
-        all_probs = torch.softmax(next_logits, dim=-1)
         probs_absolute = all_probs[0, choice_ids]
 
         return {
@@ -220,6 +216,11 @@ class Qwen35_08B(_Qwen35Base):
 
     _default_model_id = "Qwen/Qwen3.5-0.8B"
 
+@register_model("qwen3.5-2b")
+class Qwen35_2B(_Qwen35Base):
+    """Qwen3.5-2B wrapper."""
+
+    _default_model_id = "Qwen/Qwen3.5-2B"
 
 @register_model("qwen3.5-4b")
 class Qwen35_4B(_Qwen35Base):
@@ -227,30 +228,14 @@ class Qwen35_4B(_Qwen35Base):
 
     _default_model_id = "Qwen/Qwen3.5-4B"
 
-@register_model("qwen3.5-1.7b")
-class Qwen35_17B(_Qwen35Base):
-    """Qwen3.5-1.7B-Instruct wrapper."""
-
-    _default_model_id = "Qwen/Qwen3.5-1.7B-Instruct"
-
-
 @register_model("qwen3.5-9b")
 class Qwen35_9B(_Qwen35Base):
-    """Qwen3.5-9B wrapper (next dense step above 4B in the passing family)."""
+    """Qwen3.5-9B wrapper."""
 
     _default_model_id = "Qwen/Qwen3.5-9B"
 
-
 @register_model("qwen3.5-27b")
 class Qwen35_27B(_Qwen35Base):
-    """Qwen3.5-27B wrapper.
-
-    Loaded in 4-bit (nf4) on a single GPU (~16 GB): bf16 needs ~55 GB, which
-    only fits by sharding across GPUs, and sharding this Gated-DeltaNet hybrid
-    is numerically unstable (nan logits). Results carry a quantization caveat
-    relative to the bf16 rungs (4B / 9B).
-    """
+    """Qwen3.5-27B wrapper."""
 
     _default_model_id = "Qwen/Qwen3.5-27B"
-    _device_map = "auto"
-    _quantization_4bit = True

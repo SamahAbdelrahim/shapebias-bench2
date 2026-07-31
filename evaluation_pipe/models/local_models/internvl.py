@@ -54,7 +54,7 @@ class InternVL(BaseVLM):
         temperature: float = 0.0,
         choice_texts: tuple[str, str] | None = None,
     ) -> ModelResponse:
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -126,7 +126,7 @@ class InternVL(BaseVLM):
         top_k: int = 0
     ) -> dict:
         """Return next-token probabilities/logits for two one-token choices."""
-        content = build_transformers_vision_user_content(images, prompt)
+        content = build_transformers_vision_user_content(images, prompt, choice_texts)
         messages = [
             {"role": "system", "content": [{"type": "text", "text": self._system_prompt}]},
             {"role": "user", "content": content},
@@ -151,18 +151,14 @@ class InternVL(BaseVLM):
         with torch.inference_mode():
             out = self._model(**inputs)
 
-            next_logits = out.logits[:, -1, :]
-            probs = torch.softmax(next_logits, dim=-1)
-            topk = None
-            if top_k > 0:
-                topk = torch.topk(probs, top_k)
-
         elapsed = time.perf_counter() - t0
 
         next_logits = out.logits[:, -1, :].float()
-        choice_logits = next_logits[0, choice_ids]
-
         all_probs = torch.softmax(next_logits, dim=-1)
+
+        topk = torch.topk(all_probs, top_k) if top_k > 0 else None
+
+        choice_logits = next_logits[0, choice_ids]
         probs_absolute = all_probs[0, choice_ids]
 
         return {

@@ -39,6 +39,11 @@ from PIL import Image
 # Ensure repo root is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from playgrounds.embedding_robust import (
+    build_geirhos_unaltered_triplets,
+    build_smith_probe_triplets
+)
+
 from evaluation_pipe.eval_core import (
     BENCHMARK_STIM_PACKAGE,
     DEFAULT_DEVICE,
@@ -104,108 +109,6 @@ def run_local_logit_forced(
         )
     return model.score_choices(images=images, prompt=prompt, choice_texts=choice_texts)
 
-
-def run_trial_logit_forced(
-    run_score_fn,
-    stimulus: dict,
-    word: str,
-    word_type: str,
-    word_length: int = 0,
-    *,
-    choice_texts=("1", "2"),
-    ordering: str = "both",
-    prompt_condition: str = "noun_label",
-    swap_correct: bool = False,
-) -> list[dict]:
-    ref = stimulus["reference"]
-    shape = stimulus["shape_match"]
-    texture = stimulus["texture_match"]
-    prompt = make_prompt(word, prompt_condition=prompt_condition)
-
-    orderings_config = {
-        "shape_first": [("shape_first", shape, texture, "shape", "texture")],
-        "texture_first": [("texture_first", texture, shape, "texture", "shape")],
-        "both": [
-            ("shape_first", shape, texture, "shape", "texture"),
-            ("texture_first", texture, shape, "texture", "shape"),
-        ],
-    }
-    if ordering == "random":
-        configs = list(orderings_config["both"])
-        random.shuffle(configs)
-        configs = configs[:1]
-    else:
-        configs = orderings_config[ordering]
-
-    results = []
-    for ord_name, img_a, img_b, a_is, b_is in configs:
-        base = run_score_fn([ref, img_a, img_b], prompt)
-        p1_abs, p2_abs = base["choice_probs_absolute"]
-        l1, l2 = base["choice_logits"]
-        total_t = float(base["generation_time_s"])
-        decision_a_abs = p1_abs
-        decision_b_abs = p2_abs
-
-        sp1_abs, sp2_abs = None, None
-        swap_corrected_a_abs, swap_corrected_b_abs = None, None
-
-        if swap_correct:
-            sw = run_score_fn([ref, img_b, img_a], prompt)
-            sp1_abs, sp2_abs = sw["choice_probs_absolute"]  # 1->b, 2->a
-            sl1, sl2 = sw["choice_logits"]
-            decision_a_abs = 0.5 * (p1_abs + sp2_abs)
-            decision_b_abs = 0.5 * (p2_abs + sp1_abs)
-            swap_corrected_a_abs = decision_a_abs
-            swap_corrected_b_abs = decision_b_abs
-            total_t += float(sw["generation_time_s"])
-            raw_text = (
-                f"base[p1_abs={p1_abs:.4f},p2_abs={p2_abs:.4f},l1={l1:.3f},l2={l2:.3f}] "
-                f"swap[p1_abs={sp1_abs:.4f},p2_abs={sp2_abs:.4f},l1={sl1:.3f},l2={sl2:.3f}] "
-                f"corr[a={swap_corrected_a_abs:.4f},b={swap_corrected_b_abs:.4f}]"
-            )
-        else:
-            raw_text = f"p1_abs={p1_abs:.4f},p2_abs={p2_abs:.4f},l1={l1:.3f},l2={l2:.3f}"
-
-        # Under swap_correct, 'parsed' is relative to the original prompt order.
-        if decision_a_abs > decision_b_abs:
-            parsed = choice_texts[0]
-            choice = a_is
-        elif decision_b_abs > decision_a_abs:
-            parsed = choice_texts[1]
-            choice = b_is
-        else:
-            parsed = None
-            choice = "unclear"
-
-        results.append(
-            {
-                "raw_text": raw_text,
-                "generation_time_s": round(total_t, 2),
-                "model_name": base.get("model_name", ""),
-                "num_tokens_generated": 0,
-                "parsed_answer": parsed,
-                "attempts": 1,
-                "stim_id": stimulus["stim_id"],
-                "word": word,
-                "word_type": word_type,
-                "word_length": word_length,
-                "prompt_condition": prompt_condition,
-                "ordering": ord_name,
-                "order_method": "logit_forced_swap_corrected" if swap_correct else "logit_forced",
-                "a_is": a_is,
-                "b_is": b_is,
-                "choice": choice,
-                "prob_1_abs": p1_abs,
-                "prob_2_abs": p2_abs,
-                "swap_prob_1_abs": sp1_abs,
-                "swap_prob_2_abs": sp2_abs,
-                "swap_corrected_a_abs": swap_corrected_a_abs,
-                "swap_corrected_b_abs": swap_corrected_b_abs,
-            }
-        )
-    return results
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -248,6 +151,8 @@ def main():
                         help="For logit_forced, average with swapped candidate order to reduce position bias.")
     parser.add_argument("--resume", default=None, metavar="CSV",
                         help="Resume from a partial CSV — skip already-completed trials and append new results")
+    parser.add_argument("--smith-probe", default=None, help="Path to Linda Smith probe-shapematch-colormatch dataset")
+    parser.add_argument("--geirhos-unaltered", default=None, help="Path to Geirhos unaltered dataset (cue_conflict/original/texture).")
     parser.add_argument(
         "--levante-model-name",
         default="qwen35",
@@ -322,9 +227,67 @@ def main():
 
     # Load stimuli and words
     words = load_words()
-    stimuli = load_stimuli(args.stim_set, args.num_stimuli)
-    stim_set_label = resolve_stim_set_name(args.stim_set)
-    csv_meta = benchmark_csv_meta(stim_set_label)
+
+    if args.prompt_condition in {
+        "no_word_category",
+        "no_word_category_AB",
+        "no_word_similarity",
+        "no_word_similarity_AB",
+    }:
+        words = [{
+            "name": "",
+            "type": "none",
+            "length": 0,
+        }]
+
+    if args.geirhos_unaltered:
+        geirhos_triplets = build_geirhos_unaltered_triplets(
+            Path(args.geirhos_unaltered),
+            args.num_stimuli,
+            args.seed,
+        )
+
+        stimuli = []
+        for sid, ref, shape, texture in geirhos_triplets:
+            stimuli.append(
+                {
+                    "stim_id": sid,
+                    "reference": ref,
+                    "shape_match": shape,
+                    "texture_match": texture,
+                }
+            )
+
+        stim_set_label = "geirhos_unaltered"
+        csv_meta = benchmark_csv_meta(stim_set_label)
+
+        print(f"Using Geirhos unaltered dataset: {len(stimuli)} stimuli")
+    elif args.smith_probe:
+        smith_triplets = build_smith_probe_triplets(
+            Path(args.smith_probe),
+            args.num_stimuli,
+            args.seed,
+        )
+
+        stimuli = []
+        for sid, ref, shape, texture in smith_triplets:
+            stimuli.append(
+                {
+                    "stim_id": sid,
+                    "reference": ref,
+                    "shape_match": shape,
+                    "texture_match": texture,
+                }
+            )
+
+        stim_set_label = "smith_probe"
+        csv_meta = benchmark_csv_meta(stim_set_label)
+
+        print(f"Using Smith probe dataset: {len(stimuli)} stimuli")
+    else:
+        stimuli = load_stimuli(args.stim_set, args.num_stimuli)
+        stim_set_label = resolve_stim_set_name(args.stim_set)
+        csv_meta = benchmark_csv_meta(stim_set_label)
     print(f"Models:      {model_names}")
     print(f"Device:      {args.device}")
     print(f"Ordering:    {args.ordering}")
@@ -335,7 +298,10 @@ def main():
     if args.decision_mode == "logit_forced":
         print(f"Choice txt:  {args.choice_texts[0]!r} / {args.choice_texts[1]!r}")
         print(f"Swap corr:   {args.swap_correct}")
-    print(f"Stimuli:     {len(stimuli)} from {BENCHMARK_STIM_PACKAGE}/{stim_set_label}")
+    if args.smith_probe:
+        print(f"Stimuli:     {len(stimuli)} from {args.smith_probe}")
+    else:
+        print(f"Stimuli:     {len(stimuli)} from {BENCHMARK_STIM_PACKAGE}/{stim_set_label}")
     print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
     ord_mult = 1 if args.decision_mode in {"binary_pair", "binary_pair_conservative"} else (2 if args.ordering == "both" else 1)
     trials_per = len(stimuli) * len(words) * args.repeats * ord_mult
@@ -439,7 +405,7 @@ def main():
                             word_length,
                             ordering=args.ordering,
                             prompt_condition=args.prompt_condition,
-                            choice_texts=args.choice_texts
+                           choice_texts=tuple(args.choice_texts) if args.choice_texts else ("1", "2")
                         )
                     for r in trial_results:
                         r["model"] = model_key
@@ -448,31 +414,33 @@ def main():
                         r["decision_mode"] = args.decision_mode
                         r["swap_correct"] = "true" if args.swap_correct else "false"
                         r.update(csv_meta)
-                    logit_info = ""
 
-                    if r.get("choice_logits") is not None:
-                        logit_info = (
-                            f"\n      logits={r['choice_logits']}"
-                            f"\n      probs={r['choice_probs']}"
+                        logit_info = ""
+
+                        if r.get("choice_logits") is not None:
+                            logit_info = (
+                                f"\n      logits={r['choice_logits']}"
+                                f"\n      probs={r['choice_probs']}"
+                            )
+                        elif r.get("shape_choice_logits") is not None:
+                            logit_info = (
+                                f"\n      shape YES/NO:"
+                                f"\n        logits={r['shape_choice_logits']}"
+                                f"\n        probs={r['shape_choice_probs']}"
+                                f"\n      texture YES/NO:"
+                                f"\n        logits={r['texture_choice_logits']}"
+                                f"\n        probs={r['texture_choice_probs']}"
+                            )
+
+                        print(
+                            f"    {r['ordering']:15s} -> {r['raw_text']!r:10s} "
+                            f"choice={r['choice']}"
+                            f"{logit_info}"
                         )
 
-                    elif r.get("shape_choice_logits") is not None:
-                        logit_info = (
-                            f"\n      shape YES/NO:"
-                            f"\n        logits={r['shape_choice_logits']}"
-                            f"\n        probs={r['shape_choice_probs']}"
-                            f"\n      texture YES/NO:"
-                            f"\n        logits={r['texture_choice_logits']}"
-                            f"\n        probs={r['texture_choice_probs']}"
-                        )
-
-                    print(
-                        f"    {r['ordering']:15s} -> {r['raw_text']!r:10s} "
-                        f"choice={r['choice']}"
-                        f"{logit_info}"
-                    )
                     # Save incrementally after each stimulus+word trial
                     write_results(trial_results, output_path, append=True, quiet=True)
+                    all_results.extend(trial_results)
                     for r in trial_results:
                         done_keys.add(
                             (

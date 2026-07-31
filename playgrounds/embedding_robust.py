@@ -12,9 +12,9 @@ Representations (each tried independently; failures are recorded, not fatal):
   vit_pooler      : vision-tower pooler_output when present (CLS-style summary)
 
 For every representation we report, with and without mean-centering:
-  - shape rate with a bootstrap 95% CI over stimuli (n=30)
+  - shape rate with a bootstrap 95% CI over stimuli
   - a POSITIVE CONTROL: object-identity retrieval. For each reference, rank all
-    shape-match images by cosine; is its own stimulus top-1? (chance = 1/30).
+    shape-match images by cosine; is its own stimulus top-1? (chance = 1/n_stimuli).
     Same for texture matches. High retrieval => the read-out resolves these
     images, so a ~0.5 shape-vs-texture rate is a real null, not a blind probe.
 
@@ -165,9 +165,31 @@ def _retrieval_at1(R, X):
     correct = (top1 == torch.arange(len(R))).float().mean().item()
     return correct
 
+def build_default_triplets(root: Path, n: int, seed: int):
+    if not root.is_absolute():
+        root = REPO_ROOT / root
+
+    trial_dirs = sorted(
+        (d for d in root.iterdir() if d.is_dir() and d.name.isdigit()),
+        key=lambda d: int(d.name),
+    )
+
+    rng = random.Random(seed)
+    rng.shuffle(trial_dirs)
+    trial_dirs = trial_dirs[:n]
+    print(f"Stimuli: {len(trial_dirs)} randomly sampled from {root} (seed={seed})")
+    triplets = [
+        (
+            int(d.name),
+            Image.open(d / "reference.png").convert("RGB"),
+            Image.open(d / "shape_match.png").convert("RGB"),
+            Image.open(d / "texture_match.png").convert("RGB"),
+        )
+        for d in trial_dirs
+    ]
+    return triplets
 
 _CC_PAT = re.compile(r"^([a-z]+)(\d+)-([a-z]+)(\d+)\.png$")
-
 
 def build_cueconflict_triplets(root: Path, n: int, seed: int):
     """Familiar-category positive control from the Geirhos cue-conflict set.
@@ -221,11 +243,70 @@ def build_cueconflict_triplets(root: Path, n: int, seed: int):
         used[S] = used.get(S, 0) + 1
         if len(triplets) >= n:
             break
+
+    print(f"Stimuli: {len(triplets)} balanced-sampled from {root} (seed={seed})")
+    
     return triplets
 
-_SMITH_PAT = re.compile(
-    r"^smith_bg(\d+)_(\d+)(probe|color_match|shape_match)\.jpg$"
-)
+_GEIRHOS_PAT = re.compile(r"^([a-z]+)(\d+)-([a-z]+)(\d+)\.png$")
+
+def build_geirhos_unaltered_triplets(
+    root: Path,
+    n: int,
+    seed: int,
+):
+    cue_root = root / "cue_conflict"
+    original_root = root / "original"
+    texture_root = root / "texture"
+
+    items = []
+
+    for shape_dir in sorted(p for p in cue_root.iterdir() if p.is_dir()):
+        for f in sorted(shape_dir.iterdir()):
+            m = _GEIRHOS_PAT.match(f.name)
+            if not m:
+                continue
+
+            shape, shape_id, tex, tex_id = m.groups()
+            items.append((f, shape, shape_id, tex, tex_id))
+
+    rng = random.Random(seed)
+    rng.shuffle(items)
+
+    per_class_cap = max(1, -(-n // 16))
+    used = {}
+
+    triplets = []
+
+    for ref_path, shape, shape_id, tex, tex_id in items:
+        if used.get(shape, 0) >= per_class_cap:
+            continue
+
+        shape_path = original_root / shape / f"{shape}{shape_id}.png"
+        texture_path = texture_root / tex / f"{tex}{tex_id}.png"
+
+        if not shape_path.exists() or not texture_path.exists():
+            continue
+
+        triplets.append(
+            (
+                ref_path.stem,
+                Image.open(ref_path).convert("RGB"),
+                Image.open(shape_path).convert("RGB"),
+                Image.open(texture_path).convert("RGB"),
+            )
+        )
+
+        used[shape] = used.get(shape, 0) + 1
+
+        if len(triplets) >= n:
+            break
+
+    print(f"Stimuli: {len(triplets)} sampled from {root} (seed={seed})")
+
+    return triplets
+
+_SMITH_PAT = re.compile(r"^smith_bg(\d+)_(\d+)(probe|color_match|shape_match)\.jpg$")
 
 def build_smith_probe_triplets(root: Path, n: int, seed: int):
     """Build triplets from the Smith probe set.
@@ -270,6 +351,8 @@ def build_smith_probe_triplets(root: Path, n: int, seed: int):
 
         if len(triplets) >= n:
             break
+    
+    print(f"Stimuli: {len(triplets)} randomly sampled from {root} (seed={seed})")
 
     return triplets
 
@@ -289,6 +372,11 @@ def main() -> int:
         "positive control on these stimuli instead of IMAGE_DATASET.",
     )
     ap.add_argument(
+        "--geirhos-unaltered",
+        default=None,
+        help="Path to geirhos_unaltered dataset (cue_conflict/original/texture folders).",
+    )
+    ap.add_argument(
         "--smith-probe",
         default=None,
         help="Path to Linda Smith probe-shapematch-colormatch dataset; if set, run the familiar-category "
@@ -302,6 +390,8 @@ def main() -> int:
 
         if args.cue_conflict:
             name = "embedding_cueconflict"
+        elif args.geirhos_unaltered:
+            name = "embedding_geirhos_unaltered"
         elif args.smith_probe:
             name = "embedding_smith_probe"
         else:
@@ -338,40 +428,31 @@ def main() -> int:
     device = "cuda" if torch.cuda.is_available() else "mps"
     print(f"Device: {device}")
     print(f"Models: {args.models}")
-
+    
     if args.cue_conflict:
         cc_root = Path(args.cue_conflict)
         triplets = build_cueconflict_triplets(cc_root, args.n_stimuli, args.seed)
         print(f"POSITIVE CONTROL: {len(triplets)} familiar-category cue-conflict triplets from {cc_root}")
         for tid, *_ in triplets[:5]:
             print(f"  e.g. {tid}")
-    elif args.smith_probe:
-        triplets = build_smith_probe_triplets(
-            Path(args.smith_probe),
+    elif args.geirhos_unaltered:
+        geirhos_root = Path(args.geirhos_unaltered)
+        triplets = build_geirhos_unaltered_triplets(
+            geirhos_root,
             args.n_stimuli,
             args.seed,
         )
+        print(f"GEIRHOS UNALTERED: {len(triplets)} triplets from {geirhos_root}")
+        for tid, *_ in triplets[:5]:
+            print(f"  e.g. {tid}")
+    elif args.smith_probe:
+        smith_root = Path(args.smith_probe)
+        triplets = build_smith_probe_triplets(smith_root, args.n_stimuli, args.seed)
+        print(f"SMITH PROBE: {len(triplets)} triplets from {smith_root}")
+        for tid, *_ in triplets[:5]:
+            print(f"  e.g. {tid}")
     else:
-        dataset = Path(os.environ["IMAGE_DATASET"])
-        if not dataset.is_absolute():
-            dataset = REPO_ROOT / dataset
-
-        trial_dirs = sorted(
-            (d for d in dataset.iterdir() if d.is_dir() and d.name.isdigit()),
-            key=lambda d: int(d.name),
-        )[: args.n_stimuli]
-        print(f"Stimuli: {len(trial_dirs)} from {dataset}")
-
-        triplets = [
-            (
-                int(d.name),
-                Image.open(d / "reference.png").convert("RGB"),
-                Image.open(d / "shape_match.png").convert("RGB"),
-                Image.open(d / "texture_match.png").convert("RGB"),
-            )
-            for d in trial_dirs
-        ]
-
+        triplets = build_default_triplets(Path(os.environ["IMAGE_DATASET"]), args.n_stimuli, args.seed)
     all_results: dict = {"config": vars(args), "models": {}}
 
     for name in args.models:
@@ -469,9 +550,13 @@ def _print_model(name, rep_results, errs):
 
 
 def _print_summary(res):
+    n = res["config"]["n_stimuli"]
     print("\n" + "=" * 78)
     print("SUMMARY — embedding shape rate (centered, 95% CI) across read-outs")
-    print("retr@1 = object-identity retrieval (chance=1/30=0.03); high => probe is sensitive")
+    print(
+        f"retr@1 = matching-stimulus retrieval (chance=1/{n}={1/n:.2f}); "
+        "high => probe is sensitive"
+    )   
     print("=" * 78)
     print(f"{'model':14} {'readout':16} {'shape':>5} {'ci95':>13} {'retrS':>6} {'retrT':>6}")
     for name, mo in res["models"].items():
