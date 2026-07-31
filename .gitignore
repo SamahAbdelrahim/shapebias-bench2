@@ -69,6 +69,7 @@ previous-lit-stimuli/geirhos_unaltered/
 previous-lit-stimuli/geirhos_no_bg/
 previous-lit-stimuli/geirhos_rmbg2/
 previous-lit-stimuli/**/*.zip
+previous-lit-stimuli/
 # Local AI / agent instructional files (keep private; not for remote)
 TODO.md
 PLAN.md

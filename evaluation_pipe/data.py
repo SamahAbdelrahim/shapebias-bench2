@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import random
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image
+
+_SMITH_PAT = re.compile(
+    r"^smith_bg(\d+)_(\d+)(probe|color_match|shape_match)\.jpg$"
+)
 
 
 @dataclass
@@ -103,4 +108,80 @@ def load_trials(
             )
         )
 
+    return trials
+
+
+def load_smith_trials(
+    smith_dir: str | Path,
+    order: str = "shape_first",
+    n_trials: int | None = 30,
+    seed: int = 0,
+) -> list[Trial]:
+    """Load trials from Linda Smith probe / shape_match / color_match JPGs.
+
+    Each triplet shares background (bg) and trial index. ``color_match`` maps to
+    the texture distractor (color-preserving, shape-changing match).
+
+    Args:
+        smith_dir: Directory of ``smith_bg*_{probe,shape_match,color_match}.jpg``.
+        order: ``shape_first``, ``texture_first``, or ``random``.
+        n_trials: Cap after shuffling (default 30). ``None`` keeps all complete triplets.
+        seed: Shuffle seed for triplet order (must match across both order runs).
+    """
+    smith_dir = Path(smith_dir)
+    if not smith_dir.is_dir():
+        raise FileNotFoundError(f"Smith stimuli directory not found: {smith_dir}")
+    if order not in ("shape_first", "texture_first", "random"):
+        raise ValueError(
+            f"order must be 'shape_first', 'texture_first', or 'random', got '{order}'"
+        )
+
+    items: dict[tuple[str, str], dict[str, Path]] = {}
+    for path in sorted(smith_dir.iterdir()):
+        match = _SMITH_PAT.match(path.name)
+        if not match:
+            continue
+        bg, trial, kind = match.groups()
+        items.setdefault((bg, trial), {})[kind] = path
+
+    rng = random.Random(seed)
+    keys = [key for key in items if all(k in items[key] for k in ("probe", "shape_match", "color_match"))]
+    rng.shuffle(keys)
+    if n_trials is not None:
+        keys = keys[:n_trials]
+
+    if not keys:
+        raise FileNotFoundError(f"No complete Smith triplets found in {smith_dir}")
+
+    order_rng = random.Random(seed) if order == "random" else None
+    trials: list[Trial] = []
+    for trial_id, (bg, trial) in enumerate(keys, start=1):
+        imgs = items[(bg, trial)]
+        if order == "random":
+            trial_order = order_rng.choice(["shape_first", "texture_first"])
+        else:
+            trial_order = order
+
+        shape_path = imgs["shape_match"]
+        texture_path = imgs["color_match"]
+        if trial_order == "shape_first":
+            image_a_path = shape_path
+            image_b_path = texture_path
+            ground_truth = "A"
+        else:
+            image_a_path = texture_path
+            image_b_path = shape_path
+            ground_truth = "B"
+
+        trials.append(
+            Trial(
+                trial_id=trial_id,
+                mode=f"smith_bg{bg}_trial{trial}",
+                order=trial_order,
+                reference_path=imgs["probe"],
+                image_a_path=image_a_path,
+                image_b_path=image_b_path,
+                ground_truth=ground_truth,
+            )
+        )
     return trials

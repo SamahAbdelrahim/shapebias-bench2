@@ -26,7 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 load_dotenv(REPO_ROOT / ".env")
 
-from evaluation_pipe.data import load_trials
+from evaluation_pipe.data import load_smith_trials, load_trials
 from evaluation_pipe.eval_core import (
     LOCAL_VLM_SYSTEM_PROMPT,
     PROMPT_TEMPLATES,
@@ -238,6 +238,19 @@ def main() -> int:
         help="Output log path (default: results/playground.results/session_*/playground_smoke_...).",
     )
     parser.add_argument(
+        "--smith-stimuli",
+        type=Path,
+        default=None,
+        help="Directory of Smith probe/shape_match/color_match JPGs; "
+        "uses load_smith_trials instead of IMAGE_DATASET.",
+    )
+    parser.add_argument(
+        "--smith-seed",
+        type=int,
+        default=0,
+        help="Shuffle seed for Smith triplet order (default 0).",
+    )
+    parser.add_argument(
         "--resume",
         action="store_true",
         help="Skip models already complete in the existing log; append the rest. "
@@ -256,7 +269,21 @@ def main() -> int:
         return 1
 
     if args.out is None:
-        session = default_session_results_dir("playground")
+        if args.smith_stimuli is not None:
+            import time as _time
+
+            # Pin with RESULTS_SESSION_DATE so a midnight rollover cannot split
+            # one ladder across two session folders mid-job.
+            day = os.environ.get("RESULTS_SESSION_DATE") or _time.strftime("%Y-%m-%d")
+            host = os.environ.get("RESULTS_SESSION_HOST", "farmshare")
+            session = (
+                REPO_ROOT
+                / "results"
+                / "playground.results"
+                / f"session_{day}_smith_{host}"
+            )
+        else:
+            session = default_session_results_dir("playground")
         word_suffix = f"_{args.word}" if args.word else ""
         args.out = (
             session
@@ -313,11 +340,24 @@ def main() -> int:
     print(f"Writing results to: {args.out}")
     print(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    dataset = Path(os.environ["IMAGE_DATASET"])
-    if not dataset.is_absolute():
-        dataset = REPO_ROOT / dataset
+    if args.smith_stimuli is not None:
+        smith_dir = args.smith_stimuli
+        if not smith_dir.is_absolute():
+            smith_dir = REPO_ROOT / smith_dir
+        print(f"Stimuli: Smith probe set ({smith_dir})")
+        trials = load_smith_trials(
+            smith_dir,
+            order=args.order,
+            n_trials=args.n_trials,
+            seed=args.smith_seed,
+        )
+    else:
+        dataset = Path(os.environ["IMAGE_DATASET"])
+        if not dataset.is_absolute():
+            dataset = REPO_ROOT / dataset
+        print(f"Stimuli: IMAGE_DATASET ({dataset})")
+        trials = load_trials(dataset, order=args.order)
 
-    trials = load_trials(dataset, order=args.order)
     selected = trials[: args.n_trials]
     if len(selected) < args.n_trials:
         print(f"WARNING: only {len(selected)} trials available")
