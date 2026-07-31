@@ -66,6 +66,8 @@ previous-lit-stimuli/geirhos_cueconflict/
 previous-lit-stimuli/all_smith_stimuli_sets.zip
 previous-lit-stimuli/all_smith_stimuli_sets/
 previous-lit-stimuli/geirhos_unaltered/
+previous-lit-stimuli/geirhos_no_bg/
+previous-lit-stimuli/geirhos_rmbg2/
 previous-lit-stimuli/**/*.zip
 # Local AI / agent instructional files (keep private; not for remote)
 TODO.md
