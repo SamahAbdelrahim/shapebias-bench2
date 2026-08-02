@@ -88,6 +88,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=NOTEBOOK_MODELS)
     ap.add_argument("--conditions", nargs="+", default=CONDITIONS, choices=CONDITIONS)
+    ap.add_argument(
+        "--label-sets",
+        nargs="+",
+        default=list(LABEL_SETS),
+        choices=list(LABEL_SETS),
+        help="Which choice-label formats to run (default: numeric + ab).",
+    )
     ap.add_argument("--n-stimuli", type=int, default=30)
     ap.add_argument("--word", default=DEFAULT_WORD)
     ap.add_argument(
@@ -164,7 +171,7 @@ def main() -> int:
             print(f"Loaded: {model.name} on {next(model._model.parameters()).device}")
 
             for condition in conditions:
-                for lset in LABEL_SETS:
+                for lset in args.label_sets:
                     prompt = build_prompt(condition, lset, args.word)
                     choices = LABEL_SETS[lset]["choices"]
 
@@ -177,7 +184,11 @@ def main() -> int:
                             ref, a, b = imgs[(sid, order_key)]
                             shape_is_first = order_key == "sf"
 
-                            gen = model.generate(images=[ref, a, b], prompt=prompt)
+                            gen = model.generate(
+                                images=[ref, a, b],
+                                prompt=prompt,
+                                choice_texts=choices,
+                            )
                             pick = parse_choice(gen.raw_text, lset)
                             parse_total += 1
                             if pick is not None:

@@ -405,8 +405,13 @@ def main() -> int:
                                 "choice_probs_absolute": list(gen.choice_probs),
                             }
                     else:
-                        # Always get a free-text generation (matches July 10 smoke).
-                        gen = model.generate(images=images, prompt=prompt)
+                        # Free-text generation must use the same slot labels as the
+                        # choice text (Image A/B when answering A/B).
+                        gen = model.generate(
+                            images=images,
+                            prompt=prompt,
+                            choice_texts=choice_labels,
+                        )
                         if "two_pass" in args.paths:
                             try:
                                 two_pass_score = model.score_choices(

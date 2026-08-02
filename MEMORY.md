@@ -2,6 +2,107 @@
 
 Local-only (gitignored). Read at the start of every session; add an entry after any significant decision. Newest entries first.
 
+## 2026-08-02, Full-grid reporting package + PriDe/embedding GPU jobs
+
+**What was decided:** Build paper-facing figures and HTML from the completed 123,120-trial generation CSVs, and submit GPU follow-ups for logit/PriDe and vision embeddings (grid sample + Smith + Geirhos) so the full-scale report matches the 30-set analysis stack. Keep the 30-set playground figures/HTML untouched; full-grid outputs live under `results/figures/full_grid/` and `full_grid_v1a_report.html`.
+
+**Offline (done):** `analysis_pipe/full_grid_figures.py` (fig1–5 + stubs for fig6–7), `scripts/build_full_grid_report.py` (patched into playground `index.html`), tidy CSV at `results/data/full_grid_tidy_behavioral.csv`. Gate readout unchanged: 18/54 PASS; qwen3.5-4b passes all 6.
+
+**GPU submitted:** job **1673782** (`run_full_grid_logit_v1a.sbatch`, array 0–8%4) → `session_full_grid_v1a_logit/`; job **1673783** (`run_full_grid_embedding_v1a.sbatch`) → stratified n=114 grid + Smith n=30 + Geirhos n=30 per model under `probe.results/session_full_grid_v1a/`; job **1673784** finalize (dependency afterok both) merges embedding JSONs, runs `full_grid_pride.py`, rebuilds figures/HTML.
+
+**Why a separate logit session:** generation CSVs have empty `prob_*` columns (`decision_mode=2afc`). PriDe needs `logit_forced` absolute probs; writing a second session avoids rewriting finished generation files.
+
+**What was rejected:** Pointing `playground_figures.py` at grid CSVs in place (would break the 30-set paper path); embedding all 1,140 triads (use stratified 114); changing `load_data.R` to ingest 123k rows.
+
+## 2026-08-01, Full texture grid (1,140 trials) evaluated through evaluation_pipe
+
+**What was decided:** Scale model inference from 30 stimuli to the full texture grid produced by `triad-stimuli-pipeline` (30 ALICE shapes x 38 textures), scoped to **v1, mode A only** and the **same 6 cells** as the 30-set design (similarity / category / noun+`shiple`, each numeric and A/B, both orders). 1,140 x 2 x 6 = 13,680 trials per model, 123,120 across the 9-model ladder. The playground keeps using the 30-set package for testing; expansion runs only through `evaluation_pipe` / `scripts/run_local.py`.
+
+**The blocking difference:** the grid inserts a texture level, so a trial is `<stl_id>/<texture_set>/` not `<stl_id>/`. Both existing loaders scan for numbered directories holding images directly (`d.name.isdigit()`, then `trial_dir / "reference.png"`), so neither reads it. `load_stimuli` also decoded every image up front, which at 1,140 triads is roughly 10 GB.
+
+**What was built:**
+- `stimuli_pipe/stimuli_texture_grid_v1` symlink into the pipeline output, plus `stimuli_texture_grid_v1_scratch` pointing at a 671 MB `/scratch` stage (hardlinks preserved). Both gitignored. Deliberately **not** named `stimuli_unique_texture_per_stl_v1`, which already exists in bench2 as the old flat 30-folder human-matched package.
+- `load_stimuli_grid()` + `materialize_stimulus()` in `eval_core.py`: manifest-driven, returns paths, images opened one triad at a time. 1,140 records now cost 40 MB instead of ~10 GB.
+- `--grid-pkg` and `--word` on `run_local.py`. The triad is decoded once per stimulus (not once per word) and only after the resume check, so a full resume does zero image I/O.
+- `stl_id` and `texture_set` added to `CSV_FIELDS`, and `write_results` now reconciles against a CSV's existing header when appending. Without that, resuming any pre-2026-08-01 CSV would have silently shifted every column after `stim_id`.
+- `scripts/run_full_grid_pilot.sbatch` (kept as the timing/schema reference), `scripts/run_full_grid_v1a.sbatch` (9-model array), `analysis_pipe/full_grid_summary.py`.
+
+**Cluster limit found:** the `gpu` QOS caps this account at `gres/gpu=4` and 4 running jobs (32 submittable). So `%4` in the array is the hard limit, not a tuning choice; more concurrency is not available. Partition wall is 2 days.
+
+**Pilot (job 1672131, qwen3-vl-2b, 40 stimuli, L40S):** 0.44 s/trial steady-state, 1.48 s/trial on the first cell including cold model load. Projects to ~1.7 h for that model's full 13,680 trials, and ~8-11 h for qwen3.5-27b-4bit at its recorded 2-3 s/trial. Pilot readout: `no_word_similarity` tracking 0.60 / shape 0.50 / pos1st 0.70, `noun_label+shiple` tracking 0.21 / shape 0.43 / pos1st 0.90 — both fail the 0.70 gate with a position lock, consistent with qwen3-vl-2b never passing at n=30.
+
+**Why manifest-driven rather than a deeper directory scan:** the manifests already carry `stim_id`, `stl_id`, `texture_set` and the foil identities (`shape_match_texture_set`, `texture_match_stl_id`), so the join is authoritative and does not re-derive trial structure from paths.
+
+**What was rejected:** changing `load_stimuli` / `load_trials` in place (six callers including `run_remote.py` and both standardized reruns; the new loader sits alongside instead); v2 and mode B in this pass (v2 is the same renders with different foils, a separate question, and reusable by changing `GRID_PKG`); the full 10-word benchmark (22,800 trials per model per condition, and word generality was already answered at n=30); a stratified subsample instead of the exhaustive grid; wiring these CSVs into `load_data.R` (its `get_candidate_result_paths()` is a fixed legacy list, and mixing 123k grid rows into `canonical_combined_eval.csv` would swamp it).
+
+**Submitted:** job **1672132** (`scripts/run_full_grid_v1a.sbatch`, array 0-8%4, all 9 models). Queued behind other users' 2-day GPU jobs; Slurm estimated first start ~2026-08-02T05:42. Resume is per model x cell, so requeueing after any failure is safe. Check with `squeue -u $USER` and `results/model.results/jobs/grid_v1a_1672132_<task>.out`; read results with `python analysis_pipe/full_grid_summary.py`.
+
+**Open:** `analysis_pipe/playground_figures.py` still only reads playground `.txt` logs, so grid results do not appear in the paper figures yet.
+
+## 2026-07-31, Fig 7b + embedding fill job (benchmark vs Smith, full ladder)
+
+**What was decided:** Add `fig7b_benchmark_vs_smith` (panel A: vision-tower shape rate for novel benchmark vs Linda Smith probe across all 9 ladder models; panel B: embedding vs behavioral similarity, filled=benchmark / open=Smith). Existing embedding JSONs only covered 7 models and had no Smith run, so submitted job **1670938** (`scripts/run_embedding_bench_smith_31.sbatch`): (1) qwen3.5-9b + 27b fill on IMAGE_DATASET → `session_2026-07-31_farmshare/embedding_robust_fill_large.json`; (2) full 9-model ladder on `previous-lit-stimuli/smith_stimuli` → `embedding_smith_probe.json`. Rerun `python analysis_pipe/playground_figures.py` after the job finishes to fill pending cells. Fig 7 (novel vs Geirhos) kept as-is.
+
+**What was rejected:** Replacing fig 7; waiting to draw fig 7b until numbers land (skeleton with pending is useful now).
+
+## 2026-07-31, Repo cleanup (archived legacy) + Python figure pipeline
+
+**What was decided:** While the AB reruns finish (1670811/1670812 running, 1670813 finalize queued), archived legacy code and stale results, and added `analysis_pipe/playground_figures.py` (matplotlib, installed into `.venv` with pandas via uv) producing 8 paper-quality figures into `results/figures/playground/` plus a tidy CSV `results/data/playground_tidy_behavioral.csv`. Figures documented in `analysis_pipe/PLAYGROUND_FIGURES.md`; the script re-reads sessions on every run, so rerunning it after the Smith/finalize jobs land fills the pending cells (Smith noun AB, 2026-07-30 PriDe).
+
+**What was archived:** `scripts/_archive/` (22 files: `run_evaluation.py`, old smoke wrappers, March/April diagnostics, all July 17-25 `*_30.sbatch` jobs, `build_vision_vs_language_report.py`, `update_models_validity_md.py`, `compute_order_bias_validity.py`); `playgrounds/_archive/` (`gated_naming_contrast.py`, `threshold_sensitivity.py`, 3 notebooks); `results/model.results/_archive_pilots/` (reasoning March dump, no_word smoke/pilot/interim CSVs not read by load_data.R); `results/playground.results/_archived_early_sessions/` (July-10 5-trial smoke session, one .partial file). Empty `configs/*.yaml` stubs deleted from git. Each archive folder has a README.
+
+**What was rejected:** Archiving `pride_debias.py` (imported by `playground_pride_debias.py`), the `no_word_pilot_remote*.csv` / `no_word_full_remote*.csv` files (load_data.R reads them), the July 17-25 numeric session logs (still the current numeric baseline), and `compute_model_validity_split.py` / `compute_validity_human_matched.py` (human-matched track still planned).
+
+## 2026-07-31, AB rerun jobs failed on 27b OOM; restored 4-bit + resume
+
+**What happened:** Jobs 1670605 (benchmark) and 1670606 (Smith) FAILED; 1670607 finalize CANCELLED. Cause: each job completed 8 models on `shape_first` `no_word_similarity_AB`, then `qwen3.5-27b` CUDA OOM (~44 GB). Smoke exit 1 + `set -e` aborted the rest. Root cause: Adam's Jul-28 merge dropped `_quantization_4bit = True` / `_device_map = "auto"` from `Qwen35_27B`.
+
+**What was decided:** Option 1 — restore 27b 4-bit, add `--resume` to both AB sbatch scripts, continue past per-cell smoke failures (exit non-zero only if any cell still failed), resubmit the three-job chain. Partial Jul-30 logs kept so resume skips the 8 finished models on the first cell and retries 27b.
+
+## 2026-07-30 (later), AB label-fix full rerun + master interpretation report
+
+**What was decided:** Submitted parallel Slurm reruns for all archived AB conditions with fixed Image A/B slots (jobs 1670605 benchmark, 1670606 Smith; finalize 1670607 after both). New sessions: `session_2026-07-30_farmshare` (benchmark AB three-way + sudo-word AB × 4 words × 7 models) and `session_2026-07-30_smith_farmshare` (Smith AB three-way). Finalize job runs PriDe on both sessions, probe_experiment AB-only rerun, `build_playground_results_html.py`, and new `build_master_interpretation_report.py`.
+
+**Scripts added:** `run_ab_label_fix_benchmark_30.sbatch`, `run_ab_label_fix_smith_30.sbatch`, `run_ab_label_fix_finalize.sbatch`, `submit_ab_label_fix_rerun.sh`, `build_master_interpretation_report.py`. Master outputs: `master_interpretation_2026-07-30.html` + `.csv`. Smith AB HTML now prefers newest `session_*smith*` folder.
+
+**Scope not rerun:** Numeric 1/2 logs (still valid). Embedding/probe numeric cells unchanged. Archived AB stays in `_archived_ab_label_mismatch_pre_2026-07-28/`.
+
+## 2026-07-30, Archive mismatched AB runs + match image-slot labels everywhere
+
+**What was decided:** Confirmed Adam's fixes are on main (`365d2f8` AB slot labels; `602c9b5` `--geirhos-unaltered`). Archived option A: AB-only raw logs + AB-derived reports into `results/playground.results/_archived_ab_label_mismatch_pre_2026-07-28/` (Jul 17/24/25 AB sessions, catAB job logs, pride/compare/generality HTML+CSV). Numeric logs left live. Mixed reports (`*_numeric_and_qwen8_*`, `vision_vs_language_*`) and probe_experiment mixed files left in place with a README note that AB cells there are invalid until rerun.
+
+**Consistency fixes shipped:** (1) smoke dual-path free-text `generate` now passes `choice_texts`; (2) `run_local.py` defaults `choice_texts` to A/B when prompt ends with `_AB`, else 1/2; (3) remote `build_openai_compatible_vision_messages` takes `choice_texts` like local, threaded through `run_remote.py` and the standardized remote rerun; (4) `probe_experiment.py` free-text `generate` also passes `choice_texts`.
+
+**Why:** Pre–Jul 28 AB runs asked for A/B while labeling slots Image 1/2. Dual-path free-text and remote still leaked that mismatch after the local fix. Reruns of archived AB conditions are required before interpreting letter-format results.
+
+**What was rejected:** Archiving whole sessions (would bury usable numeric logs); moving mixed numeric/embedding HTML into the archive by default.
+
+## 2026-07-25, Smith ladder resume into session_2026-07-25
+
+**What happened:** Job 1656533 stalled overnight on qwen3-vl-8b during numeric noun texture_first (~3:48 AM, no further output) and was cancelled at 08:37. Midnight had also split logs: similarity+category under `session_2026-07-24_smith_farmshare/`, noun under `session_2026-07-25_smith_farmshare/`.
+
+**What was decided:** Keep the July-25 session as canonical. Moved all Smith smoke logs (plus the pre-truncate backup) into `session_2026-07-25_smith_farmshare/` and removed the empty July-24 Smith folder. Incomplete qwen3-vl-8b block was already truncated so --resume sees 4 complete models on that log (smolvlm, internvl, qwen3-vl-2b, qwen3-vl-4b) and continues from qwen3-vl-8b. Fixed `run_smith_ladder_30.sbatch` to pin `RESULTS_SESSION_DATE=2026-07-25`, pass `--out` into that session for every cell, and write PriDe/HTML as `smith_*_2026-07-25.*`. Smoke and `default_session_results_dir` now honor `RESULTS_SESSION_DATE` so a midnight rollover cannot split one job. Builder `SESS_SMITH` points at the July-25 session.
+
+**Resubmitted:** Job 1659833 (`scripts/run_smith_ladder_30.sbatch`, resume mode, oat-03). Remaining: finish numeric noun texture_first (5 models), then all three A/B conditions × 2 orders, then PriDe + HTML.
+
+## 2026-07-24 (evening), playground.results tidy + Smith full ladder queued
+
+**What was decided:** Flat layout with corrected Jul-24 names for the two composite reports rebuilt today (`local_models_numeric_and_qwen8_30trials_2026-07-24.html`, `local_models_prompt_compare_30trials_2026-07-24.html`). July-17-only reports keep `_2026-07-17` names. Sbatch stdout/stderr moved to `results/playground.results/jobs/`. Added `index.html` landing page. Smith stimuli extracted to `previous-lit-stimuli/smith_stimuli/` (150 JPGs). Added `load_smith_trials()` + `--smith-stimuli` on smoke playground; Smith logs go to `session_2026-07-24_smith_farmshare/`. Builder will write `smith_*_2026-07-24.html` + `smith_prompt_pride_debias_2026-07-24.*` when job completes.
+
+**Smith run scope (user chose full ladder):** Same 6 cells as local numeric report — similarity / category / noun × numeric + A/B — 30 trials × 2 orders × 9 models, revised July-24 category wording, PriDe at end. Job 1656533 (`scripts/run_smith_ladder_30.sbatch`, 24 h, 1× L40S).
+
+**What was rejected:** Dated subdirs or full `reports/`/`sessions/` restructure (kept flat + index to avoid breaking open paths and minimize builder churn).
+
+## 2026-07-24 (later), no_word_category prompt revision rescues large-model validity
+
+**What changed:** Samah rewrote both category prompts in `eval_core.py`. Old (July-17 runs): "See this object in the first image. Can you find another one of the two (1 or 2 / A or B)?" New: "You are given three images. This first image is an object. Which of the following two images (1 or 2 / A or B) is another one?" Only the wording changed. (Note: the file was mid-edit when first inspected; verified against the runtime string each job logged.)
+
+**What was rerun:** Both `no_word_category` (numeric) and `no_word_category_AB` on the full ladder (smolvlm, internvl, qwen3-vl-2b/4b/8b, qwen3.5-0.8b/4b/9b, qwen3.5-27b-4bit), n=30 × both orders, into `session_2026-07-24_farmshare` (jobs 1656289, 1656290; single L40S each). July-17 old-prompt logs kept as baseline. Comparison saved to `results/playground.results/no_word_category_prompt_revision_2026-07-24.csv`.
+
+**Result (gen trk / shp, gate 0.70):** The old category wording was depressing validity, not shape preference. Numeric: qwen3.5-4b 0.13/0.57 fail -> 0.93/0.97 PASS; qwen3.5-9b 0.83/0.88 -> 1.00/1.00; qwen3.5-27b(4bit) 0.40/0.70 -> 0.63/0.82 (still under gate); qwen3-vl-4b 0.07 -> 0.70 PASS; qwen3-vl-8b 0.40 -> 0.77 PASS; the four small models stay ~chance (absent signal, not prompt artifact). A/B: qwen3.5-4b 0.03 -> 0.60 (still under gate), 9b stays 0.83 PASS, 27b 0.50 -> 0.60, qwen3-vl-4b -> 0.70 PASS. So the revision flips the numeric category from a large-model failure to a large-model pass; the letter (A/B) format still adds difficulty that keeps 4b/27b just under the gate. 27b numbers carry the 4-bit quantization caveat.
+
+**Not done (now done):** Regenerated canonical HTML from the July-24 revised category logs. `find_smoke_pair` now prefers the newest session; `try_build_numeric_qwen8_report` loads category (numeric + AB) from `session_2026-07-24_farmshare` while similarity/noun stay July-17. Rebuilt: `local_models_numeric_and_qwen8_30trials_2026-07-17.html`, `local_models_prompt_compare_30trials_2026-07-17.html` (and other builder outputs). Old July-17 category logs kept as baseline; CSV comparison still at `no_word_category_prompt_revision_2026-07-24.csv`. n=5 AB smoke page still shows the old wording (n=5 was not rerun).
+
 ## 2026-07-24, qwen3.5-9b results + 27b 2-GPU sharding failed
 
 **9b result (job 1655673, COMPLETED 18 min, clean):** qwen3.5-9b extends the passing family and is more robust than 4b. Generation-path tracking / mean shape (gate = trk ≥ 0.70): numeric similarity 0.83/0.92 PASS; numeric category 0.83/0.88 PASS (4b failed this at 0.13); numeric noun+shiple 0.87/0.93 PASS; A/B similarity 0.67/0.83 fail; A/B category 0.93/0.97 PASS (4b hard-locked at 0.03); A/B noun+shiple 0.60/0.80 fail. 9b passes 4 of 6 cells vs 4b's 3, and does not collapse under the "find another one" category framing that locks 4b. Where it tracks, shape rate is 0.88-0.97. Scaling the Qwen3.5 family up strengthens and stabilizes the shape preference. 9b is appended to the shared July-17 logs and shows in all rebuilt comparison HTMLs.

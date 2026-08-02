@@ -52,9 +52,11 @@ from evaluation_pipe.eval_core import (
     add_common_args,
     benchmark_csv_meta,
     load_stimuli,
+    load_stimuli_grid,
     load_words,
     load_completed_trial_keys,
     make_prompt,
+    materialize_stimulus,
     print_summary,
     resolve_output_path,
     resolve_stim_set_name,
@@ -146,11 +148,18 @@ def main():
                         choices=["2afc", "binary_pair", "binary_pair_conservative", "binary_rank_forced", "logit_forced"],
                         help="Decision policy: standard 2AFC, binary_pair, binary_pair_conservative, binary_rank_forced, or logit_forced.")
     parser.add_argument("--choice-texts", nargs=2, default=None,
-                        help="Two choice strings for logit scoring (e.g. A B or 1 2).")
+                        help="Two choice strings for 2AFC / logit scoring and matching image-slot labels (e.g. A B or 1 2). "
+                             "Default: A B when --prompt-condition ends with _AB, else 1 2.")
     parser.add_argument("--swap-correct", action="store_true",
                         help="For logit_forced, average with swapped candidate order to reduce position bias.")
     parser.add_argument("--resume", default=None, metavar="CSV",
                         help="Resume from a partial CSV — skip already-completed trials and append new results")
+    parser.add_argument("--word", default=None,
+                        help="Restrict word-bearing prompts to one curated word (e.g. shiple). "
+                             "Default: all 10 words. Ignored by no-word prompt conditions.")
+    parser.add_argument("--grid-pkg", default=None,
+                        help="Full texture-grid package under stimuli_pipe/ (e.g. stimuli_texture_grid_v1). "
+                             "Trials are read from its manifest.csv and images opened one at a time.")
     parser.add_argument("--smith-probe", default=None, help="Path to Linda Smith probe-shapematch-colormatch dataset")
     parser.add_argument("--geirhos-unaltered", default=None, help="Path to Geirhos unaltered dataset (cue_conflict/original/texture).")
     parser.add_argument(
@@ -206,8 +215,13 @@ def main():
             "using --prompt-condition noun_label."
         )
         args.prompt_condition = "noun_label"
-    if "--choice-texts" in sys.argv and args.decision_mode != "logit_forced" and args.decision_mode != "2afc":
-        print("Info: --choice-texts has no effect unless using --decision-mode logit_forced.")
+    if "--choice-texts" in sys.argv and args.decision_mode not in {"logit_forced", "2afc"}:
+        print("Info: --choice-texts has no effect unless using --decision-mode 2afc or logit_forced.")
+
+    if args.choice_texts is None:
+        args.choice_texts = (
+            ["A", "B"] if args.prompt_condition.endswith("_AB") else ["1", "2"]
+        )
 
     random.seed(args.seed)
 
@@ -239,6 +253,12 @@ def main():
             "type": "none",
             "length": 0,
         }]
+    elif args.word:
+        words = [w for w in words if w["name"] == args.word]
+        if not words:
+            available = [w["name"] for w in load_words()]
+            print(f"Error: unknown word '{args.word}'. Available: {available}")
+            sys.exit(1)
 
     if args.geirhos_unaltered:
         geirhos_triplets = build_geirhos_unaltered_triplets(
@@ -284,10 +304,21 @@ def main():
         csv_meta = benchmark_csv_meta(stim_set_label)
 
         print(f"Using Smith probe dataset: {len(stimuli)} stimuli")
+    elif args.grid_pkg:
+        stimuli = load_stimuli_grid(args.grid_pkg, args.stim_set, args.num_stimuli)
+        stim_set_label = resolve_stim_set_name(args.stim_set)
+        csv_meta = benchmark_csv_meta(stim_set_label, stim_pkg=args.grid_pkg)
+
+        n_shapes = len({s["stl_id"] for s in stimuli})
+        n_textures = len({s["texture_set"] for s in stimuli})
+        print(f"Using texture grid {args.grid_pkg}/{stim_set_label}: "
+              f"{len(stimuli)} stimuli ({n_shapes} shapes x {n_textures} textures)")
     else:
         stimuli = load_stimuli(args.stim_set, args.num_stimuli)
         stim_set_label = resolve_stim_set_name(args.stim_set)
         csv_meta = benchmark_csv_meta(stim_set_label)
+
+    grid_mode = bool(args.grid_pkg)
     print(f"Models:      {model_names}")
     print(f"Device:      {args.device}")
     print(f"Ordering:    {args.ordering}")
@@ -295,11 +326,14 @@ def main():
     print(f"Temperature: {args.temperature}")
     print(f"Prompt cond: {args.prompt_condition}")
     print(f"Decision:    {args.decision_mode}")
-    if args.decision_mode == "logit_forced":
+    if args.decision_mode in {"logit_forced", "2afc"}:
         print(f"Choice txt:  {args.choice_texts[0]!r} / {args.choice_texts[1]!r}")
+    if args.decision_mode == "logit_forced":
         print(f"Swap corr:   {args.swap_correct}")
     if args.smith_probe:
         print(f"Stimuli:     {len(stimuli)} from {args.smith_probe}")
+    elif grid_mode:
+        print(f"Stimuli:     {len(stimuli)} from {args.grid_pkg}/{stim_set_label}")
     else:
         print(f"Stimuli:     {len(stimuli)} from {BENCHMARK_STIM_PACKAGE}/{stim_set_label}")
     print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
@@ -343,7 +377,10 @@ def main():
         for repeat in range(1, args.repeats + 1):
             if args.repeats > 1:
                 print(f"\n  --- Repeat {repeat}/{args.repeats} ---")
-            for stim in stimuli:
+            for stim_rec in stimuli:
+                # Grid records hold paths; open the triad once, and only if some
+                # word still needs running (resume skips must not pay the decode).
+                stim = None if grid_mode else stim_rec
                 for w in words:
                     word, word_type, word_length = w["name"], w["type"], w["length"]
 
@@ -355,7 +392,7 @@ def main():
                         expected_orderings = ["shape_first", "texture_first"]
                     else:
                         expected_orderings = [args.ordering]
-                    trial_key_prefix = (model_key, stim["stim_id"], word, str(repeat))
+                    trial_key_prefix = (model_key, stim_rec["stim_id"], word, str(repeat))
                     all_done = all(
                         (trial_key_prefix[0], trial_key_prefix[1], trial_key_prefix[2], ord_name, trial_key_prefix[3])
                         in done_keys
@@ -364,7 +401,10 @@ def main():
                     if all_done:
                         continue
 
-                    print(f"  Stimulus {stim['stim_id']:>3s} (word={word}, type={word_type}, len={word_length})")
+                    if stim is None:
+                        stim = materialize_stimulus(stim_rec)
+
+                    print(f"  Stimulus {stim_rec['stim_id']:>3s} (word={word}, type={word_type}, len={word_length})")
                     if args.decision_mode in {"binary_pair", "binary_pair_conservative"}:
                         trial_results = run_trial_binary_pair(
                             run_fn,
@@ -405,7 +445,7 @@ def main():
                             word_length,
                             ordering=args.ordering,
                             prompt_condition=args.prompt_condition,
-                           choice_texts=tuple(args.choice_texts) if args.choice_texts else ("1", "2")
+                            choice_texts=tuple(args.choice_texts),
                         )
                     for r in trial_results:
                         r["model"] = model_key
@@ -414,6 +454,9 @@ def main():
                         r["decision_mode"] = args.decision_mode
                         r["swap_correct"] = "true" if args.swap_correct else "false"
                         r.update(csv_meta)
+                        if grid_mode:
+                            r["stl_id"] = stim_rec["stl_id"]
+                            r["texture_set"] = stim_rec["texture_set"]
 
                         logit_info = ""
 

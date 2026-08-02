@@ -200,6 +200,7 @@ def build_messages(
     prompt: str,
     *,
     system_prompt: str | None = None,
+    choice_texts: tuple[str, str] | None = None,
 ) -> list[dict]:
     """Same vision layout as local VLMs (labeled slots + task prompt from eval_core)."""
     return build_openai_compatible_vision_messages(
@@ -207,11 +208,13 @@ def build_messages(
         prompt,
         image_to_url=image_to_base64_url,
         system_prompt=system_prompt,
+        choice_texts=choice_texts,
     )
 
 
 def run_remote(model_name: str, images: list[Image.Image], prompt: str,
-               temperature: float | None = None) -> dict:
+               temperature: float | None = None,
+               choice_texts: tuple[str, str] | None = None) -> dict:
     from openai import OpenAI
 
     cfg = REMOTE_MODELS[model_name]
@@ -230,7 +233,9 @@ def run_remote(model_name: str, images: list[Image.Image], prompt: str,
         )
 
     client = OpenAI(api_key=hf_token, base_url=base_url, timeout=60.0)
-    messages = build_messages(images, prompt, system_prompt=system_prompt)
+    messages = build_messages(
+        images, prompt, system_prompt=system_prompt, choice_texts=choice_texts
+    )
 
     # Disable thinking mode for Qwen3.5 models to avoid wasting tokens.
     # Keep max_tokens low (128) to cap runaway thinking if the provider
@@ -537,12 +542,18 @@ def main():
             repeat, stim, w = task
             word, word_type, word_length = w["name"], w["type"], w["length"]
 
-            def run_fn(images, prompt, _mk=model_key):
-                return run_remote(_mk, images, prompt, temperature=args.temperature)
+            def run_fn(images, prompt, _mk=model_key, choice_texts=None):
+                return run_remote(
+                    _mk, images, prompt, temperature=args.temperature, choice_texts=choice_texts
+                )
 
+            choice_texts = (
+                ("A", "B") if args.prompt_condition.endswith("_AB") else ("1", "2")
+            )
             trial_results = run_trial(run_fn, stim, word, word_type, word_length,
                                       ordering=args.ordering,
-                                      prompt_condition=args.prompt_condition)
+                                      prompt_condition=args.prompt_condition,
+                                      choice_texts=choice_texts)
             for r in trial_results:
                 r["model"] = model_key
                 r["repeat"] = repeat

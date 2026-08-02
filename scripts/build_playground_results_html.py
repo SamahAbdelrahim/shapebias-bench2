@@ -14,10 +14,18 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 PLAY = REPO / "results" / "playground.results"
 SESS_SMOKE = PLAY / "session_2026-07-17_farmshare"
+SESS_AB_FIXED = PLAY / "session_2026-07-30_farmshare"
 # Revised no_word_category / _AB wording (July 24). Prefer these over July-17
 # old-prompt logs when rebuilding canonical HTML. Old logs stay on disk as baseline.
 SESS_CAT_REVISED = PLAY / "session_2026-07-24_farmshare"
 SESS_SMITH = PLAY / "session_2026-07-25_smith_farmshare"
+ARCHIVE_AB = PLAY / "_archived_ab_label_mismatch_pre_2026-07-28"
+
+
+def newest_smith_session() -> Path:
+    """Prefer the newest Smith session folder (post label-fix rerun when present)."""
+    candidates = sorted(PLAY.glob("session_*smith*"), reverse=True)
+    return candidates[0] if candidates else SESS_SMITH
 SESS_PROBE = REPO / "results" / "probe.results" / "session_2026-07-10_farmshare"
 FARM_HTML = REPO / "farmshare" / "probe-experiment-results.html"
 
@@ -1345,17 +1353,22 @@ def _pair(session: Path, condition: str, suffix: str = "") -> tuple[Path, Path]:
     )
 
 
-def _load_ladder_from_session(session: Path) -> tuple[dict[str, list], dict[str, list]] | None:
-    """Load similarity/category/noun cells from one session (all models in same logs)."""
+def _load_ladder_from_session(
+    session: Path,
+    *,
+    ab_session: Path | None = None,
+) -> tuple[dict[str, list], dict[str, list]] | None:
+    """Load similarity/category/noun cells; numeric and AB may live in different sessions."""
+    ab_sess = ab_session or session
     numeric_paths = {
         "similarity": _pair(session, "no_word_similarity"),
         "category": _pair(session, "no_word_category"),
         "noun": _pair(session, "noun_label", "_shiple"),
     }
     ab_paths = {
-        "similarity": _pair(session, "no_word_similarity_AB"),
-        "category": _pair(session, "no_word_category_AB"),
-        "noun": _pair(session, "noun_label_AB", "_shiple"),
+        "similarity": _pair(ab_sess, "no_word_similarity_AB"),
+        "category": _pair(ab_sess, "no_word_category_AB"),
+        "noun": _pair(ab_sess, "noun_label_AB", "_shiple"),
     }
     if not all(path.is_file() for paths in numeric_paths.values() for path in paths):
         return None
@@ -1368,7 +1381,8 @@ def _load_ladder_from_session(session: Path) -> tuple[dict[str, list], dict[str,
 
 def try_build_smith_numeric_report() -> Path | None:
     """Smith stimuli: full numeric + A/B ladder (same columns as local report)."""
-    loaded = _load_ladder_from_session(SESS_SMITH)
+    ab_sess = newest_smith_session()
+    loaded = _load_ladder_from_session(SESS_SMITH, ab_session=ab_sess)
     if loaded is None:
         return None
     numeric, ab = loaded
@@ -1376,6 +1390,11 @@ def try_build_smith_numeric_report() -> Path | None:
         "similarity": _pair(SESS_SMITH, "no_word_similarity"),
         "category": _pair(SESS_SMITH, "no_word_category"),
         "noun": _pair(SESS_SMITH, "noun_label", "_shiple"),
+    }
+    ab_paths = {
+        "similarity": _pair(ab_sess, "no_word_similarity_AB"),
+        "category": _pair(ab_sess, "no_word_category_AB"),
+        "noun": _pair(ab_sess, "noun_label_AB", "_shiple"),
     }
 
     numeric_sections = "\n".join(
@@ -1426,7 +1445,7 @@ def try_build_smith_numeric_report() -> Path | None:
             numeric[key],
             section_title=f"Label-set effect — {key}: A/B vs 1/2 (Smith)",
             blurb="Same framing and Smith images. Δ = numeric 1/2 − letter A/B on generation.",
-            source_note=f"Session: {SESS_SMITH.name}",
+            source_note=f"Numeric: {SESS_SMITH.name}; A/B: {ab_sess.name}",
             left_label="A/B",
             right_label="1/2",
         )
@@ -1472,15 +1491,15 @@ validity gates as the local July-24 ladder.</div>
 
 def try_build_smith_prompt_compare() -> Path | None:
     """Smith stimuli: A/B three-prompt comparison (n=30)."""
-    loaded = _load_ladder_from_session(SESS_SMITH)
-    if loaded is None:
-        return None
-    _, ab = loaded
+    ab_sess = newest_smith_session()
     ab_paths = {
-        "similarity": _pair(SESS_SMITH, "no_word_similarity_AB"),
-        "category": _pair(SESS_SMITH, "no_word_category_AB"),
-        "noun": _pair(SESS_SMITH, "noun_label_AB", "_shiple"),
+        "similarity": _pair(ab_sess, "no_word_similarity_AB"),
+        "category": _pair(ab_sess, "no_word_category_AB"),
+        "noun": _pair(ab_sess, "noun_label_AB", "_shiple"),
     }
+    if not all(path.is_file() for paths in ab_paths.values() for path in paths):
+        return None
+    ab = {key: _rows_from_paths(*paths) for key, paths in ab_paths.items()}
     sim_rows = ab["similarity"]
     cat_rows = ab["category"]
     noun_rows = ab["noun"]
@@ -1496,14 +1515,14 @@ def try_build_smith_prompt_compare() -> Path | None:
         cat_rows,
         section_title="Comparison — similarity vs category (Smith, n=30)",
         blurb="Δ = category_AB − similarity_AB on generation.",
-        source_note=f"Session: {SESS_SMITH.name}",
+        source_note=f"Session: {ab_sess.name}",
     )
     noun_comparisons = comparison_section_html(
         sim_rows,
         noun_rows,
         section_title="Comparison — similarity vs noun + shiple (Smith)",
         blurb="Δ = noun − similarity on generation.",
-        source_note=f"Session: {SESS_SMITH.name}",
+        source_note=f"Session: {ab_sess.name}",
         left_label="similarity",
         right_label="shiple",
     ) + comparison_section_html(
@@ -1511,11 +1530,12 @@ def try_build_smith_prompt_compare() -> Path | None:
         noun_rows,
         section_title="Comparison — category vs noun + shiple (Smith)",
         blurb="Δ = noun − category on generation.",
-        source_note=f"Session: {SESS_SMITH.name}",
+        source_note=f"Session: {ab_sess.name}",
         left_label="category",
         right_label="shiple",
     )
 
+    date_tag = ab_sess.name.replace("session_", "").replace("_farmshare", "").replace("_smith", "")
     body = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1565,7 +1585,7 @@ Local counterpart:
 </body>
 </html>
 """
-    out = PLAY / "smith_prompt_compare_30trials_2026-07-25.html"
+    out = PLAY / f"smith_prompt_compare_30trials_{date_tag}.html"
     out.write_text(body)
     return out
 
@@ -1573,6 +1593,10 @@ Local counterpart:
 def write_index_html() -> Path:
     """Landing page grouping playground HTML reports by date/stimuli set."""
     reports = [
+        ("2026-07-30 — AB label fix (Image A/B slots)", [
+            ("Master interpretation report", "master_interpretation_2026-07-30.html"),
+            ("Master CSV", "master_interpretation_2026-07-30.csv"),
+        ]),
         ("2026-07-24 — local (revised category)", [
             ("Numeric ladder + Qwen8", "local_models_numeric_and_qwen8_30trials_2026-07-24.html"),
             ("A/B prompt compare (n=30)", "local_models_prompt_compare_30trials_2026-07-24.html"),

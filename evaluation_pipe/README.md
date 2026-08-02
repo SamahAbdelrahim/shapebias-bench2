@@ -121,7 +121,7 @@ After a run, stdout includes **Shape%(dec)** = shape / (shape + texture) and **S
 
 ## Vision prompt parity (local vs remote)
 
-Local VLMs and `run_remote.py` share the same **image-slot labels** (`Reference image:`, `Image 1:`, `Image 2:`) and the same task string from `eval_core.make_prompt`.
+Local VLMs and `run_remote.py` share the same **image-slot labels** and the same task string from `eval_core.make_prompt`. For three-image 2AFC, slots are `Reference image:`, then either `Image 1:` / `Image 2:` (numeric choices) or `Image A:` / `Image B:` when `choice_texts=("A", "B")`.
 
 **System message:** **Remote** runs use one uniform **`REMOTE_UNIFORM_SYSTEM_PROMPT`** for every `REMOTE_MODELS` entry (task-aligned 1/2 output); **local** Transformers VLMs use **`LOCAL_VLM_SYSTEM_PROMPT`** in both ``generate`` and ``score_choices`` (alias: ``QWEN35_VLM_SYSTEM_PROMPT``). The standardized local rerun patches ``_system_prompt`` to ``REMOTE_UNIFORM_SYSTEM_PROMPT``. Rationale: **`interpret/remote_eval_prompt_policy.md`**.
 

@@ -61,13 +61,17 @@ stimuli_pipe/**/*.tar.gz
 stimuli_pipe/**/*.tgz
 stimuli_pipe/**/*.7z
 
+# Symlinks to the full texture grid (1140 trials/mode): pipeline output and its scratch stage
+stimuli_pipe/stimuli_texture_grid_v1
+stimuli_pipe/stimuli_texture_grid_v1_scratch
+
 # Large previous-lit stimuli (keep local; document in readme only)
 previous-lit-stimuli/geirhos_cueconflict/
 previous-lit-stimuli/all_smith_stimuli_sets.zip
 previous-lit-stimuli/all_smith_stimuli_sets/
 previous-lit-stimuli/geirhos_unaltered/
 previous-lit-stimuli/**/*.zip
-previous-lit-stimuli/
+previous-lit-stimuli/ 
 # Local AI / agent instructional files (keep private; not for remote)
 TODO.md
 PLAN.md

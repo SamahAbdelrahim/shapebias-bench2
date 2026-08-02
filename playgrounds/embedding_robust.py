@@ -45,13 +45,15 @@ load_dotenv(REPO_ROOT / ".env")
 from evaluation_pipe.models import create_model
 
 LADDER_MODELS = [
+    "smolvlm",
+    "internvl",
     "qwen3-vl-2b",
     "qwen3-vl-4b",
     "qwen3-vl-8b",
-    "internvl",
-    "internvl-2b",
-    "internvl-8b",
-    "internvl-14b",
+    "qwen3.5-0.8b",
+    "qwen3.5-4b",
+    "qwen3.5-9b",
+    "qwen3.5-27b",
 ]
 
 
@@ -187,6 +189,45 @@ def build_default_triplets(root: Path, n: int, seed: int):
         )
         for d in trial_dirs
     ]
+    return triplets
+
+
+def build_grid_triplets(stim_pkg: str, stim_set: str, n: int, seed: int):
+    """Sample from a full texture-grid package (manifest-driven nested layout)."""
+    from evaluation_pipe.eval_core import load_stimuli_grid, materialize_stimulus
+
+    records = load_stimuli_grid(stim_pkg, stim_set)
+    rng = random.Random(seed)
+    # Stratify by shape so the sample covers the 30 STLs when n is large enough.
+    by_shape: dict[str, list] = {}
+    for rec in records:
+        by_shape.setdefault(rec["stl_id"], []).append(rec)
+    shapes = sorted(by_shape, key=lambda s: int(s))
+    picked = []
+    # Round-robin across shapes until we have n.
+    idxs = {s: 0 for s in shapes}
+    for s in shapes:
+        rng.shuffle(by_shape[s])
+    while len(picked) < n and any(idxs[s] < len(by_shape[s]) for s in shapes):
+        for s in shapes:
+            i = idxs[s]
+            if i < len(by_shape[s]):
+                picked.append(by_shape[s][i])
+                idxs[s] = i + 1
+            if len(picked) >= n:
+                break
+    print(
+        f"Stimuli: {len(picked)} stratified from grid {stim_pkg}/{stim_set} "
+        f"({len(shapes)} shapes, seed={seed})"
+    )
+    import hashlib
+    triplets = []
+    for rec in picked:
+        stim = materialize_stimulus(rec)
+        sid = int(hashlib.md5(rec["stim_id"].encode()).hexdigest()[:8], 16)
+        triplets.append(
+            (sid, stim["reference"], stim["shape_match"], stim["texture_match"])
+        )
     return triplets
 
 _CC_PAT = re.compile(r"^([a-z]+)(\d+)-([a-z]+)(\d+)\.png$")
@@ -382,6 +423,17 @@ def main() -> int:
         help="Path to Linda Smith probe-shapematch-colormatch dataset; if set, run the familiar-category "
         "positive control on these stimuli instead of IMAGE_DATASET.",
     )
+    ap.add_argument(
+        "--grid-pkg",
+        default=None,
+        help="Full texture-grid package under stimuli_pipe/ (e.g. stimuli_texture_grid_v1_scratch). "
+             "Samples stratified by shape from its manifest.",
+    )
+    ap.add_argument(
+        "--stim-set",
+        default=None,
+        help="Stimulus set name under --grid-pkg (default: stimuli_A_auto_contrast).",
+    )
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
@@ -394,6 +446,8 @@ def main() -> int:
             name = "embedding_geirhos_unaltered"
         elif args.smith_probe:
             name = "embedding_smith_probe"
+        elif args.grid_pkg:
+            name = "embedding_grid"
         else:
             name = "embedding_robust"
         args.out_prefix = str(default_session_results_dir("probe") / name)
@@ -451,6 +505,10 @@ def main() -> int:
         print(f"SMITH PROBE: {len(triplets)} triplets from {smith_root}")
         for tid, *_ in triplets[:5]:
             print(f"  e.g. {tid}")
+    elif args.grid_pkg:
+        stim_set = args.stim_set or "stimuli_A_auto_contrast"
+        triplets = build_grid_triplets(args.grid_pkg, stim_set, args.n_stimuli, args.seed)
+        print(f"FULL GRID: {len(triplets)} stratified triplets from {args.grid_pkg}/{stim_set}")
     else:
         triplets = build_default_triplets(Path(os.environ["IMAGE_DATASET"]), args.n_stimuli, args.seed)
     all_results: dict = {"config": vars(args), "models": {}}

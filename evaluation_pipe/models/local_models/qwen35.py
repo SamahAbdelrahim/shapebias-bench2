@@ -236,6 +236,14 @@ class Qwen35_9B(_Qwen35Base):
 
 @register_model("qwen3.5-27b")
 class Qwen35_27B(_Qwen35Base):
-    """Qwen3.5-27B wrapper."""
+    """Qwen3.5-27B wrapper.
+
+    Loaded in 4-bit (nf4) on a single GPU (~16 GB): bf16 needs ~55 GB, which
+    only fits by sharding across GPUs, and sharding this Gated-DeltaNet hybrid
+    is numerically unstable (nan logits). Results carry a quantization caveat
+    relative to the bf16 rungs (4B / 9B).
+    """
 
     _default_model_id = "Qwen/Qwen3.5-27B"
+    _device_map = "auto"
+    _quantization_4bit = True

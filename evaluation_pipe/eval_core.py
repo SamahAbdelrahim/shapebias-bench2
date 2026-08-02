@@ -216,13 +216,18 @@ def build_openai_compatible_vision_messages(
     *,
     image_to_url,
     system_prompt: str | None = None,
+    choice_texts: tuple[str, str] | None = None,
 ) -> list[dict]:
     """Chat messages for OpenAI-style vision APIs (e.g. HF router).
 
     *image_to_url* maps each PIL image to a URL string (e.g. data:image/jpeg;base64,...).
+    Slot labels match *choice_texts* the same way as ``build_transformers_vision_user_content``.
     """
     if len(images) == 3:
-        labels = VISION_USER_IMAGE_LABELS_3_NUMERIC
+        if choice_texts == ("A", "B"):
+            labels = VISION_USER_IMAGE_LABELS_3_ALPHABETIC
+        else:
+            labels = VISION_USER_IMAGE_LABELS_3_NUMERIC
     elif len(images) == 2:
         labels = VISION_USER_IMAGE_LABELS_2
     else:
@@ -246,7 +251,8 @@ def build_openai_compatible_vision_messages(
 # CSV OUTPUT FIELDS
 # ===========================================================================
 CSV_FIELDS = [
-    "model", "model_name", "stim_id", "word", "word_type", "word_length",
+    "model", "model_name", "stim_id", "stl_id", "texture_set",
+    "word", "word_type", "word_length",
     "prompt_condition",
     "decision_mode", "swap_correct",
     "ordering", "order_method", "a_is", "b_is", "raw_text", "parsed_answer", "choice",
@@ -406,10 +412,10 @@ def human_eval_seed_text(
     return f"{human_eval_seed}|{stim_set}|{stim_pkg}|{condition}|{word_mode}"
 
 
-def benchmark_csv_meta(stim_set: str) -> dict[str, str]:
+def benchmark_csv_meta(stim_set: str, stim_pkg: str = BENCHMARK_STIM_PACKAGE) -> dict[str, str]:
     return {
         "eval_mode": "benchmark",
-        "stim_pkg": BENCHMARK_STIM_PACKAGE,
+        "stim_pkg": stim_pkg,
         "stim_set": stim_set,
         "human_word_seed": "",
         "stimulus_shuffle_condition": "",
@@ -518,6 +524,58 @@ def load_stimuli_human_package(stim_pkg: str, stim_set: str | None = None) -> li
                 "texture_match": Image.open(trial_dir / "texture_match.png").convert("RGB"),
             })
     return stimuli
+
+
+def load_stimuli_grid(stim_pkg: str,
+                      stim_set: str | None = None,
+                      num_stimuli: int | None = None) -> list[dict]:
+    """Load full texture-grid stimuli from ``manifest.csv`` as records, not images.
+
+    Grid packages nest a texture level under each shape
+    (``<stim_set>/<stl_id>/<texture_set>/reference.png``), so the directory scan
+    in :func:`load_stimuli` does not apply. Records carry paths rather than open
+    images: a grid has 1,140 trials per mode, and decoding all of them up front
+    would hold roughly 10 GB. Pass each record through
+    :func:`materialize_stimulus` when its trial runs.
+    """
+    stim_set = resolve_stim_set_name(stim_set)
+    pkg_root = REPO_ROOT / "stimuli_pipe" / stim_pkg
+    manifest_path = pkg_root / stim_set / "manifest.csv"
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"Grid manifest not found: {manifest_path}")
+
+    records: list[dict] = []
+    with open(manifest_path, newline="", encoding="utf-8") as f:
+        for raw in csv.DictReader(f):
+            row = _normalize_csv_row_keys(raw)
+            stim_id = row.get("stim_id", "")
+            if not stim_id:
+                continue
+            records.append({
+                "stim_id": stim_id,
+                "stl_id": row.get("stl_id", ""),
+                "texture_set": row.get("texture_set", ""),
+                "reference_path": pkg_root / row["reference"],
+                "shape_match_path": pkg_root / row["shape_match"],
+                "texture_match_path": pkg_root / row["texture_match"],
+            })
+    if not records:
+        raise ValueError(f"No stimulus rows found in {manifest_path}")
+
+    if num_stimuli is not None and num_stimuli < len(records):
+        keep = sorted(random.sample(range(len(records)), num_stimuli))
+        records = [records[i] for i in keep]
+    return records
+
+
+def materialize_stimulus(record: dict) -> dict:
+    """Open one grid record's three images into the dict ``run_trial`` expects."""
+    return {
+        "stim_id": record["stim_id"],
+        "reference": Image.open(record["reference_path"]).convert("RGB"),
+        "shape_match": Image.open(record["shape_match_path"]).convert("RGB"),
+        "texture_match": Image.open(record["texture_match_path"]).convert("RGB"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1085,8 +1143,20 @@ def add_common_args(parser) -> None:
 # ---------------------------------------------------------------------------
 # CSV writing and summary
 # ---------------------------------------------------------------------------
-def _csv_row(row: dict) -> dict:
-    return {k: row.get(k, "") for k in CSV_FIELDS}
+def _csv_row(row: dict, fieldnames: list[str]) -> dict:
+    return {k: row.get(k, "") for k in fieldnames}
+
+
+def _existing_csv_fieldnames(output_path: Path) -> list[str] | None:
+    """Header already on disk, if any. Appending must follow it, not ``CSV_FIELDS``."""
+    try:
+        with open(output_path, newline="", encoding="utf-8") as f:
+            header = next(csv.reader(f), None)
+    except OSError:
+        return None
+    if not header:
+        return None
+    return [(h or "").strip().lstrip("\ufeff") for h in header]
 
 
 def write_results(all_results: list[dict], output_path: Path,
@@ -1094,14 +1164,20 @@ def write_results(all_results: list[dict], output_path: Path,
     """Write results to CSV. When append=True, adds rows without overwriting."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     write_header = not append or not output_path.exists() or output_path.stat().st_size == 0
+    fieldnames = CSV_FIELDS
+    if not write_header:
+        # Resuming a CSV written before a CSV_FIELDS change would otherwise shift columns.
+        existing = _existing_csv_fieldnames(output_path)
+        if existing:
+            fieldnames = existing
     mode = "a" if append else "w"
     with open(output_path, mode, newline="") as f:
         writer = csv.DictWriter(
-            f, fieldnames=CSV_FIELDS, extrasaction="ignore", restval="",
+            f, fieldnames=fieldnames, extrasaction="ignore", restval="",
         )
         if write_header:
             writer.writeheader()
-        writer.writerows(_csv_row(r) for r in all_results)
+        writer.writerows(_csv_row(r, fieldnames) for r in all_results)
     if not quiet:
         print(f"\nResults {'appended to' if append else 'saved to'} {output_path}")
 
