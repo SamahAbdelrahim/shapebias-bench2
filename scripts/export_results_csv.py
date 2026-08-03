@@ -66,6 +66,9 @@ def export_embedding(json_path: Path, prefix: str) -> None:
                     "margin_centered": e["centered"]["mean_margin"],
                     "retrieval_shape_at1": e.get("retrieval_shape_at1"),
                     "retrieval_texture_at1": e.get("retrieval_texture_at1"),
+                    # label-level retrieval; grid runs only, None elsewhere
+                    "retrieval_mesh_at1": e.get("retrieval_mesh_at1"),
+                    "retrieval_texset_at1": e.get("retrieval_texset_at1"),
                 }
             )
     write_csv(f"{prefix}.csv", rows)

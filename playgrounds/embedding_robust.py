@@ -167,6 +167,25 @@ def _retrieval_at1(R, X):
     correct = (top1 == torch.arange(len(R))).float().mean().item()
     return correct
 
+
+def _retrieval_by_label(R, X, lab_r, lab_x):
+    """Label-level retrieval: does the top-1 neighbour carry the same label?
+
+    ``_retrieval_at1`` demands the *exact* stimulus index. That is the right
+    question only when each label occurs once, which holds for the 30-stimulus
+    sets but not for the texture grid: there each mesh recurs across many
+    textures, so a same-mesh neighbour is scored as an error and the control
+    reads far too low (0.05-0.15 on the 114-triad sample, against 0.77-1.00 on
+    the n=30 set). Asking whether the neighbour shares the reference's mesh is
+    the question the sensitivity control was meant to ask, and its chance level
+    is 1/n_labels rather than 1/n_stimuli.
+    """
+    Rn = F.normalize(R, dim=1)
+    Xn = F.normalize(X, dim=1)
+    top1 = (Rn @ Xn.t()).argmax(dim=1).tolist()
+    hits = [1.0 if lab_x[j] == lab_r[i] else 0.0 for i, j in enumerate(top1)]
+    return sum(hits) / len(hits) if hits else float("nan")
+
 def build_default_triplets(root: Path, n: int, seed: int):
     if not root.is_absolute():
         root = REPO_ROOT / root
@@ -193,7 +212,13 @@ def build_default_triplets(root: Path, n: int, seed: int):
 
 
 def build_grid_triplets(stim_pkg: str, stim_set: str, n: int, seed: int):
-    """Sample from a full texture-grid package (manifest-driven nested layout)."""
+    """Sample from a full texture-grid package (manifest-driven nested layout).
+
+    Returns ``(triplets, meta)``, where ``meta[i]`` carries the mesh and texture
+    labels of triplet ``i``. The labels are needed because the grid reuses each
+    mesh across many textures, which makes exact-stimulus retrieval the wrong
+    sensitivity control (see :func:`_retrieval_by_label`).
+    """
     from evaluation_pipe.eval_core import load_stimuli_grid, materialize_stimulus
 
     records = load_stimuli_grid(stim_pkg, stim_set)
@@ -222,13 +247,17 @@ def build_grid_triplets(stim_pkg: str, stim_set: str, n: int, seed: int):
     )
     import hashlib
     triplets = []
+    meta = []
     for rec in picked:
         stim = materialize_stimulus(rec)
         sid = int(hashlib.md5(rec["stim_id"].encode()).hexdigest()[:8], 16)
         triplets.append(
             (sid, stim["reference"], stim["shape_match"], stim["texture_match"])
         )
-    return triplets
+        # kept alongside the triplets so retrieval can be scored at the mesh and
+        # texture level, not only at the exact-stimulus level
+        meta.append({"stl_id": str(rec["stl_id"]), "texture_set": str(rec["texture_set"])})
+    return triplets, meta
 
 _CC_PAT = re.compile(r"^([a-z]+)(\d+)-([a-z]+)(\d+)\.png$")
 
@@ -482,7 +511,8 @@ def main() -> int:
     device = "cuda" if torch.cuda.is_available() else "mps"
     print(f"Device: {device}")
     print(f"Models: {args.models}")
-    
+
+    grid_meta = None  # mesh/texture labels; only the grid builder supplies them
     if args.cue_conflict:
         cc_root = Path(args.cue_conflict)
         triplets = build_cueconflict_triplets(cc_root, args.n_stimuli, args.seed)
@@ -507,7 +537,9 @@ def main() -> int:
             print(f"  e.g. {tid}")
     elif args.grid_pkg:
         stim_set = args.stim_set or "stimuli_A_auto_contrast"
-        triplets = build_grid_triplets(args.grid_pkg, stim_set, args.n_stimuli, args.seed)
+        triplets, grid_meta = build_grid_triplets(
+            args.grid_pkg, stim_set, args.n_stimuli, args.seed
+        )
         print(f"FULL GRID: {len(triplets)} stratified triplets from {args.grid_pkg}/{stim_set}")
     else:
         triplets = build_default_triplets(Path(os.environ["IMAGE_DATASET"]), args.n_stimuli, args.seed)
@@ -560,6 +592,22 @@ def main() -> int:
                     if center:
                         entry["retrieval_shape_at1"] = _retrieval_at1(R, S)
                         entry["retrieval_texture_at1"] = _retrieval_at1(R, T)
+                        # Only safe when this read-out produced a vector for every
+                        # triplet; a skipped image would misalign labels and rows.
+                        if grid_meta and len(grid_meta) == entry["n"]:
+                            # Label-level control. The shape-match gallery shares
+                            # the reference's mesh; the texture-match gallery
+                            # shares its texture set.
+                            mesh_lab = [m["stl_id"] for m in grid_meta]
+                            tex_lab = [m["texture_set"] for m in grid_meta]
+                            entry["retrieval_mesh_at1"] = _retrieval_by_label(
+                                R, S, mesh_lab, mesh_lab
+                            )
+                            entry["retrieval_texset_at1"] = _retrieval_by_label(
+                                R, T, tex_lab, tex_lab
+                            )
+                            entry["retrieval_mesh_chance"] = 1.0 / len(set(mesh_lab))
+                            entry["retrieval_texset_chance"] = 1.0 / len(set(tex_lab))
                 rep_results[rep] = entry
 
             model_out = {"reps": rep_results, "errors": errs}
@@ -598,11 +646,17 @@ def main() -> int:
 def _print_model(name, rep_results, errs):
     for rep, e in rep_results.items():
         c = e["centered"]
-        print(
+        line = (
             f"  {rep:16} dim={e['dim']:5}  shape(centered)={c['shape_rate']:.2f} "
             f"[{c['ci95'][0]:.2f},{c['ci95'][1]:.2f}]  margin={c['mean_margin']:+.4f}  "
             f"retr@1 shape={e['retrieval_shape_at1']:.2f} tex={e['retrieval_texture_at1']:.2f}"
         )
+        if "retrieval_mesh_at1" in e:
+            line += (
+                f"  mesh@1={e['retrieval_mesh_at1']:.2f} "
+                f"texset@1={e['retrieval_texset_at1']:.2f}"
+            )
+        print(line)
     for k, v in errs.items():
         print(f"  [{k}] {v}")
 
@@ -616,18 +670,37 @@ def _print_summary(res):
         "high => probe is sensitive"
     )   
     print("=" * 78)
-    print(f"{'model':14} {'readout':16} {'shape':>5} {'ci95':>13} {'retrS':>6} {'retrT':>6}")
+    has_labels = any(
+        "retrieval_mesh_at1" in e
+        for mo in res["models"].values()
+        for e in (mo.get("reps") or {}).values()
+    )
+    if has_labels:
+        print(
+            "mesh@1/texset@1 = label-level retrieval; on the grid a mesh recurs "
+            "across textures, so exact-stimulus retr@1 understates sensitivity"
+        )
+    head = f"{'model':14} {'readout':16} {'shape':>5} {'ci95':>13} {'retrS':>6} {'retrT':>6}"
+    if has_labels:
+        head += f" {'mesh':>6} {'texset':>6}"
+    print(head)
     for name, mo in res["models"].items():
         if "error" in mo:
             print(f"{name:14} ERROR: {mo['error']}")
             continue
         for rep, e in mo["reps"].items():
             c = e["centered"]
-            print(
+            row = (
                 f"{name:14} {rep:16} {c['shape_rate']:5.2f} "
                 f"[{c['ci95'][0]:.2f},{c['ci95'][1]:.2f}] "
                 f"{e['retrieval_shape_at1']:6.2f} {e['retrieval_texture_at1']:6.2f}"
             )
+            if has_labels:
+                row += (
+                    f" {e.get('retrieval_mesh_at1', float('nan')):6.2f}"
+                    f" {e.get('retrieval_texset_at1', float('nan')):6.2f}"
+                )
+            print(row)
 
 
 if __name__ == "__main__":

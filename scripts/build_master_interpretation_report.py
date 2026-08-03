@@ -311,7 +311,9 @@ def interpretation_bullets(behavioral: list[dict]) -> str:
     bullets.append(
         "Embedding readouts on the same triplets sit near chance for novel categories "
         "while Geirhos cue-conflict shows texture preference: shape bias in 2AFC is "
-        "downstream of the vision encoder, not encoded as centred cosine shape rate."
+        "not encoded as centred cosine shape rate. Cosine is an unweighted read-out, "
+        "so this does not by itself show shape is absent from the encoder; see the "
+        "linear probe in playgrounds/linear_probe.py."
     )
     bullets.append(
         "PriDe / swap on saved one_pass logits tests whether generation locks "

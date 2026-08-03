@@ -9,3 +9,7 @@ bitsandbytes
 requests
 openai
 matplotlib
+numpy
+pandas
+scipy
+scikit-learn

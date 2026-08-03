@@ -2,6 +2,50 @@
 
 Local-only (gitignored). Read at the start of every session; add an entry after any significant decision. Newest entries first.
 
+## 2026-08-02 (latest), Read-out power objection: concede the scope, build the probe, fix the retrieval control
+
+**What was decided:** Answer reviewer point 8 ("cosine is a fixed unweighted read-out") as an experiment rather than a caveat. Narrowed the encoder claim everywhere it was overstated, and built the linear-probe / read-out-power pipeline that decides it. Scope agreed with Samah: 4 models (qwen3.5-4b, qwen3.5-9b, qwen3-vl-8b, smolvlm), mode A only, code + claim revisions + response memo + the §4.1 numeric fixes.
+
+**The concession:** cosine weights all 1,152 dims equally, so it cannot distinguish "shape absent from the encoder" from "shape present but low-weighted." What §4.1 licenses is only that shape is not a dominant axis of the encoder's *unweighted cosine geometry*. Previous phrasings ("not a property of the encoder's similarity structure", "made downstream of the vision encoder", "establish robustly") were narrowed in `manuscript/main.md` (abstract, §2, §4.1, §4.4), `REPORT.md:74`, `interpret/null-result-July10th-2026.md` (§1c, §1c-robustness), `scripts/build_master_interpretation_report.py`.
+
+**The amendment we add to the reviewer's framing:** their dichotomy (absent vs. underweighted) misses a third outcome — shape present AND strongly weighted, yet the texture candidate still nearer in the *directed* comparison. Decoding one image and ranking three points are different questions. Our own n=30 retrieval control (shape-match retrieval@1 0.77-1.00 vs 1/30 chance, texture-match 0.10-0.23) already points there. H3 would relocate the claim from what the encoder contains to how it arranges it, which is the more interesting version, not a weaker one. Reading rules for all three outcomes are pre-committed in the memo before the numbers land.
+
+**Defect found in our own sensitivity control (important):** `_retrieval_at1` demands the *exact* stimulus. At n=30 each mesh appears once so that equals mesh-identity retrieval; on the 114-triad grid `build_grid_triplets` round-robins across 30 meshes so each recurs ~4x, and a same-mesh/different-texture neighbour is scored as an **error**. The 0.05-0.15 we reported, and defended in the manuscript as "the probe is not dead," is largely a metric artifact, not lost sensitivity. Confirmed on synthetic data where mesh identity is perfectly decodable: exact@1 = 0.000 while mesh@1 = 0.797 on the same vectors. Added `_retrieval_by_label` (mesh-level and texture-set-level, chance 1/30 and 1/38); kept the old metric so prior numbers stay reproducible.
+
+**Split design (the load-bearing technical piece):** the grid's foils are deterministic offsets, not random — texture-match foil = mesh s+15 (mod 30), shape-match foil = texture t+19 (mod 38). Both are involutions, so meshes form 15 pairs and textures 19. Splits must be built from whole pairs or a triad's foils leak across the boundary. Ladder uses 5 mesh-folds x 5 texture-folds = 25 blocks, covering all 1,140 cells exactly once, with test meshes and test textures both unseen. Note for the response: holding out *meshes* is undefined for a 30-way mesh classifier (cannot predict an untrained class); it is only coherent in the metric-learning formulation, which is why the design has both a probe and a ladder.
+
+**Verified before any GPU time:** built the reviewer's hypothetical to spec (mesh in 20 of 1,152 dims, texture in the other 1,132). Centred cosine 0.00, learned metric 1.00, mesh probe 1.00 on identical triads. A second regime with shape dominant returns 1.00 at every rung, so the ladder does not manufacture a climb. `python playgrounds/linear_probe.py --self-test`.
+
+**Two factual errors in §4.1 corrected** (independent of the objection, verified against the JSONs): "CIs include 0.5" is false for 12 of 32 cells, all below 0.5; the "0.20 to 0.55" range excludes SmolVLM proj_mean 0.08 [0.04,0.13]. The direction survives (no cell's CI is above 0.5) but the accurate summary is "no encoder is shape-biased, and those departing from chance depart toward texture," which is a *stronger* dissociation than a null. Left flagged, not fixed: gate-pass count disagrees across three places (16 in `full_grid_v1a_summary.csv`, 18 in MEMORY.md, "36 of 54 fail" in main.md).
+
+**What was rejected:** running all 9 models (4 carry the argument; the clean within-model dissociations are only 4b/9b); both render modes (mode A keeps comparability to the published 114-triad sample); silently rewriting the overclaims without a record (flagged in place with dated scope notes per Samah's flag-don't-rewrite preference); asserting a result before the FarmShare export (§5 of the memo and §4.5 of the manuscript are explicitly PENDING).
+
+**New/changed files:** `playgrounds/linear_probe.py`, `playgrounds/embedding_export.py`, `scripts/run_grid_embedding_export.sbatch`, `analysis_pipe/readout_power_figure.py`, `interpret/reviewer_response_readout_power.md` (all new); `playgrounds/embedding_robust.py`, `scripts/export_results_csv.py`, `requirements.txt` (+numpy/pandas/scipy/scikit-learn, previously undeclared). Local `.venv` created for the CPU analysis; the export itself needs FarmShare since grid images are not on this machine.
+
+## 2026-08-02 (later), Manuscript Part 2 written from full-grid + three-set embedding results
+
+**What was decided:** Wrote the Part 2 section of `manuscript/main.md` (§4) around the full-grid behavioral run and the three-stimulus-set embedding read-outs, and updated the abstract, §2 contribution, §3.2 stimuli note, §3.3 (new "full stimulus scale" replication paragraph), references (added Gatys, Ecker & Bethge 2016), and the Open-slots list. No code or run scripts touched, per Samah's instruction. Numbers taken from `results/data/full_grid_v1a_summary.csv` and `results/probe.results/session_full_grid_v1a/embedding_{grid,smith,cueconflict}_*.txt`.
+
+**The load-bearing argument (§4):** hold the embedding read-out fixed and vary only the stimulus set. Novel grid (114 stratified triads): every encoder near chance (centred shape 0.20-0.55, CIs cover 0.5), retrieval above chance so the probe is live — a behavior-vs-encoder dissociation, since gate-passing Qwen3.5 models choose shape on 80-94% of behavioral trials. Smith (30 triads): same read-out returns shape (0.53-0.80, retrieval 0.30-0.67). Geirhos cue-conflict (30 triads): same read-out returns the canonical texture bias (0.03-0.13 at deep layers). Conclusion: representational "shape bias" is a property of the stimulus set, not the model; the familiarity ordering reproduces Tartaglini et al. 2022.
+
+**Full-grid behavioral numbers used:** 54 cells, 36 fail the 0.70 gate; Qwen3.5-4B passes all 6 (shape 0.80-0.91), 9B 5/6, 27B 2/6 (4-bit caveat), Qwen3-VL-4B 3, 8B 2; four small models never pass (position locks). By-item structure from `full_grid_v1a_by_shape_texture.csv`.
+
+**Geirhos method verified online** (arXiv 1811.12231 + rgeirhos/texture-vs-shape): 1,280 style-transfer composites (Gatys 2016), single-image 16-class classification, shape bias = correct-shape / (correct-shape + correct-texture), non-conflict images excluded. It is NOT a 2AFC. Wrote this into §4.3 plus the construction confound (composites cannot form a clean reference/shape-match/texture-match triad; candidates differ in silhouette/background), which is the methodological argument for using the rendered grid as the developmental substrate and Geirhos only as a representational positive control.
+
+**Also written:** anticipated-reviewer subsection (§4.4: dead-probe, cross-set confound, power asymmetry, text-prior, 4-bit) and next-steps (§4.5: full-grid PriDe still running; full-scale embedding rerun + layer/pooling sweep; human anchor on the grid; behavioral Smith ladder; direct locus demonstration).
+
+**Pending flags left in the manuscript:** full-grid PriDe/forced-logit numbers (job running; generation CSVs have empty prob_ columns); reconcile [FS] n=30 Part 1 numbers with grid where they overlap; re-check n=30 embedding points against merged JSONs after the finalize job.
+
+**What was rejected:** deleting the n=30 Part 1 (kept as the audit/first pass, added a scale replication paragraph instead); correcting the existing intro sentence on Geirhos (already accurate as single-image classification); showing draft options before writing (task was fully specified and edits are additive/reversible).
+
+## 2026-08-02, Merge local data from shapebias-bench2 into shapebias-bench-2 (option A)
+
+**What was decided:** Keep `shapebias-bench-2` as the surviving checkout. Both folders already share the same git remote and HEAD (`0fbff6d`). Copy only paths that were missing here from `/Users/samahabdelrahim/git-repos/shapebias-bench2` (additive; never overwrite). Skip `.env` and `.schrodinger`. Do not delete the old folder until Samah confirms.
+
+**What was copied:** lit stimuli (`smith_stimuli`, `geirhos_cueconflict`, `all_smith_stimuli_sets.zip`); full-grid / playground / probe result trees and tidy CSVs; `results/figures`; texture-grid packages under `stimuli_pipe/`; `interpret/archive`, `null-result-July10th-2026.md`, `RA_mentoring/`.
+
+**What was rejected:** Overwriting conflicting files (including the larger `farmshare/stimuli.zip` already here); copying secrets (`.env`); deleting `shapebias-bench2` in the same step; taking newer docs (`CLAUDE.md`, `results/README.md`) from the other checkout.
+
 ## 2026-08-02, Full-grid reporting package + PriDe/embedding GPU jobs
 
 **What was decided:** Build paper-facing figures and HTML from the completed 123,120-trial generation CSVs, and submit GPU follow-ups for logit/PriDe and vision embeddings (grid sample + Smith + Geirhos) so the full-scale report matches the 30-set analysis stack. Keep the 30-set playground figures/HTML untouched; full-grid outputs live under `results/figures/full_grid/` and `full_grid_v1a_report.html`.
