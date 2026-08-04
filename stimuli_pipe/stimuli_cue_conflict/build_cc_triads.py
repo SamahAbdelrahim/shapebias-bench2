@@ -14,15 +14,17 @@ A triad is:
         airplane10 + bicycle2
 
     shape_match.png
-        airplane10 + texture2
+        airplane10 + some other texture (e.g. car5)
 
     texture_match.png
-        shapeB + texture2
+        some other shape instance + bicycle2
 
 where:
     - reference and shape_match share the same shape instance
-    - reference and texture_match share the same texture
-    - shape_match and texture_match share the same texture
+    - reference and texture_match share the same texture instance
+    - shape_match and texture_match are otherwise unconstrained relative
+      to each other (this is the classic shape-bias triplet setup: the
+      shape match and texture match are not required to share a texture)
 
 One triad is created per valid reference image.
 
@@ -162,7 +164,7 @@ def main():
     #
     # and:
     #
-    # texture -> all images with texture
+    # (texture, texture_id) -> all images with that exact texture instance
     #
     # --------------------------------------------------
 
@@ -181,9 +183,18 @@ def main():
         lookup[key] = item["path"]
 
         texture_lookup.setdefault(
-            item["texture"],
+            (item["texture"], item["texture_id"]),
             []
         ).append(item)
+
+    # Distinct texture *names* (not (name, id) instances). Used below when
+    # searching for a same-shape / different-texture shape match: we only
+    # care whether some OTHER texture name was ever paired with this shape
+    # instance, not which particular texture instance it was.
+    texture_names = {
+        texture_name
+        for (texture_name, texture_id) in texture_lookup.keys()
+    }
 
 
     # --------------------------------------------------
@@ -206,15 +217,15 @@ def main():
 
         shape_candidates = []
 
-        for texture in texture_lookup.keys():
+        for texture_name in texture_names:
 
-            if texture == texture1:
+            if texture_name == texture1:
                 continue
 
             key = (
                 shape,
                 shape_id,
-                texture,
+                texture_name,
             )
 
             if key in lookup:
@@ -235,12 +246,12 @@ def main():
 
 
         # candidates for texture match:
-        # same texture as reference
-        # different shape category
+        # same texture instance as reference
+        # different shape instance
 
         texture_candidates = []
 
-        for item in texture_lookup[texture1]:
+        for item in texture_lookup[(texture1, reference["texture_id"])]:
 
             if (
                 item["shape"] == shape
