@@ -3,20 +3,30 @@
 
 For each VLM we extract SEVERAL representations of every image on the same 30
 stimuli and, for each, score the Tartaglini shape preference
-    shape_pref = 1[ cos(ref, shape_match) > cos(ref, texture_match) ].
+    shape_pref = 1[ sim(ref, shape_match) > sim(ref, texture_match) ].
 
 Representations (each tried independently; failures are recorded, not fatal):
-  proj_mean       : get_image_features() token features, mean-pooled (LM space; baseline)
-  vit_last_mean   : vision-tower last_hidden_state, mean-pooled
-  vit_penult_mean : vision-tower penultimate hidden state, mean-pooled (Tartaglini locus)
+  proj       : get_image_features() token features (LM space; baseline)
+  vit_last   : vision-tower last_hidden_state
+  vit_penult : vision-tower penultimate hidden state (Tartaglini locus)
   vit_pooler      : vision-tower pooler_output when present (CLS-style summary)
+
+--metric controls how sim(A, B) is computed between two images' token sets:
+  mean     (default) mean-pool tokens to one vector per image, then cosine
+  chamfer  keep tokens as a set; cosine each token to its best match on the
+           other side, both directions, and average (works with ragged token
+           counts across images, e.g. different tiling)
+  sinkhorn like chamfer but with an entropy-regularized optimal-transport
+           match instead of greedy best-match; slower, tune via
+           --sinkhorn-reg / --sinkhorn-max-iter
 
 For every representation we report, with and without mean-centering:
   - shape rate with a bootstrap 95% CI over stimuli
   - a POSITIVE CONTROL: object-identity retrieval. For each reference, rank all
-    shape-match images by cosine; is its own stimulus top-1? (chance = 1/n_stimuli).
-    Same for texture matches. High retrieval => the read-out resolves these
-    images, so a ~0.5 shape-vs-texture rate is a real null, not a blind probe.
+    shape-match images by cosine (on mean-pooled vectors, regardless of
+    --metric); is its own stimulus top-1? (chance = 1/n_stimuli). Same for
+    texture matches. High retrieval => the read-out resolves these images, so
+    a ~0.5 shape-vs-texture rate is a real null, not a blind probe.
 
 Centering: deep pooled features are anisotropic (raw cosines ~1.0); we mean-center
 across the stimulus set before cosine. Both raw and centered are reported.
@@ -33,6 +43,7 @@ import re
 import sys
 from pathlib import Path
 
+import ot
 import torch
 import torch.nn.functional as F
 from PIL import Image
@@ -40,7 +51,7 @@ from dotenv import load_dotenv
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
-load_dotenv(REPO_ROOT / ".env")
+load_dotenv(REPO_ROOT / ".env", override=True)
 
 from evaluation_pipe.models import create_model
 
@@ -57,11 +68,45 @@ LADDER_MODELS = [
 ]
 
 
-def _pool_mean(t: torch.Tensor) -> torch.Tensor:
+def _flatten(t: torch.Tensor) -> torch.Tensor:
+    """Collapse a feature tensor to [n_tokens, D], batch dim included."""
     t = t.float()
     if t.dim() == 1:
-        return t
-    return t.reshape(-1, t.shape[-1]).mean(dim=0)
+        return t.unsqueeze(0)
+    return t.reshape(-1, t.shape[-1])
+
+
+def _pool_mean(t: torch.Tensor) -> torch.Tensor:
+    return _flatten(t).mean(dim=0)
+
+
+def _chamfer_sim(A: torch.Tensor, B: torch.Tensor) -> float:
+    """Symmetric best-match cosine similarity between two token sets."""
+    An = F.normalize(A, dim=-1)
+    Bn = F.normalize(B, dim=-1)
+    sim = An @ Bn.t()  # [n_A, n_B]
+    a_to_b = sim.max(dim=1).values.mean()
+    b_to_a = sim.max(dim=0).values.mean()
+    return ((a_to_b + b_to_a) / 2).item()
+
+
+def _sinkhorn_sim(A: torch.Tensor, B: torch.Tensor, reg: float = 0.075, num_iter_max: int = 1000) -> float:
+    """Entropy-regularized optimal-transport similarity between two token sets.
+
+    Uniform weight per token; cost is 1 - cosine sim. reg=0.075 is a balanced
+    default (lower = sharper matching but less numerically stable at small n).
+    """
+    An = F.normalize(A, dim=-1)
+    Bn = F.normalize(B, dim=-1)
+    sim = An @ Bn.t()
+    cost = 1 - sim
+
+    n_a, n_b = A.shape[0], B.shape[0]
+    a = torch.full((n_a,), 1.0 / n_a, dtype=torch.double)
+    b = torch.full((n_b,), 1.0 / n_b, dtype=torch.double)
+
+    plan = ot.sinkhorn(a.numpy(), b.numpy(), cost.double().numpy(), reg, numItermax=num_iter_max)
+    return float(1 - (plan * cost.double().numpy()).sum())
 
 
 def _find_tower(model):
@@ -74,7 +119,7 @@ def _find_tower(model):
 
 
 def extract_reps(wrapper, img: Image.Image) -> dict[str, torch.Tensor]:
-    """Return {rep_name: pooled embedding [D] on CPU}. Missing reps are omitted."""
+    """Return {rep_name: token tensor [n_tokens, D] on CPU}. Missing reps are omitted."""
     model = wrapper._model
     processor = wrapper._processor
     device = next(model.parameters()).device
@@ -92,12 +137,12 @@ def extract_reps(wrapper, img: Image.Image) -> dict[str, torch.Tensor]:
             feats = model.get_image_features(
                 pixel_values=pv, **({"image_grid_thw": grid} if grid is not None else {})
             )
-        hs = feats.last_hidden_state if hasattr(feats, "last_hidden_state") else feats
+        hs = feats.pooler_output if hasattr(feats, "pooler_output") else feats
         if isinstance(hs, (list, tuple)):
             hs = hs[0]
-        reps["proj_mean"] = _pool_mean(hs).cpu()
+        reps["proj"] = _flatten(hs).cpu()
     except Exception as exc:  # noqa: BLE001
-        reps["proj_mean__err"] = f"{type(exc).__name__}: {exc}"  # type: ignore
+        reps["proj__err"] = f"{type(exc).__name__}: {exc}"  # type: ignore
 
     # --- vision tower hidden states ---
     tower = _find_tower(model)
@@ -119,27 +164,48 @@ def extract_reps(wrapper, img: Image.Image) -> dict[str, torch.Tensor]:
         if out is not None:
             last = getattr(out, "last_hidden_state", None)
             if last is not None:
-                reps["vit_last_mean"] = _pool_mean(last).cpu()
+                reps["vit_last"] = _flatten(last).cpu()
             hidden = getattr(out, "hidden_states", None)
             if hidden is not None and len(hidden) >= 2:
-                reps["vit_penult_mean"] = _pool_mean(hidden[-2]).cpu()
+                reps["vit_penult"] = _flatten(hidden[-2]).cpu()
             pooler = getattr(out, "pooler_output", None)
             if pooler is not None:
-                reps["vit_pooler"] = _pool_mean(pooler).cpu()
+                reps["vit_pooler"] = _flatten(pooler).cpu()
 
     return reps
 
 
-def _shape_rate(ref, shp, tex, center: bool):
-    """Per-stimulus shape preferences (list of 0/1) for one representation."""
-    R = torch.stack(ref)
-    S = torch.stack(shp)
-    T = torch.stack(tex)
-    if center:
-        mu = torch.cat([R, S, T]).mean(dim=0)
-        R, S, T = R - mu, S - mu, T - mu
-    cs = F.cosine_similarity(R, S, dim=1)
-    ct = F.cosine_similarity(R, T, dim=1)
+def _shape_rate(ref, shp, tex, center: bool, metric: str = "mean", sinkhorn_reg: float = 0.075, sinkhorn_max_iter: int = 1000):
+    """Per-stimulus shape preferences (list of 0/1) for one representation.
+
+    ref/shp/tex are lists of [n_tokens, D] tensors, one per stimulus. Token
+    counts can differ across images (e.g. different tiling).
+    """
+    if metric in ("chamfer", "sinkhorn"):
+        if center:
+            mu = torch.cat(ref + shp + tex, dim=0).mean(dim=0)
+            ref = [t - mu for t in ref]
+            shp = [t - mu for t in shp]
+            tex = [t - mu for t in tex]
+        if metric == "chamfer":
+            cs = torch.tensor([_chamfer_sim(r, s) for r, s in zip(ref, shp)])
+            ct = torch.tensor([_chamfer_sim(r, t) for r, t in zip(ref, tex)])
+        else:
+            cs = torch.tensor([_sinkhorn_sim(r, s, reg=sinkhorn_reg, num_iter_max=sinkhorn_max_iter) for r, s in zip(ref, shp)])
+            ct = torch.tensor([_sinkhorn_sim(r, t, reg=sinkhorn_reg, num_iter_max=sinkhorn_max_iter) for r, t in zip(ref, tex)])
+        R = torch.stack([_pool_mean(t) for t in ref])
+        S = torch.stack([_pool_mean(t) for t in shp])
+        T = torch.stack([_pool_mean(t) for t in tex])
+    else:
+        R = torch.stack([_pool_mean(t) for t in ref])
+        S = torch.stack([_pool_mean(t) for t in shp])
+        T = torch.stack([_pool_mean(t) for t in tex])
+        if center:
+            mu = torch.cat([R, S, T]).mean(dim=0)
+            R, S, T = R - mu, S - mu, T - mu
+        cs = F.cosine_similarity(R, S, dim=1)
+        ct = F.cosine_similarity(R, T, dim=1)
+
     prefs = (cs > ct).float().tolist()
     margin = (cs - ct).mean().item()
     return prefs, margin, R, S, T
@@ -191,8 +257,11 @@ def build_default_triplets(root: Path, n: int, seed: int):
         root = REPO_ROOT / root
 
     trial_dirs = sorted(
-        (d for d in root.iterdir() if d.is_dir() and d.name.isdigit()),
-        key=lambda d: int(d.name),
+        d for d in root.iterdir()
+        if d.is_dir()
+        and (d / "reference.png").exists()
+        and (d / "shape_match.png").exists()
+        and (d / "texture_match.png").exists()
     )
 
     rng = random.Random(seed)
@@ -201,7 +270,7 @@ def build_default_triplets(root: Path, n: int, seed: int):
     print(f"Stimuli: {len(trial_dirs)} randomly sampled from {root} (seed={seed})")
     triplets = [
         (
-            int(d.name),
+            d.name,
             Image.open(d / "reference.png").convert("RGB"),
             Image.open(d / "shape_match.png").convert("RGB"),
             Image.open(d / "texture_match.png").convert("RGB"),
@@ -431,6 +500,28 @@ def main() -> int:
     ap.add_argument("--models", nargs="+", default=LADDER_MODELS)
     ap.add_argument("--n-stimuli", type=int, default=30)
     ap.add_argument(
+        "--metric",
+        choices=["mean", "chamfer", "sinkhorn"],
+        default="mean",
+        help="How to compare two images' token sets: mean-pool then cosine "
+             "(default), chamfer (best-match cosine per token, both directions), "
+             "or sinkhorn (entropy-regularized optimal transport; slower, spot-check "
+             "on small --n-stimuli before running the full ladder).",
+    )
+    ap.add_argument(
+        "--sinkhorn-reg",
+        type=float,
+        default=0.075,
+        help="Entropy regularization for --metric sinkhorn (lower = sharper "
+             "matching, less stable; higher = smoother, faster).",
+    )
+    ap.add_argument(
+        "--sinkhorn-max-iter",
+        type=int,
+        default=1000,
+        help="Max Sinkhorn iterations before giving up (ot.sinkhorn's own default is 1000).",
+    )
+    ap.add_argument(
         "--out-prefix",
         default=None,
         help="Output prefix (default: results/probe.results/session_*/embedding_robust)",
@@ -511,6 +602,10 @@ def main() -> int:
     device = "cuda" if torch.cuda.is_available() else "mps"
     print(f"Device: {device}")
     print(f"Models: {args.models}")
+    print(f"Metric: {args.metric}")
+    if args.metric == "sinkhorn" and args.n_stimuli > 50:
+        print(f"  [note] sinkhorn is ~4-20x slower than chamfer; running at "
+              f"n_stimuli={args.n_stimuli}. Consider a smaller --n-stimuli for a spot-check.")
 
     grid_meta = None  # mesh/texture labels; only the grid builder supplies them
     if args.cue_conflict:
@@ -558,7 +653,8 @@ def main() -> int:
             # Collect per-image reps: rep_name -> {'ref':[...],'shape':[...],'texture':[...]}
             by_rep: dict[str, dict[str, list]] = {}
             errs: dict[str, str] = {}
-            for sid, ref_img, shape_img, tex_img in triplets:
+            n_triplets = len(triplets)
+            for i, (sid, ref_img, shape_img, tex_img) in enumerate(triplets, start=1):
                 r_ref = extract_reps(wrapper, ref_img)
                 r_shp = extract_reps(wrapper, shape_img)
                 r_tex = extract_reps(wrapper, tex_img)
@@ -572,6 +668,7 @@ def main() -> int:
                     by_rep[k]["ref"].append(v)
                     by_rep[k]["shape"].append(r_shp[k])
                     by_rep[k]["texture"].append(r_tex[k])
+                print(f"  [{i}/{n_triplets}] {sid}", flush=True)
 
             rep_results = {}
             for rep, data in by_rep.items():
@@ -579,7 +676,9 @@ def main() -> int:
                 entry = {"dim": dim, "n": len(data["ref"])}
                 for center in (False, True):
                     prefs, margin, R, S, T = _shape_rate(
-                        data["ref"], data["shape"], data["texture"], center
+                        data["ref"], data["shape"], data["texture"], center,
+                        metric=args.metric, sinkhorn_reg=args.sinkhorn_reg,
+                        sinkhorn_max_iter=args.sinkhorn_max_iter,
                     )
                     rate = sum(prefs) / len(prefs)
                     lo, hi = _bootstrap_ci(prefs)
@@ -665,6 +764,7 @@ def _print_summary(res):
     n = res["config"]["n_stimuli"]
     print("\n" + "=" * 78)
     print("SUMMARY — embedding shape rate (centered, 95% CI) across read-outs")
+    print(f"Metric: {res['config']['metric']}")
     print(
         f"retr@1 = matching-stimulus retrieval (chance=1/{n}={1/n:.2f}); "
         "high => probe is sensitive"
