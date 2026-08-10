@@ -28,7 +28,7 @@ export RESULTS_SESSION_HOST=farmshare
 SMITH_DIR=previous-lit-stimuli/smith_stimuli
 SESSION=results/playground.results/session_2026-07-30_smith_farmshare
 N=30
-MODELS=(smolvlm internvl qwen3-vl-2b qwen3-vl-4b qwen3-vl-8b qwen3.5-0.8b qwen3.5-4b qwen3.5-9b qwen3.5-27b)
+source scripts/model_ladder.sh
 ANY_FAIL=0
 
 echo "host=$(hostname) date=$(date -Is)"

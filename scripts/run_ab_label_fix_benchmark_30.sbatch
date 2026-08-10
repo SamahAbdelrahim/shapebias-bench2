@@ -28,7 +28,8 @@ export RESULTS_SESSION_HOST=farmshare
 
 SESSION=results/playground.results/session_2026-07-30_farmshare
 N=30
-MODELS=(smolvlm internvl qwen3-vl-2b qwen3-vl-4b qwen3-vl-8b qwen3.5-0.8b qwen3.5-4b qwen3.5-9b qwen3.5-27b)
+source scripts/model_ladder.sh
+# Sudo-word generality keeps its own smaller subset; it is not a scale ladder.
 WORD_MODELS=(smolvlm internvl qwen3-vl-2b qwen3-vl-4b qwen3.5-0.8b qwen3.5-4b qwen3-vl-8b)
 WORDS=(clapher plailass procation adinefults)
 ANY_FAIL=0

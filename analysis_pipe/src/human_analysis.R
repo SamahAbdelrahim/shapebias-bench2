@@ -36,12 +36,37 @@ load_human_results <- function(path = NULL) {
       )
   }
 
+  # The March 2026 human_friendly pilot predates the matched_v2 columns, so
+  # every field added for the two-stimulus-set design is filled in here rather
+  # than guarded at each call site.
+  ensure_col <- function(d, name, value) {
+    if (!name %in% names(d)) d[[name]] <- value
+    d
+  }
+  df <- df |>
+    ensure_col("stim_set_name", NA_character_) |>
+    ensure_col("ordering_group", NA_character_) |>
+    ensure_col("pool_version", NA_character_) |>
+    ensure_col("stl_id", NA_character_) |>
+    ensure_col("texture_set", NA_character_) |>
+    ensure_col("is_catch", NA) |>
+    ensure_col("catch_correct", NA) |>
+    ensure_col("response_key", NA_character_)
+
+  as_logical_flag <- function(x) {
+    if (is.logical(x)) return(x)
+    tolower(trimws(as.character(x))) %in% c("true", "1", "t", "yes")
+  }
+
   df |>
     mutate(
       design = ifelse(is.na(design), "", design),
       condition = ifelse(is.na(condition), "noun_label", condition),
       ordering_mode = ifelse(is.na(ordering_mode), "", ordering_mode),
-      choice = factor(choice, levels = c("shape", "texture", "unclear"))
+      is_catch = as_logical_flag(is_catch),
+      catch_correct = as_logical_flag(catch_correct),
+      participant_id = paste(prolific_pid, study_id, session_id, sep = "|"),
+      choice = factor(choice, levels = c("shape", "texture", "match", "foil", "unclear"))
     )
 }
 
@@ -49,6 +74,179 @@ filter_human_friendly <- function(human_df) {
   if (!nrow(human_df)) return(human_df)
   human_df |>
     filter(design == "human_friendly")
+}
+
+# ---------------------------------------------------------------------------
+# matched_v2: two stimulus sets, two framings, catch trials
+#
+# The March 2026 pilot (design == "human_friendly") stays reachable through the
+# functions above. Everything below reads the matched_v2 sample, which differs
+# in ways that make the two non-poolable: different stimulus sets, a no-word
+# condition that did not exist before, ordering counterbalanced between
+# participants, and attention checks.
+# ---------------------------------------------------------------------------
+
+filter_matched_v2 <- function(human_df) {
+  if (!nrow(human_df)) return(human_df)
+  human_df |>
+    filter(design == "matched_v2")
+}
+
+#' Wilson score interval, which behaves at the ceiling rates this task produces
+#' where a normal approximation would run past 1.
+wilson_ci <- function(successes, n, z = 1.96) {
+  if (is.na(n) || n == 0) return(c(NA_real_, NA_real_))
+  p <- successes / n
+  denom <- 1 + z^2 / n
+  centre <- (p + z^2 / (2 * n)) / denom
+  halfwidth <- (z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))) / denom
+  c(max(0, centre - halfwidth), min(1, centre + halfwidth))
+}
+
+#' Per-participant attention-check performance.
+#'
+#' Columns: participant_id, prolific_pid, study_id, session_id, condition,
+#' ordering_group, catch_trials, catch_passed, catch_errors, excluded.
+summarize_catch_by_participant <- function(human_df, max_errors = 1) {
+  if (!nrow(human_df)) return(tibble())
+  human_df |>
+    filter(is_catch) |>
+    group_by(participant_id, prolific_pid, study_id, session_id, condition, ordering_group) |>
+    summarise(
+      catch_trials = n(),
+      catch_passed = sum(catch_correct, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    mutate(
+      catch_errors = catch_trials - catch_passed,
+      excluded = catch_errors > max_errors
+    ) |>
+    arrange(desc(catch_errors), participant_id)
+}
+
+#' Drop participants who failed more than `max_errors` checks, then drop the
+#' check trials themselves so only the shape-versus-texture trials remain.
+apply_catch_exclusions <- function(human_df, max_errors = 1) {
+  if (!nrow(human_df)) return(human_df)
+  catch_summary <- summarize_catch_by_participant(human_df, max_errors = max_errors)
+  excluded_ids <- catch_summary$participant_id[catch_summary$excluded]
+  human_df |>
+    filter(!participant_id %in% excluded_ids) |>
+    filter(!is_catch)
+}
+
+#' Shape-choice rates by stimulus set and condition.
+#'
+#' Written to results/data/human_summary_by_set.csv. Schema, which
+#' analysis_pipe/full_grid_figures.py reads to place the human anchors:
+#'   stim_set_name, condition, participants, trials, unique_stimuli,
+#'   shape_prop, shape_lo, shape_hi, texture_prop, unclear_rate,
+#'   median_rt_ms, mean_rt_ms
+summarize_human_by_set_condition <- function(human_df) {
+  if (!nrow(human_df)) return(tibble())
+  human_df |>
+    group_by(stim_set_name, condition) |>
+    summarise(
+      participants = n_distinct(participant_id),
+      trials = n(),
+      unique_stimuli = n_distinct(stim_id),
+      n_shape = sum(choice == "shape", na.rm = TRUE),
+      n_decided = sum(choice %in% c("shape", "texture"), na.rm = TRUE),
+      shape_prop = mean(choice == "shape", na.rm = TRUE),
+      texture_prop = mean(choice == "texture", na.rm = TRUE),
+      unclear_rate = mean(choice == "unclear", na.rm = TRUE),
+      median_rt_ms = median(rt_ms, na.rm = TRUE),
+      mean_rt_ms = mean(rt_ms, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    rowwise() |>
+    mutate(
+      shape_lo = wilson_ci(n_shape, n_decided)[[1]],
+      shape_hi = wilson_ci(n_shape, n_decided)[[2]]
+    ) |>
+    ungroup() |>
+    select(
+      stim_set_name, condition, participants, trials, unique_stimuli,
+      shape_prop, shape_lo, shape_hi, texture_prop, unclear_rate,
+      median_rt_ms, mean_rt_ms
+    ) |>
+    arrange(stim_set_name, condition)
+}
+
+#' Item-level means, including the human counterpart of the model tracking gate.
+#'
+#' Models see each triad in both orderings, and tracking asks whether the choice
+#' follows content across the swap. No participant sees a triad twice here, so
+#' the same question is asked between participants: an item whose shape rate is
+#' the same under both orderings is being answered on content, while one whose
+#' two rates are roughly complementary is being answered on position.
+#'
+#' Written to results/data/human_item_means.csv. Schema:
+#'   stim_set_name, condition, stim_id, stl_id, texture_set, n, shape_prop,
+#'   n_shape_first, shape_prop_shape_first, n_texture_first,
+#'   shape_prop_texture_first, option1_rate, content_consistency
+summarize_human_items <- function(human_df) {
+  if (!nrow(human_df)) return(tibble())
+  human_df |>
+    group_by(stim_set_name, condition, stim_id, stl_id, texture_set) |>
+    summarise(
+      n = n(),
+      shape_prop = mean(choice == "shape", na.rm = TRUE),
+      n_shape_first = sum(ordering == "shape_first", na.rm = TRUE),
+      shape_prop_shape_first = mean(choice[ordering == "shape_first"] == "shape", na.rm = TRUE),
+      n_texture_first = sum(ordering == "texture_first", na.rm = TRUE),
+      shape_prop_texture_first = mean(choice[ordering == "texture_first"] == "shape", na.rm = TRUE),
+      option1_rate = mean(response_key == "1", na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    mutate(
+      content_consistency = 1 - abs(shape_prop_shape_first - shape_prop_texture_first)
+    ) |>
+    arrange(stim_set_name, condition, stim_id)
+}
+
+#' Roll the item-level position check up to one row per set and condition, so it
+#' can be read against the models' 0.70 tracking gate.
+summarize_position_check <- function(item_means, gate = 0.70) {
+  if (!nrow(item_means)) return(tibble())
+  item_means |>
+    group_by(stim_set_name, condition) |>
+    summarise(
+      items = n(),
+      items_with_both_orderings = sum(n_shape_first > 0 & n_texture_first > 0, na.rm = TRUE),
+      mean_content_consistency = mean(content_consistency, na.rm = TRUE),
+      items_above_gate = sum(content_consistency >= gate, na.rm = TRUE),
+      mean_option1_rate = mean(option1_rate, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    mutate(prop_items_above_gate = items_above_gate / items) |>
+    arrange(stim_set_name, condition)
+}
+
+#' Item-level agreement between humans and one model cell, per stimulus set.
+#'
+#' The old comparison correlated 30 stimuli measured under different protocols
+#' and returned r = 0.08. This one joins on stim_id within a stimulus set, where
+#' humans and models saw the same triads.
+compute_human_model_item_correlation <- function(item_means, model_items,
+                                                 model_label = "model") {
+  if (!nrow(item_means) || !nrow(model_items)) return(tibble())
+  item_means |>
+    inner_join(model_items, by = c("stim_set_name", "stim_id")) |>
+    group_by(stim_set_name, condition) |>
+    summarise(
+      model = model_label,
+      shared_items = n(),
+      human_shape_prop = mean(shape_prop, na.rm = TRUE),
+      model_shape_prop = mean(model_shape_prop, na.rm = TRUE),
+      mean_abs_delta = mean(abs(shape_prop - model_shape_prop), na.rm = TRUE),
+      item_correlation = if (n() >= 3) {
+        suppressWarnings(cor(shape_prop, model_shape_prop, use = "complete.obs"))
+      } else {
+        NA_real_
+      },
+      .groups = "drop"
+    )
 }
 
 summarize_human_friendly_overall <- function(human_df) {

@@ -7,10 +7,12 @@
 #
 #   sbatch scripts/run_full_grid_embedding_v1a.sbatch
 #
+# Model list and array-index mapping: scripts/model_ladder.sh
+#
 #SBATCH --job-name=sb-grid-emb
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
-#SBATCH --array=0-8%4
+#SBATCH --array=0-13%4
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
@@ -29,12 +31,12 @@ export TRANSFORMERS_CACHE="$HF_HOME"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
-MODELS=(smolvlm internvl qwen3-vl-2b qwen3-vl-4b qwen3-vl-8b qwen3.5-0.8b qwen3.5-4b qwen3.5-9b qwen3.5-27b)
+source scripts/model_ladder.sh
 MODEL="${MODELS[$SLURM_ARRAY_TASK_ID]}"
 SESS=results/probe.results/session_full_grid_v1a
 GRID_PKG=stimuli_texture_grid_v1_scratch
 SMITH=previous-lit-stimuli/smith_stimuli
-CUE=previous-lit-stimuli/geirhos_cueconflict
+CUE=previous-lit-stimuli/cue-conflict/geirhos_cueconflict
 
 echo "host=$(hostname) date=$(date -Is) task=$SLURM_ARRAY_TASK_ID model=$MODEL EMBED"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader

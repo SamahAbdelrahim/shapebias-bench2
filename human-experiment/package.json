@@ -6,6 +6,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "preview": "node server.local-preview.js",
+    "verify:assignment": "node verify_assignment.js",
+    "vendor:jspsych": "bash vendor_jspsych.sh",
     "analyze:words": "node analyze_human_words.js",
     "export:results": "node export_human_results.js"
   },

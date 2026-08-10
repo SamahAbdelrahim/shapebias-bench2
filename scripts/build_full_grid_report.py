@@ -24,8 +24,10 @@ INDEX = REPO / "results" / "playground.results" / "index.html"
 GATE = 0.70
 
 MODEL_ORDER = (
-    "smolvlm", "internvl", "qwen3-vl-2b", "qwen3-vl-4b", "qwen3-vl-8b",
-    "qwen3.5-0.8b", "qwen3.5-4b", "qwen3.5-9b", "qwen3.5-27b",
+    "smolvlm-256m", "smolvlm",
+    "internvl", "internvl-2b", "internvl-8b", "internvl-14b",
+    "qwen3-vl-2b", "qwen3-vl-4b", "qwen3-vl-8b",
+    "qwen3.5-0.8b", "qwen3.5-2b", "qwen3.5-4b", "qwen3.5-9b", "qwen3.5-27b",
 )
 COND_ORDER = (
     "no_word_similarity", "no_word_category", "noun_label",
@@ -125,8 +127,10 @@ def fig_block() -> str:
         ("fig3_naming_effect.png", "Naming effect"),
         ("fig4_label_format.png", "Label format 1/2 vs A/B"),
         ("fig5_by_shape_texture.png", "By shape / texture"),
-        ("fig6_position_bias_correction.png", "PriDe / order-swap (when ready)"),
-        ("fig7_vision_vs_behavior.png", "Vision vs behavior"),
+        ("fig6_position_bias_correction.png", "PriDe / order-swap (similarity / category / noun)"),
+        ("fig7_vision_vs_behavior.png", "Vision vs behavior by framing (numeric)"),
+        ("fig7b_sets_behavior.png", "Behavior across stimulus sets by framing (ours / Smith / cc_triads / decomposition)"),
+        ("fig7b_sets_emb_vs_behavior.png", "Vision tower vs behavior across stimulus sets by framing"),
     ]
     parts = []
     for name, caption in names:
@@ -183,8 +187,8 @@ def main() -> int:
 <title>Full grid v1A report</title>
 <style>{CSS}</style></head><body><main>
 <h1>Full texture grid — v1, mode A</h1>
-<p class="sub">30 shapes × 38 textures = 1,140 stimuli × 2 orders × 6 cells × 9 models
-= 123,120 generation trials. Raw CSVs:
+<p class="sub">30 shapes × 38 textures = 1,140 stimuli × 2 orders × 6 cells × 14 models
+= 191,520 generation trials. Raw CSVs:
 <code>results/model.results/session_full_grid_v1a/</code>.</p>
 <div class="tiles">
   <div class="tile"><div class="v">{len(rows)}</div><div class="l">model × cell</div></div>

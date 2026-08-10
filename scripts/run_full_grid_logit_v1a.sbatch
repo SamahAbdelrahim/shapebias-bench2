@@ -1,14 +1,16 @@
 #!/bin/bash
 # Logit-forced rerun of the full texture grid (v1A) for PriDe / order-swap.
-# Same 9 models × 6 cells × 1,140 stimuli × both orders as the generation run.
+# Same models × 6 cells × 1,140 stimuli × both orders as the generation run.
 # Writes to session_full_grid_v1a_logit/ so generation CSVs are untouched.
 #
 #   sbatch scripts/run_full_grid_logit_v1a.sbatch
 #
+# Model list and array-index mapping: scripts/model_ladder.sh
+#
 #SBATCH --job-name=sb-grid-logit
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
-#SBATCH --array=0-8%4
+#SBATCH --array=0-13%4
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
@@ -32,7 +34,7 @@ STIM_SET=stimuli_A_auto_contrast
 SESSION=results/model.results/session_full_grid_v1a_logit
 FIXED_WORD=shiple
 
-MODELS=(smolvlm internvl qwen3-vl-2b qwen3-vl-4b qwen3-vl-8b qwen3.5-0.8b qwen3.5-4b qwen3.5-9b qwen3.5-27b)
+source scripts/model_ladder.sh
 CONDITIONS=(
   no_word_similarity
   no_word_similarity_AB

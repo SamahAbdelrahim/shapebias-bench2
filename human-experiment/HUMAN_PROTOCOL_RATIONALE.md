@@ -1,4 +1,30 @@
-# Human-Friendly Protocol Rationale
+# Human Protocol Rationale
+
+## Current protocol: `matched_v2`
+
+The protocol described from "Human-Friendly Protocol Rationale" onward is the March 2026 pilot (`design=human_friendly`). It is superseded. That pilot reduced to one number, 95.2% shape choices from 28 adults over 30 stimuli in a single condition, which could not be compared cell-for-cell against the model results because it ran a different stimulus package, had no no-word baseline, and showed each triad in one option order.
+
+`matched_v2` keeps the reasons the pilot diverged from the benchmark, since they are about memory and not about stimulus coverage, and fixes what blocked comparison.
+
+What carries over from the pilot: one exposure per triad per participant, a unique pseudo-word per trial in the noun condition, and no exhaustive Cartesian expansion. Human participants remember words and objects; models do not.
+
+What changed:
+
+- **Stimulus sets.** Participants run the two sets the models run: 114 triads from the novel texture grid (the same triads behind the embedding panel, since both use the shape-stratified round-robin at `seed=0`) and 160 triads from `cc_triads`, stratified at 10 per Geirhos class from the frozen n=320 model subset. Congruent `cc_triads` pairs are skipped because both options come from one class, so there is no shape-versus-texture answer to give.
+- **Framing.** Noun-label and no-word-category, between participants. The no-word wording now matches the model template: "This first image is an object. Which of the following two images is another one?" The pilot's wording said the first image was a "label", which asserted a label in the condition designed to withhold one.
+- **Option order.** Counterbalanced between participants. A triad's order is fixed by the parity of its index in the pool and flipped for ordering group B, so every triad appears in both orders across people while no one sees a triad twice. Within a participant orders alternate, so a side preference cannot masquerade as a shape preference. This supports an item-level analogue of the model tracking gate: an item answered on content has the same shape rate under both orders, while one answered on position has roughly complementary rates.
+- **Attention checks.** Four per session, each offering an exact duplicate of the reference against an unrelated object. More than one error excludes the participant.
+- **Session.** 18 grid plus 18 cue-conflict trials, blocked with block order counterbalanced, plus the four checks, for 40 trials.
+
+Sample size scales as `274 triads x 2 conditions x k / 36 test trials`. At k = 16 observations per triad per condition that is about 244 participants. Because the two sets share the 36 trials unevenly against their different pool sizes, a 244-participant run gives roughly 19 observations per grid triad and 14 per cue-conflict triad in each condition; simulate with `node human-experiment/verify_assignment.js N` before committing to a number.
+
+One caveat worth stating in any writeup: adults were at 95.2% in the pilot, and more participants at ceiling buy precision, not information. What buys information is the no-word contrast and the cue-conflict set, where responses should sit off ceiling.
+
+The pilot is not pooled with `matched_v2`. It is kept separate by `design` and `pool_version`.
+
+---
+
+# Human-Friendly Protocol Rationale (March 2026 pilot, superseded)
 
 ## Purpose
 

@@ -10,13 +10,16 @@
 # cluster limit rather than a throttle choice. Each cell writes its own CSV and
 # is restarted with --resume, so a preempted or timed-out task loses nothing.
 #
-#   sbatch scripts/run_full_grid_v1a.sbatch          # all 9 models
-#   sbatch --array=7 scripts/run_full_grid_v1a.sbatch  # just qwen3.5-9b
+#   sbatch scripts/run_full_grid_v1a.sbatch           # all 14 models
+#   sbatch --array=12 scripts/run_full_grid_v1a.sbatch  # just qwen3.5-9b
+#
+# The model list lives in scripts/model_ladder.sh; run that file to print the
+# current array-index mapping before selecting indices by hand.
 #
 #SBATCH --job-name=sb-grid-v1a
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
-#SBATCH --array=0-8%4
+#SBATCH --array=0-13%4
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
@@ -44,7 +47,7 @@ STIM_SET=stimuli_A_auto_contrast
 SESSION=results/model.results/session_full_grid_v1a
 FIXED_WORD=shiple
 
-MODELS=(smolvlm internvl qwen3-vl-2b qwen3-vl-4b qwen3-vl-8b qwen3.5-0.8b qwen3.5-4b qwen3.5-9b qwen3.5-27b)
+source scripts/model_ladder.sh
 CONDITIONS=(
   no_word_similarity
   no_word_similarity_AB

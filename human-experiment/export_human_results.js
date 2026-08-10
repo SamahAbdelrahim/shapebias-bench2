@@ -162,6 +162,14 @@ function toCsv(rows) {
   return `${lines.join("\n")}\n`;
 }
 
+// Booleans must survive as explicit "true"/"false" text rather than collapsing
+// to "" when false, since is_catch drives the exclusion rule downstream.
+function boolField(value) {
+  if (value === true || value === "true") return "true";
+  if (value === false || value === "false") return "false";
+  return "";
+}
+
 function normalizeTrial(doc) {
   const raw = doc.raw_trial || {};
   return {
@@ -170,17 +178,26 @@ function normalizeTrial(doc) {
     study_id: doc.study_id || raw.study_id || "",
     session_id: doc.session_id || raw.session_id || "",
     completion_code: doc.completion_code || raw.completion_code || "",
-    design: raw.design || "",
+    design: doc.design || raw.design || "",
     ordering_mode: raw.ordering_mode || "",
     condition: doc.condition || raw.condition || "",
+    pool_version: doc.pool_version || raw.pool_version || "",
+    stim_set_name: doc.stim_set_name || raw.stim_set_name || "",
     stim_set: doc.stim_set || raw.stim_set || "",
     stim_pkg: doc.stim_pkg || raw.stim_pkg || "",
     trial_index: doc.trial_index ?? raw.trial_index ?? "",
+    block_index: doc.block_index ?? raw.block_index ?? "",
+    pool_index: doc.pool_index ?? raw.pool_index ?? "",
     stim_id: doc.stim_id || raw.stim_id || "",
+    stl_id: doc.stl_id || raw.stl_id || "",
+    texture_set: doc.texture_set || raw.texture_set || "",
+    is_catch: boolField(doc.is_catch ?? raw.is_catch),
+    catch_correct: boolField(doc.catch_correct ?? raw.catch_correct),
     word: doc.word || raw.word || "",
     word_type: doc.word_type || raw.word_type || "",
     word_length: doc.word_length ?? raw.word_length ?? "",
     ordering: doc.ordering || raw.ordering || "",
+    ordering_group: doc.ordering_group || raw.ordering_group || "",
     a_is: doc.a_is || raw.a_is || "",
     b_is: doc.b_is || raw.b_is || "",
     response_key: doc.response_key || raw.response_key || "",
@@ -206,14 +223,23 @@ function normalizeCsvTrial(row) {
     design: row.design || row["raw_trial.design"] || "",
     ordering_mode: row.ordering_mode || row["raw_trial.ordering_mode"] || "",
     condition: row.condition || row["raw_trial.condition"] || "",
+    pool_version: row.pool_version || row["raw_trial.pool_version"] || "",
+    stim_set_name: row.stim_set_name || row["raw_trial.stim_set_name"] || "",
     stim_set: row.stim_set || row["raw_trial.stim_set"] || "",
     stim_pkg: row.stim_pkg || row["raw_trial.stim_pkg"] || "",
     trial_index: row.trial_index || row["raw_trial.trial_index"] || "",
+    block_index: row.block_index || row["raw_trial.block_index"] || "",
+    pool_index: row.pool_index || row["raw_trial.pool_index"] || "",
     stim_id: row.stim_id || row["raw_trial.stim_id"] || "",
+    stl_id: row.stl_id || row["raw_trial.stl_id"] || "",
+    texture_set: row.texture_set || row["raw_trial.texture_set"] || "",
+    is_catch: boolField(row.is_catch || row["raw_trial.is_catch"]),
+    catch_correct: boolField(row.catch_correct || row["raw_trial.catch_correct"]),
     word: row.word || row["raw_trial.word"] || "",
     word_type: row.word_type || row["raw_trial.word_type"] || "",
     word_length: row.word_length || row["raw_trial.word_length"] || "",
     ordering: row.ordering || row["raw_trial.ordering"] || "",
+    ordering_group: row.ordering_group || row["raw_trial.ordering_group"] || "",
     a_is: row.a_is || row["raw_trial.a_is"] || "",
     b_is: row.b_is || row["raw_trial.b_is"] || "",
     response_key: row.response_key || row["raw_trial.response"] || "",

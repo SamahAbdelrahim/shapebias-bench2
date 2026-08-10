@@ -13,7 +13,7 @@
 
 # Fill missing vision-tower embeddings for fig 7b (benchmark vs Smith):
 #   1. qwen3.5-9b + 27b on novel/benchmark stimuli (IMAGE_DATASET)
-#   2. full 9-model ladder on Linda Smith probe set
+#   2. full model ladder (scripts/model_ladder.sh) on Linda Smith probe set
 set -euo pipefail
 cd /home/users/samahabd/shapebias-bench2
 source .venv/bin/activate
@@ -28,8 +28,10 @@ export IMAGE_DATASET=stimuli_pipe/stimuli_per_stl_packages/stimuli_A_auto_contra
 
 SESSION=results/probe.results/session_2026-07-31_farmshare
 SMITH_DIR=previous-lit-stimuli/smith_stimuli
+# Deliberate two-model subset, not a ladder: these two were missing from fig 7b.
 FILL_MODELS=(qwen3.5-9b qwen3.5-27b)
-LADDER=(smolvlm internvl qwen3-vl-2b qwen3-vl-4b qwen3-vl-8b qwen3.5-0.8b qwen3.5-4b qwen3.5-9b qwen3.5-27b)
+source scripts/model_ladder.sh
+LADDER=("${MODELS[@]}")
 
 echo "host=$(hostname) date=$(date -Is)"
 echo "SESSION=$SESSION IMAGE_DATASET=$IMAGE_DATASET SMITH=$SMITH_DIR"

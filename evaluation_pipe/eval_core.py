@@ -568,6 +568,51 @@ def load_stimuli_grid(stim_pkg: str,
     return records
 
 
+def load_stimuli_triad_dir(root: str | Path,
+                           num_stimuli: int | None = None) -> list[dict]:
+    """Load a flat directory of named triad folders as records, not images.
+
+    Layout is one directory per trial holding the three canonical PNGs, with the
+    directory name carrying the pair identity rather than a number::
+
+        <root>/<shape_id>-<texture_id>/{reference,shape_match,texture_match}.png
+
+    That is the cue-conflict triad convention (``airplane1-bicycle2``), which
+    :func:`load_stimuli` cannot read because it sorts directories by ``int``.
+    ``stl_id`` and ``texture_set`` are filled from the two halves of the name so
+    the CSV keeps the shape and texture identity of every trial; a trial whose
+    two halves share a class (``dog1-dog2``) is congruent rather than conflicting
+    and can be separated in analysis on that basis. Records carry paths for the
+    same reason the grid loader does, since these sets run to 1,280 triads.
+    """
+    root = Path(root)
+    if not root.is_dir():
+        raise FileNotFoundError(f"Triad directory not found: {root}")
+
+    records: list[dict] = []
+    for d in sorted(p for p in root.iterdir() if p.is_dir()):
+        paths = {r: d / f"{r}.png" for r in ("reference", "shape_match", "texture_match")}
+        missing = [r for r, p in paths.items() if not p.is_file()]
+        if missing:
+            raise FileNotFoundError(f"{d} is missing {', '.join(sorted(missing))}.png")
+        shape_id, _, texture_id = d.name.partition("-")
+        records.append({
+            "stim_id": d.name,
+            "stl_id": shape_id,
+            "texture_set": texture_id,
+            "reference_path": paths["reference"],
+            "shape_match_path": paths["shape_match"],
+            "texture_match_path": paths["texture_match"],
+        })
+    if not records:
+        raise ValueError(f"No triad directories found under {root}")
+
+    if num_stimuli is not None and num_stimuli < len(records):
+        keep = sorted(random.sample(range(len(records)), num_stimuli))
+        records = [records[i] for i in keep]
+    return records
+
+
 def materialize_stimulus(record: dict) -> dict:
     """Open one grid record's three images into the dict ``run_trial`` expects."""
     return {
@@ -1197,7 +1242,10 @@ def load_completed_trial_keys(csv_path: Path) -> set[tuple[str, str, str, str, s
     """Keys for completed benchmark rows: (model, stim_id, word, ordering, repeat).
 
     Matches skip/resume logic in ``run_remote_benchmark_standardized`` / local rerun.
-    Rows missing any of those fields are skipped (legacy or non-benchmark CSVs).
+    Rows missing model, stim_id or ordering are skipped (legacy or non-benchmark
+    CSVs). ``word`` is not required: the no-word prompt conditions write an empty
+    word, and treating that as missing made those cells unresumable, so a
+    requeued task appended a second copy of every row instead of skipping them.
     """
     done: set[tuple[str, str, str, str, str]] = set()
     if not csv_path.exists() or csv_path.stat().st_size == 0:
@@ -1215,9 +1263,9 @@ def load_completed_trial_keys(csv_path: Path) -> set[tuple[str, str, str, str, s
             row = _normalize_csv_row_keys(raw)
             model = row.get("model")
             stim_id = row.get("stim_id")
-            word = row.get("word")
+            word = row.get("word", "")
             ordering = row.get("ordering")
-            if not model or not stim_id or not word or not ordering:
+            if not model or not stim_id or not ordering:
                 continue
             rep = row.get("repeat", "1")
             if rep == "":

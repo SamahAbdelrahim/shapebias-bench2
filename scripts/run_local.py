@@ -53,6 +53,7 @@ from evaluation_pipe.eval_core import (
     benchmark_csv_meta,
     load_stimuli,
     load_stimuli_grid,
+    load_stimuli_triad_dir,
     load_words,
     load_completed_trial_keys,
     make_prompt,
@@ -160,6 +161,12 @@ def main():
     parser.add_argument("--grid-pkg", default=None,
                         help="Full texture-grid package under stimuli_pipe/ (e.g. stimuli_texture_grid_v1). "
                              "Trials are read from its manifest.csv and images opened one at a time.")
+    parser.add_argument("--triad-dir", default=None,
+                        help="Path to a flat directory of named triad folders, each holding "
+                             "reference.png / shape_match.png / texture_match.png "
+                             "(e.g. the cue-conflict cc_triads and decomposition_triads sets). "
+                             "Folder names of the form <shape_id>-<texture_id> populate the "
+                             "stl_id and texture_set columns.")
     parser.add_argument("--smith-probe", default=None, help="Path to Linda Smith probe-shapematch-colormatch dataset")
     parser.add_argument("--geirhos-unaltered", default=None, help="Path to Geirhos unaltered dataset (cue_conflict/original/texture).")
     parser.add_argument(
@@ -304,6 +311,15 @@ def main():
         csv_meta = benchmark_csv_meta(stim_set_label)
 
         print(f"Using Smith probe dataset: {len(stimuli)} stimuli")
+    elif args.triad_dir:
+        stimuli = load_stimuli_triad_dir(args.triad_dir, args.num_stimuli)
+        stim_set_label = Path(args.triad_dir).name
+        csv_meta = benchmark_csv_meta(stim_set_label, stim_pkg="triad_dir")
+
+        n_shapes = len({s["stl_id"] for s in stimuli})
+        n_textures = len({s["texture_set"] for s in stimuli})
+        print(f"Using triad directory {args.triad_dir}: "
+              f"{len(stimuli)} triads ({n_shapes} shape ids x {n_textures} texture ids)")
     elif args.grid_pkg:
         stimuli = load_stimuli_grid(args.grid_pkg, args.stim_set, args.num_stimuli)
         stim_set_label = resolve_stim_set_name(args.stim_set)
@@ -318,7 +334,9 @@ def main():
         stim_set_label = resolve_stim_set_name(args.stim_set)
         csv_meta = benchmark_csv_meta(stim_set_label)
 
-    grid_mode = bool(args.grid_pkg)
+    # Both loaders return path records with stl_id / texture_set, so the triad
+    # sets ride the same lazy-open and CSV-column path as the texture grid.
+    grid_mode = bool(args.grid_pkg or args.triad_dir)
     print(f"Models:      {model_names}")
     print(f"Device:      {args.device}")
     print(f"Ordering:    {args.ordering}")
@@ -332,6 +350,8 @@ def main():
         print(f"Swap corr:   {args.swap_correct}")
     if args.smith_probe:
         print(f"Stimuli:     {len(stimuli)} from {args.smith_probe}")
+    elif args.triad_dir:
+        print(f"Stimuli:     {len(stimuli)} from {args.triad_dir}")
     elif grid_mode:
         print(f"Stimuli:     {len(stimuli)} from {args.grid_pkg}/{stim_set_label}")
     else:

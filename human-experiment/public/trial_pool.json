@@ -1,0 +1,2697 @@
+{
+ "pool_version": "v2",
+ "grid_stim_set": "stimuli_A_auto_contrast",
+ "grid_seed": 0,
+ "cc_seed": 0,
+ "counts": {
+  "grid": 114,
+  "cc_triads": 160,
+  "catch": 24
+ },
+ "test": [
+  {
+   "stim_set_name": "grid",
+   "stim_id": "1/Carpet008_1K-JPG",
+   "stl_id": "1",
+   "texture_set": "Carpet008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/1_Carpet008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/1_Carpet008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/1_Carpet008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "2/MetalPlates013_1K-JPG",
+   "stl_id": "2",
+   "texture_set": "MetalPlates013_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/2_MetalPlates013_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/2_MetalPlates013_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/2_MetalPlates013_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "3/Metal007_1K-JPG",
+   "stl_id": "3",
+   "texture_set": "Metal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/3_Metal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/3_Metal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/3_Metal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "4/Metal032_1K-JPG",
+   "stl_id": "4",
+   "texture_set": "Metal032_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/4_Metal032_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/4_Metal032_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/4_Metal032_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "5/Fabric020_1K-JPG",
+   "stl_id": "5",
+   "texture_set": "Fabric020_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/5_Fabric020_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/5_Fabric020_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/5_Fabric020_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "6/Metal022_1K-JPG",
+   "stl_id": "6",
+   "texture_set": "Metal022_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/6_Metal022_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/6_Metal022_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/6_Metal022_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "7/Leather011_1K-JPG",
+   "stl_id": "7",
+   "texture_set": "Leather011_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/7_Leather011_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/7_Leather011_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/7_Leather011_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "8/Fabric004_1K-JPG",
+   "stl_id": "8",
+   "texture_set": "Fabric004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/8_Fabric004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/8_Fabric004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/8_Fabric004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "9/Fabric004_1K-JPG",
+   "stl_id": "9",
+   "texture_set": "Fabric004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/9_Fabric004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/9_Fabric004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/9_Fabric004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "10/Fabric046_1K-JPG",
+   "stl_id": "10",
+   "texture_set": "Fabric046_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/10_Fabric046_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/10_Fabric046_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/10_Fabric046_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "11/PaintedMetal007_1K-JPG",
+   "stl_id": "11",
+   "texture_set": "PaintedMetal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/11_PaintedMetal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/11_PaintedMetal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/11_PaintedMetal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "12/Leather008_1K-JPG",
+   "stl_id": "12",
+   "texture_set": "Leather008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/12_Leather008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/12_Leather008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/12_Leather008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "13/Carpet013_1K-JPG",
+   "stl_id": "13",
+   "texture_set": "Carpet013_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/13_Carpet013_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/13_Carpet013_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/13_Carpet013_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "14/PaintedMetal008_1K-JPG",
+   "stl_id": "14",
+   "texture_set": "PaintedMetal008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/14_PaintedMetal008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/14_PaintedMetal008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/14_PaintedMetal008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "15/Leather010_1K-JPG",
+   "stl_id": "15",
+   "texture_set": "Leather010_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/15_Leather010_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/15_Leather010_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/15_Leather010_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "16/Fabric062_1K-JPG",
+   "stl_id": "16",
+   "texture_set": "Fabric062_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/16_Fabric062_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/16_Fabric062_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/16_Fabric062_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "17/Fabric001_1K-JPG",
+   "stl_id": "17",
+   "texture_set": "Fabric001_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/17_Fabric001_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/17_Fabric001_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/17_Fabric001_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "18/Fabric004_1K-JPG",
+   "stl_id": "18",
+   "texture_set": "Fabric004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/18_Fabric004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/18_Fabric004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/18_Fabric004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "19/Ground054_1K-JPG",
+   "stl_id": "19",
+   "texture_set": "Ground054_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/19_Ground054_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/19_Ground054_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/19_Ground054_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "20/PaintedMetal004_1K-JPG",
+   "stl_id": "20",
+   "texture_set": "PaintedMetal004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/20_PaintedMetal004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/20_PaintedMetal004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/20_PaintedMetal004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "21/Rust004_1K-JPG",
+   "stl_id": "21",
+   "texture_set": "Rust004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/21_Rust004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/21_Rust004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/21_Rust004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "22/Metal006_1K-JPG",
+   "stl_id": "22",
+   "texture_set": "Metal006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/22_Metal006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/22_Metal006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/22_Metal006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "23/Rust006_1K-JPG",
+   "stl_id": "23",
+   "texture_set": "Rust006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/23_Rust006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/23_Rust006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/23_Rust006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "24/CorrugatedSteel005_1K-JPG",
+   "stl_id": "24",
+   "texture_set": "CorrugatedSteel005_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/24_CorrugatedSteel005_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/24_CorrugatedSteel005_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/24_CorrugatedSteel005_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "25/Rust006_1K-JPG",
+   "stl_id": "25",
+   "texture_set": "Rust006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/25_Rust006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/25_Rust006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/25_Rust006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "26/Leather028_1K-JPG",
+   "stl_id": "26",
+   "texture_set": "Leather028_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/26_Leather028_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/26_Leather028_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/26_Leather028_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "27/Fabric031_1K-JPG",
+   "stl_id": "27",
+   "texture_set": "Fabric031_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/27_Fabric031_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/27_Fabric031_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/27_Fabric031_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "28/Metal032_1K-JPG",
+   "stl_id": "28",
+   "texture_set": "Metal032_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/28_Metal032_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/28_Metal032_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/28_Metal032_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "29/Fabric020_1K-JPG",
+   "stl_id": "29",
+   "texture_set": "Fabric020_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/29_Fabric020_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/29_Fabric020_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/29_Fabric020_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "30/Metal009_1K-JPG",
+   "stl_id": "30",
+   "texture_set": "Metal009_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/30_Metal009_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/30_Metal009_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/30_Metal009_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "1/Fabric045_1K-JPG",
+   "stl_id": "1",
+   "texture_set": "Fabric045_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/1_Fabric045_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/1_Fabric045_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/1_Fabric045_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "2/Ground054_1K-JPG",
+   "stl_id": "2",
+   "texture_set": "Ground054_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/2_Ground054_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/2_Ground054_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/2_Ground054_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "3/Fabric046_1K-JPG",
+   "stl_id": "3",
+   "texture_set": "Fabric046_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/3_Fabric046_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/3_Fabric046_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/3_Fabric046_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "4/Fabric012_1K-JPG",
+   "stl_id": "4",
+   "texture_set": "Fabric012_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/4_Fabric012_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/4_Fabric012_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/4_Fabric012_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "5/Leather028_1K-JPG",
+   "stl_id": "5",
+   "texture_set": "Leather028_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/5_Leather028_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/5_Leather028_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/5_Leather028_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "6/MetalPlates006_1K-JPG",
+   "stl_id": "6",
+   "texture_set": "MetalPlates006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/6_MetalPlates006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/6_MetalPlates006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/6_MetalPlates006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "7/CorrugatedSteel007B_1K-JPG",
+   "stl_id": "7",
+   "texture_set": "CorrugatedSteel007B_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/7_CorrugatedSteel007B_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/7_CorrugatedSteel007B_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/7_CorrugatedSteel007B_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "8/Fabric047_1K-JPG",
+   "stl_id": "8",
+   "texture_set": "Fabric047_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/8_Fabric047_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/8_Fabric047_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/8_Fabric047_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "9/Fabric047_1K-JPG",
+   "stl_id": "9",
+   "texture_set": "Fabric047_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/9_Fabric047_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/9_Fabric047_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/9_Fabric047_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "10/PaintedMetal007_1K-JPG",
+   "stl_id": "10",
+   "texture_set": "PaintedMetal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/10_PaintedMetal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/10_PaintedMetal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/10_PaintedMetal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "11/SheetMetal001_1K-JPG",
+   "stl_id": "11",
+   "texture_set": "SheetMetal001_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/11_SheetMetal001_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/11_SheetMetal001_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/11_SheetMetal001_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "12/Fabric031_1K-JPG",
+   "stl_id": "12",
+   "texture_set": "Fabric031_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/12_Fabric031_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/12_Fabric031_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/12_Fabric031_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "13/Leather011_1K-JPG",
+   "stl_id": "13",
+   "texture_set": "Leather011_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/13_Leather011_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/13_Leather011_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/13_Leather011_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "14/Rust004_1K-JPG",
+   "stl_id": "14",
+   "texture_set": "Rust004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/14_Rust004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/14_Rust004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/14_Rust004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "15/Metal009_1K-JPG",
+   "stl_id": "15",
+   "texture_set": "Metal009_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/15_Metal009_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/15_Metal009_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/15_Metal009_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "16/Leather028_1K-JPG",
+   "stl_id": "16",
+   "texture_set": "Leather028_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/16_Leather028_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/16_Leather028_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/16_Leather028_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "17/Metal006_1K-JPG",
+   "stl_id": "17",
+   "texture_set": "Metal006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/17_Metal006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/17_Metal006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/17_Metal006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "18/Metal007_1K-JPG",
+   "stl_id": "18",
+   "texture_set": "Metal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/18_Metal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/18_Metal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/18_Metal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "19/PaintedMetal007_1K-JPG",
+   "stl_id": "19",
+   "texture_set": "PaintedMetal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/19_PaintedMetal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/19_PaintedMetal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/19_PaintedMetal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "20/PaintedMetal008_1K-JPG",
+   "stl_id": "20",
+   "texture_set": "PaintedMetal008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/20_PaintedMetal008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/20_PaintedMetal008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/20_PaintedMetal008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "21/Carpet014_1K-JPG",
+   "stl_id": "21",
+   "texture_set": "Carpet014_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/21_Carpet014_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/21_Carpet014_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/21_Carpet014_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "22/Fabric001_1K-JPG",
+   "stl_id": "22",
+   "texture_set": "Fabric001_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/22_Fabric001_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/22_Fabric001_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/22_Fabric001_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "23/Rust008_1K-JPG",
+   "stl_id": "23",
+   "texture_set": "Rust008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/23_Rust008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/23_Rust008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/23_Rust008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "24/Rust008_1K-JPG",
+   "stl_id": "24",
+   "texture_set": "Rust008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/24_Rust008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/24_Rust008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/24_Rust008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "25/PaintedMetal004_1K-JPG",
+   "stl_id": "25",
+   "texture_set": "PaintedMetal004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/25_PaintedMetal004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/25_PaintedMetal004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/25_PaintedMetal004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "26/Fabric020_1K-JPG",
+   "stl_id": "26",
+   "texture_set": "Fabric020_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/26_Fabric020_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/26_Fabric020_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/26_Fabric020_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "27/Fabric045_1K-JPG",
+   "stl_id": "27",
+   "texture_set": "Fabric045_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/27_Fabric045_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/27_Fabric045_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/27_Fabric045_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "28/Ground054_1K-JPG",
+   "stl_id": "28",
+   "texture_set": "Ground054_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/28_Ground054_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/28_Ground054_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/28_Ground054_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "29/Carpet013_1K-JPG",
+   "stl_id": "29",
+   "texture_set": "Carpet013_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/29_Carpet013_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/29_Carpet013_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/29_Carpet013_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "30/PaintedMetal007_1K-JPG",
+   "stl_id": "30",
+   "texture_set": "PaintedMetal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/30_PaintedMetal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/30_PaintedMetal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/30_PaintedMetal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "1/Leather028_1K-JPG",
+   "stl_id": "1",
+   "texture_set": "Leather028_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/1_Leather028_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/1_Leather028_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/1_Leather028_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "2/Rust004_1K-JPG",
+   "stl_id": "2",
+   "texture_set": "Rust004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/2_Rust004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/2_Rust004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/2_Rust004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "3/CorrugatedSteel005_1K-JPG",
+   "stl_id": "3",
+   "texture_set": "CorrugatedSteel005_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/3_CorrugatedSteel005_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/3_CorrugatedSteel005_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/3_CorrugatedSteel005_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "4/CorrugatedSteel007B_1K-JPG",
+   "stl_id": "4",
+   "texture_set": "CorrugatedSteel007B_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/4_CorrugatedSteel007B_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/4_CorrugatedSteel007B_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/4_CorrugatedSteel007B_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "5/CorrugatedSteel007B_1K-JPG",
+   "stl_id": "5",
+   "texture_set": "CorrugatedSteel007B_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/5_CorrugatedSteel007B_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/5_CorrugatedSteel007B_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/5_CorrugatedSteel007B_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "6/Leather028_1K-JPG",
+   "stl_id": "6",
+   "texture_set": "Leather028_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/6_Leather028_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/6_Leather028_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/6_Leather028_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "7/Metal032_1K-JPG",
+   "stl_id": "7",
+   "texture_set": "Metal032_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/7_Metal032_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/7_Metal032_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/7_Metal032_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "8/Fabric001_1K-JPG",
+   "stl_id": "8",
+   "texture_set": "Fabric001_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/8_Fabric001_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/8_Fabric001_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/8_Fabric001_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "9/Carpet014_1K-JPG",
+   "stl_id": "9",
+   "texture_set": "Carpet014_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/9_Carpet014_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/9_Carpet014_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/9_Carpet014_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "10/Leather011_1K-JPG",
+   "stl_id": "10",
+   "texture_set": "Leather011_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/10_Leather011_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/10_Leather011_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/10_Leather011_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "11/Leather010_1K-JPG",
+   "stl_id": "11",
+   "texture_set": "Leather010_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/11_Leather010_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/11_Leather010_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/11_Leather010_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "12/CorrugatedSteel007B_1K-JPG",
+   "stl_id": "12",
+   "texture_set": "CorrugatedSteel007B_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/12_CorrugatedSteel007B_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/12_CorrugatedSteel007B_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/12_CorrugatedSteel007B_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "13/Fabric030_1K-JPG",
+   "stl_id": "13",
+   "texture_set": "Fabric030_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/13_Fabric030_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/13_Fabric030_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/13_Fabric030_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "14/Fabric002_1K-JPG",
+   "stl_id": "14",
+   "texture_set": "Fabric002_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/14_Fabric002_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/14_Fabric002_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/14_Fabric002_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "15/Rust008_1K-JPG",
+   "stl_id": "15",
+   "texture_set": "Rust008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/15_Rust008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/15_Rust008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/15_Rust008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "16/Fabric045_1K-JPG",
+   "stl_id": "16",
+   "texture_set": "Fabric045_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/16_Fabric045_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/16_Fabric045_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/16_Fabric045_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "17/Fabric012_1K-JPG",
+   "stl_id": "17",
+   "texture_set": "Fabric012_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/17_Fabric012_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/17_Fabric012_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/17_Fabric012_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "18/Rust004_1K-JPG",
+   "stl_id": "18",
+   "texture_set": "Rust004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/18_Rust004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/18_Rust004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/18_Rust004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "19/Metal022_1K-JPG",
+   "stl_id": "19",
+   "texture_set": "Metal022_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/19_Metal022_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/19_Metal022_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/19_Metal022_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "20/Fabric062_1K-JPG",
+   "stl_id": "20",
+   "texture_set": "Fabric062_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/20_Fabric062_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/20_Fabric062_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/20_Fabric062_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "21/PaintedMetal008_1K-JPG",
+   "stl_id": "21",
+   "texture_set": "PaintedMetal008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/21_PaintedMetal008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/21_PaintedMetal008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/21_PaintedMetal008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "22/Rust006_1K-JPG",
+   "stl_id": "22",
+   "texture_set": "Rust006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/22_Rust006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/22_Rust006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/22_Rust006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "23/PaintedMetal007_1K-JPG",
+   "stl_id": "23",
+   "texture_set": "PaintedMetal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/23_PaintedMetal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/23_PaintedMetal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/23_PaintedMetal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "24/Leather011_1K-JPG",
+   "stl_id": "24",
+   "texture_set": "Leather011_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/24_Leather011_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/24_Leather011_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/24_Leather011_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "25/Carpet008_1K-JPG",
+   "stl_id": "25",
+   "texture_set": "Carpet008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/25_Carpet008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/25_Carpet008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/25_Carpet008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "26/Fabric070_1K-JPG",
+   "stl_id": "26",
+   "texture_set": "Fabric070_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/26_Fabric070_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/26_Fabric070_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/26_Fabric070_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "27/MetalPlates006_1K-JPG",
+   "stl_id": "27",
+   "texture_set": "MetalPlates006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/27_MetalPlates006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/27_MetalPlates006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/27_MetalPlates006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "28/Fabric031_1K-JPG",
+   "stl_id": "28",
+   "texture_set": "Fabric031_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/28_Fabric031_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/28_Fabric031_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/28_Fabric031_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "29/Carpet014_1K-JPG",
+   "stl_id": "29",
+   "texture_set": "Carpet014_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/29_Carpet014_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/29_Carpet014_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/29_Carpet014_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "30/CorrugatedSteel005_1K-JPG",
+   "stl_id": "30",
+   "texture_set": "CorrugatedSteel005_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/30_CorrugatedSteel005_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/30_CorrugatedSteel005_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/30_CorrugatedSteel005_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "1/MetalPlates006_1K-JPG",
+   "stl_id": "1",
+   "texture_set": "MetalPlates006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/1_MetalPlates006_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/1_MetalPlates006_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/1_MetalPlates006_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "2/Fabric012_1K-JPG",
+   "stl_id": "2",
+   "texture_set": "Fabric012_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/2_Fabric012_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/2_Fabric012_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/2_Fabric012_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "3/Fabric030_1K-JPG",
+   "stl_id": "3",
+   "texture_set": "Fabric030_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/3_Fabric030_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/3_Fabric030_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/3_Fabric030_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "4/Fabric062_1K-JPG",
+   "stl_id": "4",
+   "texture_set": "Fabric062_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/4_Fabric062_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/4_Fabric062_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/4_Fabric062_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "5/PaintedMetal008_1K-JPG",
+   "stl_id": "5",
+   "texture_set": "PaintedMetal008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/5_PaintedMetal008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/5_PaintedMetal008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/5_PaintedMetal008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "6/Fabric002_1K-JPG",
+   "stl_id": "6",
+   "texture_set": "Fabric002_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/6_Fabric002_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/6_Fabric002_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/6_Fabric002_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "7/CorrugatedSteel005_1K-JPG",
+   "stl_id": "7",
+   "texture_set": "CorrugatedSteel005_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/7_CorrugatedSteel005_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/7_CorrugatedSteel005_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/7_CorrugatedSteel005_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "8/Leather028_1K-JPG",
+   "stl_id": "8",
+   "texture_set": "Leather028_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/8_Leather028_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/8_Leather028_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/8_Leather028_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "9/Fabric045_1K-JPG",
+   "stl_id": "9",
+   "texture_set": "Fabric045_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/9_Fabric045_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/9_Fabric045_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/9_Fabric045_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "10/PaintedMetal004_1K-JPG",
+   "stl_id": "10",
+   "texture_set": "PaintedMetal004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/10_PaintedMetal004_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/10_PaintedMetal004_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/10_PaintedMetal004_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "11/Carpet008_1K-JPG",
+   "stl_id": "11",
+   "texture_set": "Carpet008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/11_Carpet008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/11_Carpet008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/11_Carpet008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "12/Fabric012_1K-JPG",
+   "stl_id": "12",
+   "texture_set": "Fabric012_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/12_Fabric012_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/12_Fabric012_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/12_Fabric012_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "13/PaintedMetal007_1K-JPG",
+   "stl_id": "13",
+   "texture_set": "PaintedMetal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/13_PaintedMetal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/13_PaintedMetal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/13_PaintedMetal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "14/MetalPlates013_1K-JPG",
+   "stl_id": "14",
+   "texture_set": "MetalPlates013_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/14_MetalPlates013_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/14_MetalPlates013_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/14_MetalPlates013_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "15/PaintedMetal005_1K-JPG",
+   "stl_id": "15",
+   "texture_set": "PaintedMetal005_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/15_PaintedMetal005_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/15_PaintedMetal005_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/15_PaintedMetal005_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "16/SheetMetal001_1K-JPG",
+   "stl_id": "16",
+   "texture_set": "SheetMetal001_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/16_SheetMetal001_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/16_SheetMetal001_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/16_SheetMetal001_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "17/MetalPlates013_1K-JPG",
+   "stl_id": "17",
+   "texture_set": "MetalPlates013_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/17_MetalPlates013_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/17_MetalPlates013_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/17_MetalPlates013_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "18/Rust008_1K-JPG",
+   "stl_id": "18",
+   "texture_set": "Rust008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/18_Rust008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/18_Rust008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/18_Rust008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "19/Leather008_1K-JPG",
+   "stl_id": "19",
+   "texture_set": "Leather008_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/19_Leather008_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/19_Leather008_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/19_Leather008_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "20/Leather011_1K-JPG",
+   "stl_id": "20",
+   "texture_set": "Leather011_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/20_Leather011_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/20_Leather011_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/20_Leather011_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "21/Fabric012_1K-JPG",
+   "stl_id": "21",
+   "texture_set": "Fabric012_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/21_Fabric012_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/21_Fabric012_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/21_Fabric012_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "22/Fabric062_1K-JPG",
+   "stl_id": "22",
+   "texture_set": "Fabric062_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/22_Fabric062_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/22_Fabric062_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/22_Fabric062_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "23/Fabric046_1K-JPG",
+   "stl_id": "23",
+   "texture_set": "Fabric046_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/23_Fabric046_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/23_Fabric046_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/23_Fabric046_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "24/Metal007_1K-JPG",
+   "stl_id": "24",
+   "texture_set": "Metal007_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/24_Metal007_1K-JPG__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/grid/24_Metal007_1K-JPG__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/grid/24_Metal007_1K-JPG__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane5-oven3",
+   "stl_id": "airplane5",
+   "texture_set": "oven3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane5-oven3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane5-oven3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane5-oven3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear10-cat2",
+   "stl_id": "bear10",
+   "texture_set": "cat2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear10-cat2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear10-cat2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear10-cat2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle8-chair2",
+   "stl_id": "bicycle8",
+   "texture_set": "chair2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle8-chair2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle8-chair2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle8-chair2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird4-bicycle2",
+   "stl_id": "bird4",
+   "texture_set": "bicycle2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird4-bicycle2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird4-bicycle2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird4-bicycle2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat4-knife2",
+   "stl_id": "boat4",
+   "texture_set": "knife2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat4-knife2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat4-knife2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat4-knife2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle1-bear1",
+   "stl_id": "bottle1",
+   "texture_set": "bear1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle1-bear1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle1-bear1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle1-bear1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car6-bicycle3",
+   "stl_id": "car6",
+   "texture_set": "bicycle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car6-bicycle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car6-bicycle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car6-bicycle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat6-bear1",
+   "stl_id": "cat6",
+   "texture_set": "bear1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat6-bear1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat6-bear1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat6-bear1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair5-boat3",
+   "stl_id": "chair5",
+   "texture_set": "boat3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair5-boat3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair5-boat3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair5-boat3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock2-elephant2",
+   "stl_id": "clock2",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock2-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock2-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock2-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog7-keyboard3",
+   "stl_id": "dog7",
+   "texture_set": "keyboard3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog7-keyboard3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog7-keyboard3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog7-keyboard3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant2-boat1",
+   "stl_id": "elephant2",
+   "texture_set": "boat1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant2-boat1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant2-boat1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant2-boat1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard5-bicycle1",
+   "stl_id": "keyboard5",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard5-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard5-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard5-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife8-bicycle1",
+   "stl_id": "knife8",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife8-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife8-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife8-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven10-bicycle1",
+   "stl_id": "oven10",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven10-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven10-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven10-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck2-car3",
+   "stl_id": "truck2",
+   "texture_set": "car3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck2-car3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck2-car3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck2-car3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane5-bear2",
+   "stl_id": "airplane5",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane5-bear2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane5-bear2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane5-bear2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear6-chair1",
+   "stl_id": "bear6",
+   "texture_set": "chair1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear6-chair1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear6-chair1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear6-chair1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle4-knife3",
+   "stl_id": "bicycle4",
+   "texture_set": "knife3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle4-knife3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle4-knife3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle4-knife3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird10-elephant2",
+   "stl_id": "bird10",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird10-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird10-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird10-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat4-car3",
+   "stl_id": "boat4",
+   "texture_set": "car3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat4-car3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat4-car3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat4-car3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle5-chair1",
+   "stl_id": "bottle5",
+   "texture_set": "chair1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle5-chair1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle5-chair1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle5-chair1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car5-truck3",
+   "stl_id": "car5",
+   "texture_set": "truck3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car5-truck3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car5-truck3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car5-truck3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat5-chair3",
+   "stl_id": "cat5",
+   "texture_set": "chair3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat5-chair3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat5-chair3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat5-chair3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair5-bottle3",
+   "stl_id": "chair5",
+   "texture_set": "bottle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair5-bottle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair5-bottle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair5-bottle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock7-truck3",
+   "stl_id": "clock7",
+   "texture_set": "truck3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock7-truck3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock7-truck3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock7-truck3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog2-cat1",
+   "stl_id": "dog2",
+   "texture_set": "cat1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog2-cat1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog2-cat1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog2-cat1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant7-clock2",
+   "stl_id": "elephant7",
+   "texture_set": "clock2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant7-clock2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant7-clock2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant7-clock2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard1-elephant3",
+   "stl_id": "keyboard1",
+   "texture_set": "elephant3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard1-elephant3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard1-elephant3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard1-elephant3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife4-keyboard1",
+   "stl_id": "knife4",
+   "texture_set": "keyboard1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife4-keyboard1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife4-keyboard1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife4-keyboard1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven8-keyboard3",
+   "stl_id": "oven8",
+   "texture_set": "keyboard3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven8-keyboard3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven8-keyboard3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven8-keyboard3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck3-dog3",
+   "stl_id": "truck3",
+   "texture_set": "dog3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck3-dog3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck3-dog3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck3-dog3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane1-chair2",
+   "stl_id": "airplane1",
+   "texture_set": "chair2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane1-chair2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane1-chair2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane1-chair2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear8-dog1",
+   "stl_id": "bear8",
+   "texture_set": "dog1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear8-dog1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear8-dog1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear8-dog1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle4-cat1",
+   "stl_id": "bicycle4",
+   "texture_set": "cat1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle4-cat1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle4-cat1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle4-cat1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird10-bear2",
+   "stl_id": "bird10",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird10-bear2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird10-bear2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird10-bear2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat5-bicycle3",
+   "stl_id": "boat5",
+   "texture_set": "bicycle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat5-bicycle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat5-bicycle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat5-bicycle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle9-truck1",
+   "stl_id": "bottle9",
+   "texture_set": "truck1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle9-truck1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle9-truck1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle9-truck1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car10-elephant2",
+   "stl_id": "car10",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car10-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car10-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car10-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat10-oven2",
+   "stl_id": "cat10",
+   "texture_set": "oven2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat10-oven2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat10-oven2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat10-oven2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair5-bicycle1",
+   "stl_id": "chair5",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair5-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair5-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair5-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock7-bear2",
+   "stl_id": "clock7",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock7-bear2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock7-bear2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock7-bear2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog7-oven2",
+   "stl_id": "dog7",
+   "texture_set": "oven2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog7-oven2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog7-oven2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog7-oven2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant7-dog1",
+   "stl_id": "elephant7",
+   "texture_set": "dog1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant7-dog1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant7-dog1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant7-dog1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard7-chair3",
+   "stl_id": "keyboard7",
+   "texture_set": "chair3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard7-chair3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard7-chair3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard7-chair3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife7-chair2",
+   "stl_id": "knife7",
+   "texture_set": "chair2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife7-chair2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife7-chair2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife7-chair2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven4-car1",
+   "stl_id": "oven4",
+   "texture_set": "car1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven4-car1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven4-car1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven4-car1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck7-bear2",
+   "stl_id": "truck7",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck7-bear2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck7-bear2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck7-bear2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane8-clock2",
+   "stl_id": "airplane8",
+   "texture_set": "clock2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane8-clock2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane8-clock2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane8-clock2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear8-bicycle3",
+   "stl_id": "bear8",
+   "texture_set": "bicycle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear8-bicycle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear8-bicycle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear8-bicycle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle7-knife2",
+   "stl_id": "bicycle7",
+   "texture_set": "knife2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle7-knife2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle7-knife2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle7-knife2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird8-keyboard2",
+   "stl_id": "bird8",
+   "texture_set": "keyboard2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird8-keyboard2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird8-keyboard2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird8-keyboard2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat4-bottle2",
+   "stl_id": "boat4",
+   "texture_set": "bottle2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat4-bottle2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat4-bottle2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat4-bottle2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle3-cat3",
+   "stl_id": "bottle3",
+   "texture_set": "cat3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle3-cat3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle3-cat3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle3-cat3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car3-bird2",
+   "stl_id": "car3",
+   "texture_set": "bird2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car3-bird2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car3-bird2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car3-bird2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat9-bicycle1",
+   "stl_id": "cat9",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat9-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat9-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat9-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair3-car3",
+   "stl_id": "chair3",
+   "texture_set": "car3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair3-car3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair3-car3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair3-car3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock5-bicycle1",
+   "stl_id": "clock5",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock5-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock5-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock5-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog9-bottle1",
+   "stl_id": "dog9",
+   "texture_set": "bottle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog9-bottle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog9-bottle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog9-bottle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant8-clock2",
+   "stl_id": "elephant8",
+   "texture_set": "clock2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant8-clock2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant8-clock2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant8-clock2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard3-cat1",
+   "stl_id": "keyboard3",
+   "texture_set": "cat1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard3-cat1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard3-cat1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard3-cat1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife9-bicycle1",
+   "stl_id": "knife9",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife9-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife9-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife9-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven5-bicycle1",
+   "stl_id": "oven5",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven5-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven5-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven5-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck7-elephant2",
+   "stl_id": "truck7",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck7-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck7-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck7-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane10-knife3",
+   "stl_id": "airplane10",
+   "texture_set": "knife3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane10-knife3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane10-knife3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane10-knife3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear3-bird3",
+   "stl_id": "bear3",
+   "texture_set": "bird3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear3-bird3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear3-bird3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear3-bird3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle10-elephant2",
+   "stl_id": "bicycle10",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle10-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle10-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle10-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird4-clock1",
+   "stl_id": "bird4",
+   "texture_set": "clock1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird4-clock1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird4-clock1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird4-clock1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat1-bicycle2",
+   "stl_id": "boat1",
+   "texture_set": "bicycle2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat1-bicycle2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat1-bicycle2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat1-bicycle2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle4-bicycle1",
+   "stl_id": "bottle4",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle4-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle4-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle4-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car7-keyboard3",
+   "stl_id": "car7",
+   "texture_set": "keyboard3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car7-keyboard3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car7-keyboard3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car7-keyboard3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat4-bird2",
+   "stl_id": "cat4",
+   "texture_set": "bird2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat4-bird2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat4-bird2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat4-bird2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair7-airplane1",
+   "stl_id": "chair7",
+   "texture_set": "airplane1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair7-airplane1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair7-airplane1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair7-airplane1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock5-oven1",
+   "stl_id": "clock5",
+   "texture_set": "oven1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock5-oven1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock5-oven1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock5-oven1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog6-truck2",
+   "stl_id": "dog6",
+   "texture_set": "truck2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog6-truck2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog6-truck2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog6-truck2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant4-car3",
+   "stl_id": "elephant4",
+   "texture_set": "car3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant4-car3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant4-car3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant4-car3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard2-elephant1",
+   "stl_id": "keyboard2",
+   "texture_set": "elephant1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard2-elephant1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard2-elephant1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard2-elephant1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife6-oven3",
+   "stl_id": "knife6",
+   "texture_set": "oven3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife6-oven3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife6-oven3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife6-oven3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven6-elephant2",
+   "stl_id": "oven6",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven6-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven6-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven6-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck5-knife3",
+   "stl_id": "truck5",
+   "texture_set": "knife3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck5-knife3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck5-knife3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck5-knife3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane8-bird1",
+   "stl_id": "airplane8",
+   "texture_set": "bird1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane8-bird1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane8-bird1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane8-bird1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear10-oven1",
+   "stl_id": "bear10",
+   "texture_set": "oven1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear10-oven1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear10-oven1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear10-oven1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle9-bird3",
+   "stl_id": "bicycle9",
+   "texture_set": "bird3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle9-bird3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle9-bird3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle9-bird3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird1-bear1",
+   "stl_id": "bird1",
+   "texture_set": "bear1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird1-bear1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird1-bear1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird1-bear1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat6-bear1",
+   "stl_id": "boat6",
+   "texture_set": "bear1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat6-bear1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat6-bear1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat6-bear1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle7-airplane3",
+   "stl_id": "bottle7",
+   "texture_set": "airplane3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle7-airplane3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle7-airplane3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle7-airplane3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car7-oven2",
+   "stl_id": "car7",
+   "texture_set": "oven2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car7-oven2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car7-oven2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car7-oven2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat8-bird2",
+   "stl_id": "cat8",
+   "texture_set": "bird2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat8-bird2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat8-bird2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat8-bird2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair4-keyboard2",
+   "stl_id": "chair4",
+   "texture_set": "keyboard2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair4-keyboard2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair4-keyboard2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair4-keyboard2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock7-bicycle1",
+   "stl_id": "clock7",
+   "texture_set": "bicycle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock7-bicycle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock7-bicycle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock7-bicycle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog8-bear3",
+   "stl_id": "dog8",
+   "texture_set": "bear3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog8-bear3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog8-bear3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog8-bear3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant6-cat2",
+   "stl_id": "elephant6",
+   "texture_set": "cat2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant6-cat2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant6-cat2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant6-cat2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard9-bear2",
+   "stl_id": "keyboard9",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard9-bear2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard9-bear2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard9-bear2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife2-elephant2",
+   "stl_id": "knife2",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife2-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife2-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife2-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven4-bicycle2",
+   "stl_id": "oven4",
+   "texture_set": "bicycle2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven4-bicycle2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven4-bicycle2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven4-bicycle2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck2-bird2",
+   "stl_id": "truck2",
+   "texture_set": "bird2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck2-bird2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck2-bird2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck2-bird2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane5-bird2",
+   "stl_id": "airplane5",
+   "texture_set": "bird2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane5-bird2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane5-bird2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane5-bird2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear10-keyboard3",
+   "stl_id": "bear10",
+   "texture_set": "keyboard3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear10-keyboard3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear10-keyboard3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear10-keyboard3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle9-airplane2",
+   "stl_id": "bicycle9",
+   "texture_set": "airplane2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle9-airplane2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle9-airplane2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle9-airplane2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird7-cat3",
+   "stl_id": "bird7",
+   "texture_set": "cat3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird7-cat3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird7-cat3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird7-cat3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat1-chair3",
+   "stl_id": "boat1",
+   "texture_set": "chair3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat1-chair3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat1-chair3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat1-chair3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle4-truck1",
+   "stl_id": "bottle4",
+   "texture_set": "truck1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle4-truck1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle4-truck1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle4-truck1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car1-clock2",
+   "stl_id": "car1",
+   "texture_set": "clock2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car1-clock2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car1-clock2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car1-clock2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat4-keyboard2",
+   "stl_id": "cat4",
+   "texture_set": "keyboard2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat4-keyboard2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat4-keyboard2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat4-keyboard2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair3-bottle3",
+   "stl_id": "chair3",
+   "texture_set": "bottle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair3-bottle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair3-bottle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair3-bottle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock2-bottle3",
+   "stl_id": "clock2",
+   "texture_set": "bottle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock2-bottle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock2-bottle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock2-bottle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog3-boat1",
+   "stl_id": "dog3",
+   "texture_set": "boat1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog3-boat1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog3-boat1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog3-boat1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant5-bicycle3",
+   "stl_id": "elephant5",
+   "texture_set": "bicycle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant5-bicycle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant5-bicycle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant5-bicycle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard4-knife2",
+   "stl_id": "keyboard4",
+   "texture_set": "knife2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard4-knife2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard4-knife2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard4-knife2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife5-oven2",
+   "stl_id": "knife5",
+   "texture_set": "oven2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife5-oven2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife5-oven2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife5-oven2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven5-bottle3",
+   "stl_id": "oven5",
+   "texture_set": "bottle3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven5-bottle3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven5-bottle3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven5-bottle3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck6-cat2",
+   "stl_id": "truck6",
+   "texture_set": "cat2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck6-cat2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck6-cat2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck6-cat2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane2-bear1",
+   "stl_id": "airplane2",
+   "texture_set": "bear1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane2-bear1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane2-bear1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane2-bear1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear6-cat3",
+   "stl_id": "bear6",
+   "texture_set": "cat3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear6-cat3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear6-cat3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear6-cat3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle5-oven3",
+   "stl_id": "bicycle5",
+   "texture_set": "oven3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle5-oven3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle5-oven3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle5-oven3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird3-truck3",
+   "stl_id": "bird3",
+   "texture_set": "truck3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird3-truck3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird3-truck3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird3-truck3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat8-elephant1",
+   "stl_id": "boat8",
+   "texture_set": "elephant1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat8-elephant1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat8-elephant1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat8-elephant1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle7-oven2",
+   "stl_id": "bottle7",
+   "texture_set": "oven2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle7-oven2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle7-oven2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle7-oven2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car4-bottle1",
+   "stl_id": "car4",
+   "texture_set": "bottle1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car4-bottle1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car4-bottle1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car4-bottle1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat9-clock2",
+   "stl_id": "cat9",
+   "texture_set": "clock2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat9-clock2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat9-clock2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat9-clock2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair8-car1",
+   "stl_id": "chair8",
+   "texture_set": "car1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair8-car1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair8-car1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair8-car1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock2-dog1",
+   "stl_id": "clock2",
+   "texture_set": "dog1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock2-dog1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock2-dog1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock2-dog1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog4-bottle2",
+   "stl_id": "dog4",
+   "texture_set": "bottle2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog4-bottle2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog4-bottle2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog4-bottle2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant4-clock3",
+   "stl_id": "elephant4",
+   "texture_set": "clock3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant4-clock3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant4-clock3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant4-clock3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard4-bird1",
+   "stl_id": "keyboard4",
+   "texture_set": "bird1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard4-bird1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard4-bird1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard4-bird1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife1-car3",
+   "stl_id": "knife1",
+   "texture_set": "car3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife1-car3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife1-car3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife1-car3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven4-chair1",
+   "stl_id": "oven4",
+   "texture_set": "chair1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven4-chair1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven4-chair1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven4-chair1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck1-clock3",
+   "stl_id": "truck1",
+   "texture_set": "clock3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck1-clock3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck1-clock3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck1-clock3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane3-clock1",
+   "stl_id": "airplane3",
+   "texture_set": "clock1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane3-clock1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane3-clock1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane3-clock1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear4-clock3",
+   "stl_id": "bear4",
+   "texture_set": "clock3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear4-clock3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear4-clock3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear4-clock3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle6-dog2",
+   "stl_id": "bicycle6",
+   "texture_set": "dog2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle6-dog2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle6-dog2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle6-dog2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird6-car3",
+   "stl_id": "bird6",
+   "texture_set": "car3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird6-car3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird6-car3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird6-car3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat3-airplane2",
+   "stl_id": "boat3",
+   "texture_set": "airplane2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat3-airplane2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat3-airplane2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat3-airplane2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle6-bear2",
+   "stl_id": "bottle6",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle6-bear2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle6-bear2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle6-bear2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car10-dog1",
+   "stl_id": "car10",
+   "texture_set": "dog1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car10-dog1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car10-dog1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car10-dog1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat7-truck2",
+   "stl_id": "cat7",
+   "texture_set": "truck2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat7-truck2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat7-truck2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat7-truck2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair4-truck2",
+   "stl_id": "chair4",
+   "texture_set": "truck2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair4-truck2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair4-truck2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair4-truck2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock4-car2",
+   "stl_id": "clock4",
+   "texture_set": "car2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock4-car2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock4-car2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock4-car2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog7-chair2",
+   "stl_id": "dog7",
+   "texture_set": "chair2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog7-chair2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog7-chair2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog7-chair2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant2-truck2",
+   "stl_id": "elephant2",
+   "texture_set": "truck2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant2-truck2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant2-truck2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant2-truck2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard6-chair1",
+   "stl_id": "keyboard6",
+   "texture_set": "chair1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard6-chair1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard6-chair1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard6-chair1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife5-truck3",
+   "stl_id": "knife5",
+   "texture_set": "truck3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife5-truck3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife5-truck3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife5-truck3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven2-bear3",
+   "stl_id": "oven2",
+   "texture_set": "bear3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven2-bear3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven2-bear3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven2-bear3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck6-clock2",
+   "stl_id": "truck6",
+   "texture_set": "clock2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck6-clock2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck6-clock2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck6-clock2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "airplane9-clock1",
+   "stl_id": "airplane9",
+   "texture_set": "clock1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/airplane9-clock1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/airplane9-clock1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/airplane9-clock1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bear3-chair2",
+   "stl_id": "bear3",
+   "texture_set": "chair2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bear3-chair2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bear3-chair2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bear3-chair2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bicycle9-knife3",
+   "stl_id": "bicycle9",
+   "texture_set": "knife3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bicycle9-knife3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bicycle9-knife3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bicycle9-knife3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bird9-elephant2",
+   "stl_id": "bird9",
+   "texture_set": "elephant2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bird9-elephant2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bird9-elephant2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bird9-elephant2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "boat10-cat1",
+   "stl_id": "boat10",
+   "texture_set": "cat1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/boat10-cat1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/boat10-cat1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/boat10-cat1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "bottle4-dog2",
+   "stl_id": "bottle4",
+   "texture_set": "dog2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/bottle4-dog2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/bottle4-dog2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/bottle4-dog2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "car2-chair1",
+   "stl_id": "car2",
+   "texture_set": "chair1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/car2-chair1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/car2-chair1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/car2-chair1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "cat10-clock1",
+   "stl_id": "cat10",
+   "texture_set": "clock1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/cat10-clock1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/cat10-clock1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/cat10-clock1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "chair8-clock3",
+   "stl_id": "chair8",
+   "texture_set": "clock3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/chair8-clock3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/chair8-clock3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/chair8-clock3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "clock10-bird3",
+   "stl_id": "clock10",
+   "texture_set": "bird3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/clock10-bird3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/clock10-bird3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/clock10-bird3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "dog1-bear1",
+   "stl_id": "dog1",
+   "texture_set": "bear1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/dog1-bear1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/dog1-bear1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/dog1-bear1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "elephant8-airplane3",
+   "stl_id": "elephant8",
+   "texture_set": "airplane3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/elephant8-airplane3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/elephant8-airplane3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/elephant8-airplane3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "keyboard7-oven2",
+   "stl_id": "keyboard7",
+   "texture_set": "oven2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/keyboard7-oven2__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/keyboard7-oven2__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/keyboard7-oven2__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "knife5-dog1",
+   "stl_id": "knife5",
+   "texture_set": "dog1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/knife5-dog1__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/knife5-dog1__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/knife5-dog1__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "oven6-chair3",
+   "stl_id": "oven6",
+   "texture_set": "chair3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/oven6-chair3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/oven6-chair3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/oven6-chair3__texture_match.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "truck7-keyboard3",
+   "stl_id": "truck7",
+   "texture_set": "keyboard3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/truck7-keyboard3__reference.webp",
+   "shape_match_url": "/human-experiment/stimuli/cc_triads/truck7-keyboard3__shape_match.webp",
+   "texture_match_url": "/human-experiment/stimuli/cc_triads/truck7-keyboard3__texture_match.webp"
+  }
+ ],
+ "catch": [
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_14/MetalPlates013_1K-JPG",
+   "stl_id": "14",
+   "texture_set": "MetalPlates013_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_14_MetalPlates013_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_14_MetalPlates013_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_14_MetalPlates013_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_10/PaintedMetal004_1K-JPG",
+   "stl_id": "10",
+   "texture_set": "PaintedMetal004_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_10_PaintedMetal004_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_10_PaintedMetal004_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_10_PaintedMetal004_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_6/Fabric002_1K-JPG",
+   "stl_id": "6",
+   "texture_set": "Fabric002_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_6_Fabric002_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_6_Fabric002_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_6_Fabric002_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_4/Metal032_1K-JPG",
+   "stl_id": "4",
+   "texture_set": "Metal032_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_4_Metal032_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_4_Metal032_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_4_Metal032_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_15/Metal009_1K-JPG",
+   "stl_id": "15",
+   "texture_set": "Metal009_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_15_Metal009_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_15_Metal009_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_15_Metal009_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_28/Ground054_1K-JPG",
+   "stl_id": "28",
+   "texture_set": "Ground054_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_28_Ground054_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_28_Ground054_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_28_Ground054_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_13/Fabric030_1K-JPG",
+   "stl_id": "13",
+   "texture_set": "Fabric030_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_13_Fabric030_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_13_Fabric030_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_13_Fabric030_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_23/Rust006_1K-JPG",
+   "stl_id": "23",
+   "texture_set": "Rust006_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_23_Rust006_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_23_Rust006_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_23_Rust006_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_1/Fabric045_1K-JPG",
+   "stl_id": "1",
+   "texture_set": "Fabric045_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_1_Fabric045_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_1_Fabric045_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_1_Fabric045_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_26/Leather028_1K-JPG",
+   "stl_id": "26",
+   "texture_set": "Leather028_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_26_Leather028_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_26_Leather028_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_26_Leather028_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_17/MetalPlates013_1K-JPG",
+   "stl_id": "17",
+   "texture_set": "MetalPlates013_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_17_MetalPlates013_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_17_MetalPlates013_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_17_MetalPlates013_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "grid",
+   "stim_id": "catch_grid_2/Fabric012_1K-JPG",
+   "stl_id": "2",
+   "texture_set": "Fabric012_1K-JPG",
+   "reference_url": "/human-experiment/stimuli/grid/catch_grid_2_Fabric012_1K-JPG__reference.webp",
+   "match_url": "/human-experiment/stimuli/grid/catch_grid_2_Fabric012_1K-JPG__reference.webp",
+   "foil_url": "/human-experiment/stimuli/grid/catch_grid_2_Fabric012_1K-JPG__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_elephant4-car3",
+   "stl_id": "elephant4",
+   "texture_set": "car3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_elephant4-car3__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_elephant4-car3__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_elephant4-car3__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_elephant8-airplane3",
+   "stl_id": "elephant8",
+   "texture_set": "airplane3",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_elephant8-airplane3__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_elephant8-airplane3__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_elephant8-airplane3__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_boat6-bear1",
+   "stl_id": "boat6",
+   "texture_set": "bear1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_boat6-bear1__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_boat6-bear1__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_boat6-bear1__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_truck6-clock2",
+   "stl_id": "truck6",
+   "texture_set": "clock2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_truck6-clock2__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_truck6-clock2__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_truck6-clock2__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_bird4-bicycle2",
+   "stl_id": "bird4",
+   "texture_set": "bicycle2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bird4-bicycle2__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bird4-bicycle2__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bird4-bicycle2__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_keyboard6-chair1",
+   "stl_id": "keyboard6",
+   "texture_set": "chair1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_keyboard6-chair1__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_keyboard6-chair1__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_keyboard6-chair1__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_cat4-keyboard2",
+   "stl_id": "cat4",
+   "texture_set": "keyboard2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_cat4-keyboard2__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_cat4-keyboard2__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_cat4-keyboard2__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_airplane3-clock1",
+   "stl_id": "airplane3",
+   "texture_set": "clock1",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_airplane3-clock1__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_airplane3-clock1__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_airplane3-clock1__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_bird10-bear2",
+   "stl_id": "bird10",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bird10-bear2__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bird10-bear2__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bird10-bear2__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_keyboard7-oven2",
+   "stl_id": "keyboard7",
+   "texture_set": "oven2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_keyboard7-oven2__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_keyboard7-oven2__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_keyboard7-oven2__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_truck6-cat2",
+   "stl_id": "truck6",
+   "texture_set": "cat2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_truck6-cat2__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_truck6-cat2__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_truck6-cat2__foil.webp"
+  },
+  {
+   "stim_set_name": "cc_triads",
+   "stim_id": "catch_cc_triads_bottle6-bear2",
+   "stl_id": "bottle6",
+   "texture_set": "bear2",
+   "reference_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bottle6-bear2__reference.webp",
+   "match_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bottle6-bear2__reference.webp",
+   "foil_url": "/human-experiment/stimuli/cc_triads/catch_cc_triads_bottle6-bear2__foil.webp"
+  }
+ ]
+}

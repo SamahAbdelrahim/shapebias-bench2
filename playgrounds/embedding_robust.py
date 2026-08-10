@@ -259,6 +259,57 @@ def build_grid_triplets(stim_pkg: str, stim_set: str, n: int, seed: int):
         meta.append({"stl_id": str(rec["stl_id"]), "texture_set": str(rec["texture_set"])})
     return triplets, meta
 
+def build_triad_dir_triplets(root: Path, n: int, seed: int):
+    """Sample from a flat directory of named triad folders (cue-conflict triads).
+
+    Stratifies by shape class so a sample spans all 16 Geirhos categories rather
+    than clustering in whichever names sort first. Returns ``(triplets, meta)``
+    like :func:`build_grid_triplets`; the labels are the Geirhos *classes*
+    (``airplane``) rather than the exemplar ids (``airplane1``), because the
+    label-level retrieval control is only informative when many triplets share a
+    label. With 16 classes that control runs against a 1/16 chance baseline.
+    """
+    from evaluation_pipe.eval_core import load_stimuli_triad_dir, materialize_stimulus
+
+    def _cls(name: str) -> str:
+        return re.sub(r"\d+$", "", name)
+
+    records = load_stimuli_triad_dir(root)
+    rng = random.Random(seed)
+    by_class: dict[str, list] = {}
+    for rec in records:
+        by_class.setdefault(_cls(rec["stl_id"]), []).append(rec)
+    classes = sorted(by_class)
+    for c in classes:
+        rng.shuffle(by_class[c])
+
+    picked = []
+    idxs = {c: 0 for c in classes}
+    while len(picked) < n and any(idxs[c] < len(by_class[c]) for c in classes):
+        for c in classes:
+            i = idxs[c]
+            if i < len(by_class[c]):
+                picked.append(by_class[c][i])
+                idxs[c] = i + 1
+            if len(picked) >= n:
+                break
+    print(
+        f"Stimuli: {len(picked)} stratified from triad dir {root} "
+        f"({len(classes)} shape classes, seed={seed})"
+    )
+    triplets, meta = [], []
+    for rec in picked:
+        stim = materialize_stimulus(rec)
+        triplets.append(
+            (rec["stim_id"], stim["reference"], stim["shape_match"], stim["texture_match"])
+        )
+        meta.append({
+            "stl_id": _cls(rec["stl_id"]),
+            "texture_set": _cls(rec["texture_set"]),
+        })
+    return triplets, meta
+
+
 _CC_PAT = re.compile(r"^([a-z]+)(\d+)-([a-z]+)(\d+)\.png$")
 
 def build_cueconflict_triplets(root: Path, n: int, seed: int):
@@ -453,6 +504,13 @@ def main() -> int:
         "positive control on these stimuli instead of IMAGE_DATASET.",
     )
     ap.add_argument(
+        "--triad-dir",
+        default=None,
+        help="Path to a flat directory of named triad folders holding reference.png / "
+             "shape_match.png / texture_match.png (cc_triads, decomposition_triads). "
+             "Samples stratified by shape class.",
+    )
+    ap.add_argument(
         "--grid-pkg",
         default=None,
         help="Full texture-grid package under stimuli_pipe/ (e.g. stimuli_texture_grid_v1_scratch). "
@@ -475,6 +533,8 @@ def main() -> int:
             name = "embedding_geirhos_unaltered"
         elif args.smith_probe:
             name = "embedding_smith_probe"
+        elif args.triad_dir:
+            name = f"embedding_{Path(args.triad_dir).name}"
         elif args.grid_pkg:
             name = "embedding_grid"
         else:
@@ -533,6 +593,14 @@ def main() -> int:
         smith_root = Path(args.smith_probe)
         triplets = build_smith_probe_triplets(smith_root, args.n_stimuli, args.seed)
         print(f"SMITH PROBE: {len(triplets)} triplets from {smith_root}")
+        for tid, *_ in triplets[:5]:
+            print(f"  e.g. {tid}")
+    elif args.triad_dir:
+        triad_root = Path(args.triad_dir)
+        triplets, grid_meta = build_triad_dir_triplets(
+            triad_root, args.n_stimuli, args.seed
+        )
+        print(f"TRIAD DIR: {len(triplets)} triplets from {triad_root}")
         for tid, *_ in triplets[:5]:
             print(f"  e.g. {tid}")
     elif args.grid_pkg:

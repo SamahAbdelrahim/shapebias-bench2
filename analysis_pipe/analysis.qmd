@@ -300,6 +300,55 @@ if (has_human_friendly) {
 }
 ```
 
+## Matched Sample (matched_v2)
+
+The matched_v2 sample replaces the March 2026 pilot as the human anchor. It runs the two stimulus sets the models are evaluated on (the novel texture grid and `cc_triads`), crosses the noun-label framing with a no-word framing between participants, counterbalances option order between participants, and carries attention checks. The pilot is not pooled with it: different stimulus packages, no no-word condition, and no ordering counterbalance.
+
+```{r matched-v2-catch}
+matched_raw <- filter_matched_v2(human_df)
+has_matched <- nrow(matched_raw) > 0
+if (has_matched) {
+  catch_summary <- summarize_catch_by_participant(matched_raw)
+  readr::write_csv(catch_summary, file.path(data_dir, "human_catch_by_participant.csv"))
+  matched_df <- apply_catch_exclusions(matched_raw)
+  knitr::kable(
+    data.frame(
+      participants_run = nrow(catch_summary),
+      participants_excluded = sum(catch_summary$excluded),
+      trials_before = nrow(matched_raw),
+      trials_after = nrow(matched_df)
+    )
+  )
+} else {
+  matched_df <- matched_raw
+  knitr::kable(data.frame(note = "No matched_v2 rows found. Run the export step after collection."))
+}
+```
+
+```{r matched-v2-by-set}
+if (has_matched) {
+  human_by_set <- summarize_human_by_set_condition(matched_df)
+  readr::write_csv(human_by_set, file.path(data_dir, "human_summary_by_set.csv"))
+  knitr::kable(human_by_set, digits = 3)
+}
+```
+
+```{r matched-v2-items}
+if (has_matched) {
+  human_items <- summarize_human_items(matched_df)
+  readr::write_csv(human_items, file.path(data_dir, "human_item_means.csv"))
+  knitr::kable(head(human_items, 20), digits = 3)
+}
+```
+
+```{r matched-v2-position-check}
+if (has_matched) {
+  position_check <- summarize_position_check(human_items)
+  readr::write_csv(position_check, file.path(data_dir, "human_position_check.csv"))
+  knitr::kable(position_check, digits = 3)
+}
+```
+
 ## Human-Vs-Model Comparison
 
 The primary human-versus-model comparison should use only models that pass the validity gates above. This follows the updated guidance in `interpret/models_validity.md`: interpret shape-bias relative to the validity-gated subset first, then use broader model pools only as robustness checks.

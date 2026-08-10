@@ -55,9 +55,8 @@ except ImportError:
 
 ROLES = ("reference", "shape_match", "texture_match")
 
-# The four models that carry the argument: the two clean within-model
-# dissociations, the model the original claim was built on, and the strongest
-# texture lean.
+# The full ladder can be passed via --models; the FarmShare export array uses
+# scripts/model_ladder.sh. These four remain the defaults for a local smoke run.
 DEFAULT_MODELS = ["qwen3.5-4b", "qwen3.5-9b", "qwen3-vl-8b", "smolvlm"]
 
 
