@@ -192,12 +192,12 @@ async function main() {
   console.log(`  trial rows rejected:     ${logFail}`);
   console.log("");
 
-  // A 40-trial session at the March pilot's ~4 s mean RT is about 2.7 minutes of
-  // responding; the number worth watching here is how much image data a
-  // participant on a slow connection has to pull.
+  // The number worth watching here is how much image data a participant on a
+  // slow connection has to pull; response time comes from the pilot RTs.
   const medianMb = quantile(bytes, 0.5) / 1e6;
+  const nTrials = sessionSummaries[0].trials;
   console.log(
-    `Estimated session: 40 trials, ~${medianMb.toFixed(2)} MB of images ` +
+    `Estimated session: ${nTrials} trials, ~${medianMb.toFixed(2)} MB of images ` +
       `(~${(medianMb / 0.5).toFixed(1)} s to preload on a 4 Mbps link)`
   );
   console.log("");

@@ -1,0 +1,88 @@
+Loaded 12 probe results from results/probe.results/session_readout_power
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_proj_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_proj_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_vit_last_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_vit_last_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_vit_penult_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_vit_penult_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_vit_pooler.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_vit_pooler.png/.pdf
+
+model            readout          meshP1  texP2  cos(cent)  learned  mesh@1
+qwen3-vl-8b      proj_mean         0.997  0.995     0.474    0.732   1.000
+qwen3-vl-8b      vit_last_mean     0.997  0.995     0.474    0.732   1.000
+qwen3-vl-8b      vit_penult_mean   1.000  0.999     0.453    0.959   1.000
+qwen3-vl-8b      vit_pooler        1.000  0.999     0.447    0.962   1.000
+qwen3.5-4b       proj_mean         0.999  0.996     0.456    0.682   1.000
+qwen3.5-4b       vit_last_mean     0.999  0.996     0.456    0.682   1.000
+qwen3.5-4b       vit_penult_mean   1.000  1.000     0.489    0.975   1.000
+qwen3.5-4b       vit_pooler        1.000  1.000     0.541    0.979   1.000
+qwen3.5-9b       proj_mean         1.000  0.997     0.496    0.783   1.000
+qwen3.5-9b       vit_last_mean     1.000  0.997     0.496    0.783   1.000
+qwen3.5-9b       vit_penult_mean   1.000  0.999     0.401    0.986   1.000
+qwen3.5-9b       vit_pooler        1.000  1.000     0.418    0.982   1.000
+
+Done. Figures in /home/users/samahabd/shapebias-bench2/results/figures/readout_power
+FIGURE_EXIT:0
+total 1310
+drwxr-xr-x 2 root root     18 Aug  3 01:21 .
+drwxr-xr-x 5 root root      5 Aug  3 01:21 ..
+-rw-r--r-- 1 root root  21746 Aug  3 02:23 figA_readout_power_ladder_proj_mean.pdf
+-rw-r--r-- 1 root root 184269 Aug  3 02:23 figA_readout_power_ladder_proj_mean.png
+-rw-r--r-- 1 root root  21516 Aug  3 02:23 figA_readout_power_ladder_vit_last_mean.pdf
+-rw-r--r-- 1 root root 184671 Aug  3 02:23 figA_readout_power_ladder_vit_last_mean.png
+-rw-r--r-- 1 root root  21411 Aug  3 02:23 figA_readout_power_ladder_vit_penult_mean.pdf
+-rw-r--r-- 1 root root 174846 Aug  3 02:23 figA_readout_power_ladder_vit_penult_mean.png
+-rw-r--r-- 1 root root  21410 Aug  3 02:23 figA_readout_power_ladder_vit_pooler.pdf
+-rw-r--r-- 1 root root 166245 Aug  3 02:23 figA_readout_power_ladder_vit_pooler.png
+-rw-r--r-- 1 root root  16409 Aug  3 02:23 figB_decodability_proj_mean.pdf
+-rw-r--r-- 1 root root  98586 Aug  3 02:23 figB_decodability_proj_mean.png
+-rw-r--r-- 1 root root  16176 Aug  3 02:23 figB_decodability_vit_last_mean.pdf
+-rw-r--r-- 1 root root  97518 Aug  3 02:23 figB_decodability_vit_last_mean.png
+-rw-r--r-- 1 root root  16130 Aug  3 02:23 figB_decodability_vit_penult_mean.pdf
+-rw-r--r-- 1 root root  97472 Aug  3 02:23 figB_decodability_vit_penult_mean.png
+-rw-r--r-- 1 root root  16108 Aug  3 02:23 figB_decodability_vit_pooler.pdf
+-rw-r--r-- 1 root root  96328 Aug  3 02:23 figB_decodability_vit_pooler.png
+FIGURE_DONE
+FIGURE_EXIT:0
+total 1310
+drwxr-xr-x 2 root root     18 Aug  3 01:21 .
+drwxr-xr-x 5 root root      5 Aug  3 01:21 ..
+-rw-r--r-- 1 root root  21746 Aug  3 02:23 figA_readout_power_ladder_proj_mean.pdf
+-rw-r--r-- 1 root root 184269 Aug  3 02:23 figA_readout_power_ladder_proj_mean.png
+-rw-r--r-- 1 root root  21516 Aug  3 02:23 figA_readout_power_ladder_vit_last_mean.pdf
+-rw-r--r-- 1 root root 184671 Aug  3 02:23 figA_readout_power_ladder_vit_last_mean.png
+-rw-r--r-- 1 root root  21411 Aug  3 02:23 figA_readout_power_ladder_vit_penult_mean.pdf
+-rw-r--r-- 1 root root 174846 Aug  3 02:23 figA_readout_power_ladder_vit_penult_mean.png
+-rw-r--r-- 1 root root  21410 Aug  3 02:23 figA_readout_power_ladder_vit_pooler.pdf
+-rw-r--r-- 1 root root 166245 Aug  3 02:23 figA_readout_power_ladder_vit_pooler.png
+-rw-r--r-- 1 root root  16409 Aug  3 02:23 figB_decodability_proj_mean.pdf
+-rw-r--r-- 1 root root  98586 Aug  3 02:23 figB_decodability_proj_mean.png
+-rw-r--r-- 1 root root  16176 Aug  3 02:23 figB_decodability_vit_last_mean.pdf
+-rw-r--r-- 1 root root  97518 Aug  3 02:23 figB_decodability_vit_last_mean.png
+-rw-r--r-- 1 root root  16130 Aug  3 02:23 figB_decodability_vit_penult_mean.pdf
+-rw-r--r-- 1 root root  97472 Aug  3 02:23 figB_decodability_vit_penult_mean.png
+-rw-r--r-- 1 root root  16108 Aug  3 02:23 figB_decodability_vit_pooler.pdf
+-rw-r--r-- 1 root root      0 Aug  3 02:23 figB_decodability_vit_pooler.png
+FIGURE_DONE
+FIGURE_EXIT:0
+total 1310
+drwxr-xr-x 2 root root     18 Aug  3 01:21 .
+drwxr-xr-x 5 root root      5 Aug  3 01:21 ..
+-rw-r--r-- 1 root root  21746 Aug  3 02:23 figA_readout_power_ladder_proj_mean.pdf
+-rw-r--r-- 1 root root 184269 Aug  3 02:23 figA_readout_power_ladder_proj_mean.png
+-rw-r--r-- 1 root root  21516 Aug  3 02:23 figA_readout_power_ladder_vit_last_mean.pdf
+-rw-r--r-- 1 root root 184671 Aug  3 02:23 figA_readout_power_ladder_vit_last_mean.png
+-rw-r--r-- 1 root root  21411 Aug  3 02:23 figA_readout_power_ladder_vit_penult_mean.pdf
+-rw-r--r-- 1 root root 174846 Aug  3 02:23 figA_readout_power_ladder_vit_penult_mean.png
+-rw-r--r-- 1 root root  21410 Aug  3 02:23 figA_readout_power_ladder_vit_pooler.pdf
+-rw-r--r-- 1 root root 166245 Aug  3 02:23 figA_readout_power_ladder_vit_pooler.png
+-rw-r--r-- 1 root root  16409 Aug  3 02:23 figB_decodability_proj_mean.pdf
+-rw-r--r-- 1 root root  98586 Aug  3 02:23 figB_decodability_proj_mean.png
+-rw-r--r-- 1 root root  16176 Aug  3 02:23 figB_decodability_vit_last_mean.pdf
+-rw-r--r-- 1 root root  97518 Aug  3 02:23 figB_decodability_vit_last_mean.png
+-rw-r--r-- 1 root root  16130 Aug  3 02:23 figB_decodability_vit_penult_mean.pdf
+-rw-r--r-- 1 root root  97472 Aug  3 02:23 figB_decodability_vit_penult_mean.png
+-rw-r--r-- 1 root root  16108 Aug  3 02:23 figB_decodability_vit_pooler.pdf
+-rw-r--r-- 1 root root  96328 Aug  3 02:23 figB_decodability_vit_pooler.png
+FIGURE_DONE

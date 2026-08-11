@@ -8,12 +8,19 @@
  * reads it off the global; Node requires it directly.
  *
  * Design in brief:
- *   - condition, ordering group and block order are hashes of the Prolific
- *     identifiers, so a reload lands in the same cell with the same items
+ *   - condition and ordering group are hashes of the Prolific identifiers, so a
+ *     reload lands in the same cell with the same items
  *   - each participant takes a contiguous, wrapping window of the pool, which
- *     is emitted round-robin across shapes and classes so any window spans both
+ *     is emitted round-robin across shapes so any window spans the shape range
  *   - a trial's ordering is the parity of its pool index, flipped for group B,
  *     so each triad is shape-first for one group and texture-first for the other
+ *
+ * The pool carries a stim_set_name per trial and the code reads whatever sets
+ * are present, but only the novel grid is currently built. Cue-conflict triads
+ * were dropped because their Geirhos categories are familiar and named, so a
+ * pseudo-word in the noun condition competes with a name the participant
+ * already has. Nothing here assumes a single set, so restoring the second one
+ * is a pool rebuild rather than a code change.
  */
 (function (root, factory) {
   const api = factory();
@@ -26,8 +33,13 @@
 
   const CONDITIONS = ["noun_label", "no_word_category"];
   const ORDERING_GROUPS = ["A", "B"];
+  // Sets the session may draw from, in the order they are blocked. Only the
+  // sets actually present in the pool are used, so this can list a set the
+  // current pool does not carry.
   const SET_ORDER_DEFAULT = ["grid", "cc_triads"];
-  const TRIALS_PER_SET = 18;
+  // Per set. With the grid alone this is the whole session: 27 test trials plus
+  // the checks, close to the 30-trial March pilot.
+  const TRIALS_PER_SET = 27;
   const CATCH_PER_SESSION = 4;
 
   // Frequent English bigrams with rough relative weights (higher = more
@@ -169,6 +181,56 @@
     return out;
   }
 
+  /**
+   * Pick `count` triads for one participant, one shape at a time.
+   *
+   * A contiguous window of the pool is not safe here. The grid pool holds 114
+   * triads emitted round-robin over 30 shapes, so the last round is partial and
+   * a window that wraps past the end returns to shapes it has already used. At
+   * 27 trials that repeated a shape in most sessions, and in the noun condition
+   * one object appearing twice means it carries two different pseudo-words.
+   *
+   * Walking shapes instead guarantees distinct shapes for as many trials as
+   * there are shapes. Each shape's own triads are rotated per participant, so
+   * which texture a given shape appears with still varies across people and
+   * every triad in the pool gets used.
+   */
+  function takeByShape(items, participantSeed, setName, count) {
+    const byShape = {};
+    const shapes = [];
+    items.forEach((item, poolIndex) => {
+      const key = String(item.stl_id);
+      if (!byShape[key]) {
+        byShape[key] = [];
+        shapes.push(key);
+      }
+      byShape[key].push({ item, poolIndex });
+    });
+
+    const shapeStart = seededIndex(`shape_start|${setName}|${participantSeed}`, shapes.length);
+    const rot = seededIndex(`triad_rot|${setName}|${participantSeed}`, 1009);
+    const rotated = {};
+    shapes.forEach((key, si) => {
+      const list = byShape[key];
+      const off = (rot + si) % list.length;
+      rotated[key] = list.slice(off).concat(list.slice(0, off));
+    });
+
+    const want = Math.min(count, items.length);
+    const maxPerShape = Math.max(...shapes.map((k) => byShape[k].length));
+    const picked = [];
+    // Pass 0 gives one triad per shape. Later passes only run if the session is
+    // longer than the number of shapes, which the current design avoids.
+    for (let pass = 0; pass < maxPerShape && picked.length < want; pass += 1) {
+      for (let k = 0; k < shapes.length && picked.length < want; k += 1) {
+        const key = shapes[(shapeStart + k) % shapes.length];
+        const list = rotated[key];
+        if (pass < list.length) picked.push(list[pass]);
+      }
+    }
+    return picked;
+  }
+
   function pickCondition(participantSeed, override) {
     if (CONDITIONS.indexOf(override) !== -1) return override;
     return CONDITIONS[seededIndex(`condition|${participantSeed}`, CONDITIONS.length)];
@@ -179,9 +241,22 @@
     return ORDERING_GROUPS[seededIndex(`ordering_group|${participantSeed}`, ORDERING_GROUPS.length)];
   }
 
-  function pickSetOrder(participantSeed) {
+  /**
+   * Which sets this participant runs, in block order.
+   *
+   * Restricted to the sets the pool actually carries, so a one-set pool yields
+   * one block and the block-order counterbalance falls away instead of
+   * producing an empty second block.
+   */
+  function pickSetOrder(pool, participantSeed) {
+    const present = new Set((pool.test || []).map((t) => t.stim_set_name));
+    const sets = SET_ORDER_DEFAULT.filter((s) => present.has(s));
+    for (const s of present) {
+      if (sets.indexOf(s) === -1) sets.push(s);
+    }
+    if (sets.length < 2) return sets;
     const flipped = seededIndex(`block_order|${participantSeed}`, 2) === 1;
-    return flipped ? SET_ORDER_DEFAULT.slice().reverse() : SET_ORDER_DEFAULT.slice();
+    return flipped ? sets.reverse() : sets;
   }
 
   function buildTestTrials(pool, participantSeed, setOrder, orderingGroup, trialsPerSet) {
@@ -197,9 +272,8 @@
       const setName = setOrder[blockIndex];
       const items = bySet[setName] || [];
       if (items.length === 0) continue;
-      const start = seededIndex(`window|${setName}|${participantSeed}`, items.length);
-      const window = takeWindow(items, start, trialsPerSet);
-      for (const entry of window) {
+      const selection = takeByShape(items, participantSeed, setName, trialsPerSet);
+      for (const entry of selection) {
         const item = entry.item;
         const shapeFirst = (entry.poolIndex + groupOffset) % 2 === 0;
         trials.push({
@@ -280,7 +354,7 @@
     const opts = options || {};
     const condition = pickCondition(participantSeed, opts.condition);
     const orderingGroup = pickOrderingGroup(participantSeed, opts.orderingGroup);
-    const setOrder = pickSetOrder(participantSeed);
+    const setOrder = pickSetOrder(pool, participantSeed);
     const trialsPerSet = opts.trialsPerSet || TRIALS_PER_SET;
     const catchPerSession =
       typeof opts.catchPerSession === "number" ? opts.catchPerSession : CATCH_PER_SESSION;

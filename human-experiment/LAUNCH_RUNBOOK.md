@@ -10,10 +10,13 @@ and money, so they are written out here rather than executed.
 ```
 
 Writes `results/data/human_trial_pool_v2.csv`,
-`human-experiment/public/trial_pool.json` and 870 WebP images (6.2 MB) under
-`human-experiment/public/stimuli/`. The script reads the grid and cue-conflict
-sources from `/scratch`, so it has to run on a machine that can see them. Its
-outputs are self-contained; nothing at run time touches `/scratch`.
+`human-experiment/public/trial_pool.json` and 390 WebP images (1.5 MB) under
+`human-experiment/public/stimuli/`. The script reads the grid from `/scratch`,
+so it has to run on a machine that can see it. Its outputs are self-contained;
+nothing at run time touches `/scratch`.
+
+Humans run the novel grid alone. Cue-conflict triads are behind `--include-cc`
+and are off; see the rationale in `HUMAN_PROTOCOL_RATIONALE.md`.
 
 If jsPsych is ever bumped in `package.json`, re-run
 `bash human-experiment/vendor_jspsych.sh` so `public/vendor/` matches.
@@ -21,11 +24,12 @@ If jsPsych is ever bumped in `package.json`, re-run
 ## 2. Check the design before paying anyone
 
 ```bash
-node human-experiment/verify_assignment.js 244
+node human-experiment/verify_assignment.js 135
 ```
 
-Fails loudly if a session repeats a stimulus, a check has no correct answer, an
-item takes both orders within one group, or a condition-by-group cell is empty.
+Fails loudly if a session repeats a stimulus, repeats a shape (which would give
+one object two pseudo-words), leaves a check without a correct answer, lets an
+item take both orders within one group, or empties a condition-by-group cell.
 It also prints observations per triad, which is the number to look at when
 choosing a sample size.
 
@@ -58,7 +62,7 @@ and `api/config.js` as functions. Set in the Vercel project:
 - `PROLIFIC_COMPLETION_CODE` - the code Prolific issues for the study
 
 `public/stimuli/` and `public/vendor/` must be committed, since a git-based
-deploy only ships tracked files. Together they are about 12 MB.
+deploy only ships tracked files. Together they are about 2 MB.
 
 Atlas needs network access from Vercel's egress; the serverless handler caches
 its connection per warm container and caps the pool at 5.
@@ -76,11 +80,11 @@ out later on `completion_code == "PILOT"`.
 
 ## 5. Prolific
 
-One study, not four. Condition, ordering group and block order are all assigned
-from the `PROLIFIC_PID|STUDY_ID|SESSION_ID` seed, so a single study fills all
-cells at roughly equal rates and a participant who reloads returns to the same
-cell with the same items. Splitting into separate studies would break that and
-risk the same person appearing in two cells.
+One study, not two. Condition and ordering group are both assigned from the
+`PROLIFIC_PID|STUDY_ID|SESSION_ID` seed, so a single study fills all four cells
+at roughly equal rates and a participant who reloads returns to the same cell
+with the same items. Splitting into separate studies would break that and risk
+the same person appearing in two cells.
 
 Study URL:
 
@@ -88,19 +92,17 @@ Study URL:
 https://<deployment>/?PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}&SESSION_ID={{%SESSION_ID%}}
 ```
 
-Sample size: 244 participants for k = 16 observations per triad per condition,
-152 for k = 10. Verified spread at 244, from `verify_assignment.js`:
+Sample size: 135 participants for k = 16 observations per triad per condition,
+about 85 for k = 10. Verified spread at 135, from `verify_assignment.js`:
 
-| set | observations per triad per condition |
+| condition | observations per triad |
 | --- | --- |
-| grid (114 triads) | mean 19, range 10 to 28 |
-| cc_triads (160 triads) | mean 14, range 5 to 24 |
+| noun_label | mean 16.3, range 13 to 26 |
+| no_word_category | mean 15.6, range 9 to 24 |
 
-The cue-conflict set is thinner because 160 triads share the same 18 trials per
-participant that 114 grid triads do. Raise the sample or lower `CC_PER_CLASS` in
-the pool builder if the cue-conflict item analysis needs more.
+All 114 triads are covered in both option orders in both conditions.
 
-Timing: 40 trials at the pilot's 3.06 s median response time is roughly 7 to 8
+Timing: 31 trials at the pilot's 3.06 s median response time is roughly 5 to 6
 minutes including instructions. Set the reward from your own current rate; I
 have no reliable figure for Prolific's present fee percentage, so check it in
 your account rather than trusting a number from here.

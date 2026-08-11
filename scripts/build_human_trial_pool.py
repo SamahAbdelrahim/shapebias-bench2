@@ -2,18 +2,22 @@
 """Build the fixed trial pool for the human experiment and export its images.
 
 The human app used to read a stimulus manifest at run time, which only worked
-for the flat 30-shape packages. The model ladder now runs the nested texture
-grid and the ``<shape_id>-<texture_id>`` cue-conflict triads, neither of which
-the JavaScript side can walk. This script resolves the selection offline
-instead: it picks the triads once, copies their images out to display-sized
-WebP, and writes a single pool file that the frontend reads verbatim. Nothing
-at run time depends on the ``/scratch`` symlinks.
+for the flat 30-shape packages. The texture grid nests a texture level under
+each shape, which the JavaScript side cannot walk. This script resolves the
+selection offline instead: it picks the triads once, copies their images out to
+display-sized WebP, and writes a single pool file that the frontend reads
+verbatim. Nothing at run time depends on the ``/scratch`` symlinks.
 
 Grid triads reuse the shape-stratified round-robin from
 ``playgrounds.embedding_robust.build_grid_triplets`` at ``seed=0``, so the human
-items are the same 114 that back the embedding panel. Cue-conflict triads are
-drawn from the frozen ``cueconflict_triad_subset_n320.csv`` so ids stay paired
-with the model run.
+items are the same 114 that back the embedding panel.
+
+Cue-conflict triads are built only under ``--include-cc``, which is off. Humans
+run the novel grid alone. The Geirhos classes are familiar named categories, so
+a pseudo-word label in the noun condition competes with a name the participant
+already has, which pushes responses for lexical rather than perceptual reasons
+and does so only in that set. The selection code is kept so the set can be
+switched back on without rewriting it.
 
 Outputs:
   results/data/human_trial_pool_v2.csv       tidy manifest (one row per triad)
@@ -180,15 +184,21 @@ def build_catch(grid: list[dict], cc: list[dict], n: int = N_CATCH,
 
     A catch trial shows a reference and offers an exact duplicate of it against
     an unrelated object, so the correct answer does not depend on any
-    shape-versus-texture judgement. Foils are drawn from a different shape (grid)
-    or a different Geirhos class (cue-conflict) so nothing about the check is
+    shape-versus-texture judgement. Foils come from a different shape (grid) or
+    a different Geirhos class (cue-conflict) so nothing about the check is
     ambiguous. Catch items reuse pool images, so they cost no extra export.
+
+    Checks are split across whichever sets are in the pool. With the grid alone
+    every check is a grid check, which also removes an ordering wrinkle from the
+    two-set version: there, a check drawn from one set could land inside the
+    other set's block.
     """
     rng = random.Random(seed)
     catch: list[dict] = []
-    half = n // 2
 
     def _pairs(records: list[dict], group_of, count: int, set_name: str) -> None:
+        if count <= 0 or not records:
+            return
         pool = list(records)
         rng.shuffle(pool)
         used = 0
@@ -216,8 +226,9 @@ def build_catch(grid: list[dict], cc: list[dict], n: int = N_CATCH,
         if used < count:
             raise ValueError(f"Could not build {count} catch trials for {set_name}")
 
-    _pairs(grid, lambda r: r["stl_id"], half, "grid")
-    _pairs(cc, lambda r: r["shape_class"], n - half, "cc_triads")
+    n_cc = n // 2 if cc else 0
+    _pairs(grid, lambda r: r["stl_id"], n - n_cc, "grid")
+    _pairs(cc, lambda r: r["shape_class"], n_cc, "cc_triads")
     return catch
 
 
@@ -245,16 +256,23 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="Resolve the selection and report counts without writing images")
     ap.add_argument("--grid-n", type=int, default=GRID_N)
+    ap.add_argument("--include-cc", action="store_true",
+                    help="Also build cue-conflict triads. Off by default: humans run "
+                         "the novel grid alone, because a pseudo-word over a familiar "
+                         "Geirhos category competes with a name participants already have")
     ap.add_argument("--cc-per-class", type=int, default=CC_PER_CLASS)
     ap.add_argument("--catch-n", type=int, default=N_CATCH)
     args = ap.parse_args()
 
     grid = select_grid(args.grid_n)
-    cc = select_cc(args.cc_per_class)
+    cc = select_cc(args.cc_per_class) if args.include_cc else []
     catch = build_catch(grid, cc, args.catch_n)
     print(f"grid: {len(grid)} triads over {len({r['stl_id'] for r in grid})} shapes, "
           f"{len({r['texture_set'] for r in grid})} textures")
-    print(f"cc_triads: {len(cc)} triads over {len({r['shape_class'] for r in cc})} classes")
+    if cc:
+        print(f"cc_triads: {len(cc)} triads over {len({r['shape_class'] for r in cc})} classes")
+    else:
+        print("cc_triads: excluded (pass --include-cc to add them back)")
     print(f"catch: {len(catch)} identity-match trials")
 
     csv_rows: list[dict] = []

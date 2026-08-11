@@ -10,15 +10,26 @@ What carries over from the pilot: one exposure per triad per participant, a uniq
 
 What changed:
 
-- **Stimulus sets.** Participants run the two sets the models run: 114 triads from the novel texture grid (the same triads behind the embedding panel, since both use the shape-stratified round-robin at `seed=0`) and 160 triads from `cc_triads`, stratified at 10 per Geirhos class from the frozen n=320 model subset. Congruent `cc_triads` pairs are skipped because both options come from one class, so there is no shape-versus-texture answer to give.
+- **Stimulus set.** 114 triads from the novel texture grid, the same triads behind the embedding panel, since both use the shape-stratified round-robin at `seed=0`. The pilot used a different 30-shape package.
 - **Framing.** Noun-label and no-word-category, between participants. The no-word wording now matches the model template: "This first image is an object. Which of the following two images is another one?" The pilot's wording said the first image was a "label", which asserted a label in the condition designed to withhold one.
 - **Option order.** Counterbalanced between participants. A triad's order is fixed by the parity of its index in the pool and flipped for ordering group B, so every triad appears in both orders across people while no one sees a triad twice. Within a participant orders alternate, so a side preference cannot masquerade as a shape preference. This supports an item-level analogue of the model tracking gate: an item answered on content has the same shape rate under both orders, while one answered on position has roughly complementary rates.
 - **Attention checks.** Four per session, each offering an exact duplicate of the reference against an unrelated object. More than one error excludes the participant.
-- **Session.** 18 grid plus 18 cue-conflict trials, blocked with block order counterbalanced, plus the four checks, for 40 trials.
+- **Session.** 27 grid trials plus 4 checks, 31 trials, close to the pilot's 30.
+- **One shape per participant per session.** Each of the 27 trials uses a different shape, so no object is ever seen twice and no object carries two pseudo-words. Which texture a shape appears with rotates across participants, so all 114 triads are still used.
 
-Sample size scales as `274 triads x 2 conditions x k / 36 test trials`. At k = 16 observations per triad per condition that is about 244 participants. Because the two sets share the 36 trials unevenly against their different pool sizes, a 244-participant run gives roughly 19 observations per grid triad and 14 per cue-conflict triad in each condition; simulate with `node human-experiment/verify_assignment.js N` before committing to a number.
+Sample size scales as `114 triads x 2 conditions x k / 27 test trials`. At k = 16 observations per triad per condition that is about 135 participants. Simulating 135 gives 16.3 observations per triad in the noun condition and 15.6 in the no-word condition, every triad covered in both orders in both conditions. Re-simulate with `node human-experiment/verify_assignment.js N` before committing to a number.
 
-One caveat worth stating in any writeup: adults were at 95.2% in the pilot, and more participants at ceiling buy precision, not information. What buys information is the no-word contrast and the cue-conflict set, where responses should sit off ceiling.
+One caveat worth stating in any writeup: adults were at 95.2% in the pilot, and more participants at ceiling buy precision, not information. What buys information here is the no-word contrast.
+
+## Why cue-conflict is not in the human experiment
+
+An earlier version of this design gave each participant 18 grid triads and 18 Geirhos cue-conflict triads. It was dropped for humans, though the models still run both.
+
+The cue-conflict images are photographs of familiar named categories: airplane, bear, bicycle, bird, boat, bottle, car, cat, chair, clock, dog, elephant, keyboard, knife, oven, truck. In the noun condition the participant is told "this first image is a *rilas*" while looking at an obvious elephant. That asks an adult to accept a novel name for something already named, and the usual response is to look for something else the word could pick out. The most available candidate in the display is the texture, so the pseudo-word would push responses toward texture for a lexical reason rather than a perceptual one, and only in that set. The novel grid has no competing name, so the manipulation is not comparable across the two sets.
+
+Two further problems were specific to that set. The cue-conflict pool drew 160 triads from only 108 distinct shape exemplars, so in about a fifth of sessions the same photograph appeared twice wearing different textures and received two different pseudo-words. And the set contrast confounded more than novelty: the grid pairs a novel shape against a *material* (carpet, leather, metal), while cue-conflict pairs a familiar object against *another familiar object's* surface, at a different resolution and in a different rendering style.
+
+The selection code is kept behind `--include-cc` in `scripts/build_human_trial_pool.py`, and nothing in the frontend assumes a single set, so the comparison can be restored as a separate study rather than a second block inside this one.
 
 The pilot is not pooled with `matched_v2`. It is kept separate by `design` and `pool_version`.
 

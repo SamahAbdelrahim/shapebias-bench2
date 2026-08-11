@@ -1,0 +1,5 @@
+squeue: error: resolve_ctls_from_dns_srv: res_nsearch error: Host name lookup failure
+squeue: error: fetch_config: DNS SRV lookup failed
+squeue: error: _establish_config_source: failed to fetch config
+squeue: fatal: Could not establish a configuration source
+SQUEUE_EXIT:1

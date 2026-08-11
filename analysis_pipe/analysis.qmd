@@ -302,7 +302,9 @@ if (has_human_friendly) {
 
 ## Matched Sample (matched_v2)
 
-The matched_v2 sample replaces the March 2026 pilot as the human anchor. It runs the two stimulus sets the models are evaluated on (the novel texture grid and `cc_triads`), crosses the noun-label framing with a no-word framing between participants, counterbalances option order between participants, and carries attention checks. The pilot is not pooled with it: different stimulus packages, no no-word condition, and no ordering counterbalance.
+The matched_v2 sample replaces the March 2026 pilot as the human anchor. It runs the 114 novel texture grid triads the models are evaluated on, crosses the noun-label framing with a no-word framing between participants, counterbalances option order between participants, and carries attention checks. The pilot is not pooled with it: different stimulus packages, no no-word condition, and no ordering counterbalance.
+
+Humans do not run `cc_triads`. Those images are familiar named categories, so a pseudo-word in the noun condition competes with a name the participant already has and would move responses toward texture for a lexical reason that does not apply to the novel grid. The per-set code paths below are kept, so a set added later needs no changes here.
 
 ```{r matched-v2-catch}
 matched_raw <- filter_matched_v2(human_df)

@@ -55,6 +55,7 @@ function main() {
   const trialCounts = new Set();
   const catchCounts = new Set();
   let duplicateStimuli = 0;
+  let duplicateShapes = 0;
   let catchWithoutMatch = 0;
   let orderingConflicts = 0;
   // orderingByItem[stim_id][group] = ordering, to confirm groups are opposites
@@ -93,6 +94,14 @@ function main() {
       if (seenIds.has(t.stim_id)) duplicateStimuli += 1;
       seenIds.add(t.stim_id);
     }
+    // Distinct triads can still share a shape, and in the noun condition that
+    // means one object appearing twice under two different pseudo-words. With
+    // 27 trials drawn round-robin over 30 shapes this should never happen.
+    const seenShapes = new Set();
+    for (const t of tests) {
+      if (seenShapes.has(t.stl_id)) duplicateShapes += 1;
+      seenShapes.add(t.stl_id);
+    }
     for (const t of catches) {
       if (t.a_is !== "match" && t.b_is !== "match") catchWithoutMatch += 1;
     }
@@ -121,6 +130,7 @@ function main() {
   console.log(`  trials per session: ${[...trialCounts].join(", ")}`);
   console.log(`  catch per session:  ${[...catchCounts].join(", ")}`);
   console.log(`  repeated stimuli within a session: ${duplicateStimuli}`);
+  console.log(`  repeated shapes within a session:  ${duplicateShapes}`);
   console.log(`  catch trials missing a correct option: ${catchWithoutMatch}`);
   console.log("");
 
@@ -156,8 +166,10 @@ function main() {
   );
   console.log("");
 
+  const setsInPool = [...new Set(pool.test.map((t) => t.stim_set_name))];
+
   console.log("Item coverage (observations per triad, by condition)");
-  for (const setName of ["grid", "cc_triads"]) {
+  for (const setName of setsInPool) {
     const idsInSet = pool.test
       .filter((t) => t.stim_set_name === setName)
       .map((t) => t.stim_id);
@@ -185,13 +197,16 @@ function main() {
 
   const problems = [];
   if (duplicateStimuli > 0) problems.push("a session repeated a stimulus");
+  if (duplicateShapes > 0) {
+    problems.push("a session showed one shape twice, which gives it two pseudo-words");
+  }
   if (catchWithoutMatch > 0) problems.push("a catch trial had no correct option");
   if (orderingConflicts > 0) problems.push("an item took both orderings within one group");
   if (trialCounts.size > 1) problems.push("session length varies across participants");
   if (emptyCells.length) {
     problems.push(`condition x ordering group cell empty: ${emptyCells.join(", ")}`);
   }
-  for (const setName of ["grid", "cc_triads"]) {
+  for (const setName of setsInPool) {
     const idsInSet = pool.test.filter((t) => t.stim_set_name === setName).map((t) => t.stim_id);
     for (const cond of Object.keys(coverage)) {
       const missingBoth = idsInSet.filter((id) => {

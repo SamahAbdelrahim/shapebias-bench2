@@ -2,6 +2,124 @@
 
 Local-only (gitignored). Read at the start of every session; add an entry after any significant decision. Newest entries first.
 
+## 2026-08-10, Cue-conflict dropped from the human experiment; grid-only, 31 trials
+
+**What was decided:** Humans run the novel texture grid alone. `cc_triads` comes out of the human protocol (models keep it). A session is now 27 grid trials plus 4 attention checks, 31 trials, close to the March pilot's 30. Sample target drops from 244 to 135 for k = 16 observations per triad per condition. Condition and ordering group stay as they were; the block-order counterbalance falls away with only one set. Same `design=matched_v2`, `pool_version=v2`, since no data had been collected under the two-set version.
+
+**Why:** The cue-conflict images are familiar named categories (airplane, cat, elephant). Telling an adult "this first image is a *rilas*" while showing an obvious elephant asks them to accept a second name for something already named, and the available referent for the new word is the texture. That would push responses toward texture for a lexical reason rather than a perceptual one, and only in that set, so the noun manipulation is not comparable across sets. Two further problems were specific to it: 160 triads drew on 108 distinct shape exemplars, so about a fifth of sessions showed one photograph twice under two different pseudo-words; and the set contrast confounded novelty with texture type (material versus another object's surface), resolution and rendering style.
+
+**What was rejected:**
+- Keeping cue-conflict without pseudo-words, i.e. running it in the no-word condition only. That drops the cell that makes the set interesting and leaves an unbalanced design.
+- Deleting the cue-conflict selection code. It sits behind `--include-cc` in `scripts/build_human_trial_pool.py` (off), and `pickSetOrder` reads whatever sets the pool carries, so restoring it is a pool rebuild.
+- Keeping the session at 40 trials by giving all 36 test trials to the grid (would have needed only 101 participants), and shortening it to 22. 27 was chosen to match the pilot length.
+
+**Bug this surfaced:** the contiguous-window selection repeated a shape in 106 of 135 simulated sessions. 114 grid triads are emitted round-robin over 30 shapes, so the final round is partial (shapes 1 to 24) and a window wrapping past the end returns to shapes it already used. In the noun condition that means one object with two pseudo-words, the same defect found in cue-conflict. Selection now walks shapes rather than pool indices: 27 distinct shapes per session, each shape's own triads rotated per participant so all 114 are still covered. `verify_assignment.js` gained a repeated-shape check that fails the run. Verified at 135: 0 repeated shapes, all four condition-by-group cells filled, every triad covered in both orders in both conditions, 16.3 and 15.6 observations per triad.
+
+## 2026-08-10, Human experiment rebuilt as matched_v2 (two stimulus sets, two framings)
+
+**What was decided:** Replace the March 2026 human anchor with a new protocol, `design=matched_v2`, `pool_version=v2`. Participants run 18 novel-grid triads and 18 `cc_triads` (blocked, block order counterbalanced) plus 4 attention checks, 40 trials, about 7 to 8 minutes. Noun-label versus no-word-category between participants; option order counterbalanced between participants; unique pseudo-words retained per trial.
+
+Trial selection moved offline into `scripts/build_human_trial_pool.py`: 114 grid triads reproducing `build_grid_triplets(seed=0)` exactly (verified identical, so the human items are the same ones behind the embedding panel), and 160 `cc_triads` at 10 per Geirhos class from the frozen n=320 subset, congruent pairs skipped. Images export to 384 px WebP under `human-experiment/public/stimuli/`, 870 files, 6.2 MB, so nothing at run time touches `/scratch`. Counterbalancing lives in a shared `public/assignment.js` so it can be checked in Node (`verify_assignment.js`) rather than only in a browser. Deployment is static plus two Vercel functions against Atlas; the Express servers stay for local testing.
+
+**Why:** The old anchor was one scalar, 0.952, from 28 adults on 30 stimuli in one condition and one option order, drawn as a flat dotted line across every panel of fig2 including framings and AB variants no human ever saw. It could not be compared cell-for-cell with the model results: different stimulus package, no no-word baseline, no ordering swap, and an item-level human-model correlation of r = 0.083.
+
+**Two real bugs found and fixed while building this:**
+- `hash(seed|salt) % 2` made condition and ordering group perfectly correlated. FNV-1a ends in a multiply by an odd prime, so the digest's low bit is near-linear in the input bytes and two salts give the same coin. Every noun-label participant would have been ordering group A, so no triad would ever have appeared in both orders within a condition and the counterbalance would have been silently void. Factor assignment now goes through mulberry32 (`seededUnit`). Caught only because the simulation was rerun with realistic random Prolific IDs.
+- The committed `human-experiment/node_modules/` had every package's `dist/` stripped, so `index.html` pointed at jsPsych files that did not exist. Only the local preview server worked, by redirecting to unpkg. `vendor_jspsych.sh` now pulls the published browser bundles into `public/vendor/`.
+
+**What was rejected:**
+- Pooling the March pilot with the new sample. Different stimulus package, no no-word condition, no ordering counterbalance. Kept separate by `design` and `pool_version`.
+- Fixed option order per participant, which is what the models do. It would have let a side preference at the participant level masquerade as shape bias. Order now alternates within a participant and flips by group, so the item-level counterbalance is exact and the participant-level confound is gone.
+- Reusing the models' fixed word `shiple`. Word identity moves validity, not shape rate, and unique words are what prevent carry-over.
+- Congruent `cc_triads` (`dog1-dog2`): both options come from one class, so there is no shape-versus-texture answer. They stay in the model subset, labelled rather than dropped.
+- Keeping the scalar human line in fig2. Anchors are now placed only in the cells humans were measured in.
+
+**Not done, needs your accounts:** deployment and the Prolific launch. See `human-experiment/LAUNCH_RUNBOOK.md`. Also note R is not installed on this machine, so the new functions in `analysis_pipe/src/human_analysis.R` were written but never executed; the figure side was tested against a schema fixture, which was deleted afterwards so no fabricated human numbers remain in `results/data/`.
+
+## 2026-08-10, fig7b split into two figures to fix overlap
+
+**What was decided:** Replace the 2×3 `fig7b_stimulus_sets` with two 1×3 figures: `fig7b_sets_behavior` (behavior across the four sets per framing) and `fig7b_sets_emb_vs_behavior` (embedding vs behavior per framing). Deleted the old combined PNG/PDF and updated the report figure list. In the emb-vs-behavior figure the model legend now uses neutral grey markers, since colour encodes stimulus set and only marker shape encodes model.
+
+**Why:** In the 2×3 version the rotated model names on the top row collided with the bottom row panel titles, and the set/model legends sat on top of the data.
+
+**What was rejected:** Keeping one figure with a taller canvas and larger hspace; dropping model names from the top row.
+
+## 2026-08-10, Fig6/7/7b faceted by numeric framing (similarity / category / noun)
+
+**What was decided:** Option 1. Same figure layouts, three numeric framings side by side (AB left out). Fig6 is 1×3 PriDe bars; fig7 keeps one shared embedding panel A then three emb-vs-behavior panels; fig7b is 2×3 (behavior rates / emb-vs-behavior × framing).
+
+**Why:** Embeddings are prompt-free so Panel A need not repeat; behavior and gate-pass do shift by framing (grid gate: similarity 2/14, category 5/14, noun 4/14).
+
+**What was rejected:** Full 6-cell AB×framing grid; separate files per condition.
+
+## 2026-08-10, Full-grid fig7/fig7b extended to four stimulus sets
+
+**What was decided:** Option A. Rewrote `fig7_vision_vs_behavior` (Panel A: embedding shape rates for novel grid / Smith / cc_triads / decomposition; Panel B: grid emb vs grid behavior) and added `fig7b_stimulus_sets` (Panel A: behavioral similarity across the four sets; Panel B: emb vs behavior, color=set, marker=model). Wired both into `build_full_grid_report.py`. Old Geirhos class-folder cue-conflict is not in these panels.
+
+**Why:** Playground had fig7 / fig7b for two-set comparisons; full_grid only had a three-panel scatter that still pointed at old Geirhos. Four-set behavioral + embedding data were already complete.
+
+**What was rejected:** Keeping Geirhos as a fifth series; waiting for probe job 1679628 before regenerating (behavioral/embedding figs do not need NPZ probes).
+
+## 2026-08-09, Remaining linear probes queued on CPU after emb-export
+
+**What was decided:** Leave GPU tasks `1678529_10` (`qwen3.5-2b`) and `1678529_13` (`qwen3.5-27b`) running, then finish any still-missing probe JSONs on CPU via `scripts/run_remaining_probes_cpu.sbatch` with `--dependency=afterany:1678529` (job **1679628**). That job also rebuilds readout-power figures at the end.
+
+**Why:** NPZ export for timed-out tasks (`qwen3-vl-2b`, `qwen3.5-0.8b`) already finished; only probes were incomplete. Probing does not need a GPU. Waiting avoids racing or canceling the two still-running array tasks.
+
+**What was rejected:** Canceling 10/13 to move probes to CPU immediately; leaving the probe gap until a later ask.
+
+## 2026-08-09, NPZ embedding export extended to the full 14-model ladder
+
+**What was decided:** Run `scripts/run_grid_embedding_export.sbatch` on all 14 ladder models so the linear-probe / read-out-power analysis is not limited to the original four (qwen3.5-4b, qwen3.5-9b, qwen3-vl-8b, smolvlm). The array now sources `scripts/model_ladder.sh` (`--array=0-13%4`), skips GPU re-export when `${MODEL}_*.npz` already exists, and only runs `linear_probe.py` for missing probe JSONs.
+
+**Why:** Cosine JSONs alone cannot settle the read-out-power objection; saved vectors are required for the probe. Filling NPZ for everyone keeps that test aligned with the behavioral ladder.
+
+**Submitted:** emb-export array on FarmShare (queued behind the Smith ladder if GPUs are full). Outputs stay under `results/probe.results/session_readout_power/embeddings_grid/`.
+
+## 2026-08-09, Smith behavioral+logit+PriDe backfill for the full 14-model ladder
+
+**What was missing:** Smith had embeddings for all 14 models but generation only for the old 9 (playground `.txt`), no `run_local` CSVs, no logit session, and PriDe only from the 9-model playground path. Original Geirhos still cannot support 2AFC generation in its class-folder layout; that gap was already closed by the edited triad sets (`cc_triads` / `decomposition_triads`), which have the full readout stack, while original Geirhos embeddings remain 14/14 at n=30.
+
+**What was decided:** Run Smith through `scripts/run_local.py --smith-probe` for all 14 models, matching the embedding sample (n=30, seed=0), six cells × both orders, generation then logit (`swap_correct` off). Finalize writes PriDe, summary, and `smith_ladder_report.html`. Submitted array **1678392** and finalize with `--dependency=afterany:1678392`.
+
+**What was rejected:** Re-running original Geirhos as behavioral 2AFC without the triad rebuild (still the wrong layout); waiting on NPZ export / 30-set playground backfill in this pass (separate from the Smith/Geirhos readout gap the user asked to fill).
+
+## 2026-08-08, Full ladder results in; reports regenerated for 14 models + cue-conflict triads
+
+**What finished:** All submitted jobs completed with exit 0. Completeness for the agreed matrix is full: grid gen/logit 84/84 cells, cue-conflict gen/logit 168/168, embeddings 14/14 on grid+Smith+Geirhos and on both triad sets, PriDe 84 rows for grid and for each triad set.
+
+**Reporting updates:** Extended `MODEL_ORDER` (and colors/markers) to 14 in `full_grid_figures.py` and `build_full_grid_report.py`. Regenerated fig1–7 and `full_grid_v1a_report.html`. Added `analysis_pipe/cueconflict_summary.py` and `scripts/build_cueconflict_report.py`; wrote per-set summaries and `cueconflict_triads_report.html`, linked from the playground index.
+
+**Grid gate (generation):** 20/84 PASS. The old 9-model subset is still 18/54. Of the five new models only `internvl-14b` contributes (2/6); the other four are 0/6. `qwen3.5-4b` remains the only model with 6/6; 9b 5/6; 27b 2/6; Qwen3-VL-4B 3/6; 8B 2/6. Gate-passing noun_label shape rates stay high for the Qwen3.5 family (0.80–0.91).
+
+**Cue-conflict triads (n=320):** cc_triads 35/84 PASS; decomposition 40/84. More models clear the tracking gate here than on the novel-object grid, but shape rates among passers are lower and closer to 0.5–0.7. Decomposition rates run higher than cc_triads for several models, consistent with the format confound (isolated object vs cluttered photo). `internvl-14b` passes all 6 on both triad sets but only 2/6 on the grid.
+
+**Still deferred:** Smith/Geirhos behavioral+logit via `run_local`, NPZ export beyond 4 models, 30-set playground backfill for the 5 new models.
+
+## 2026-08-07, Model ladder centralized; five registered models were never being run
+
+**What was found:** `internvl-2b`, `internvl-8b`, `internvl-14b` and `smolvlm-256m` register correctly in `MODEL_REGISTRY` (16 keys) but appear nowhere in `results/model.results/`. Nothing was broken in the registry or the wrappers. Every runner hardcoded its own copy of the same 9-entry `MODELS=(...)` array, and the InternVL sizes were never added to it, so `--models` never received them. The three InternVL variants had already been downloaded to scratch and smoke-tested at n=30 on 2026-07-30 (`ret1` 0.7 / 0.9 / 0.8), then not promoted. `internvl` alone means InternVL3-**1B**, so the grid's InternVL rung was the 1B all along.
+
+**What was decided:** One shared list in `scripts/model_ladder.sh`, sourced by `run_full_grid_v1a`, `run_full_grid_logit_v1a`, `run_full_grid_embedding_v1a`, `run_ab_label_fix_benchmark_30`, `run_ab_label_fix_smith_30`, and `run_embedding_bench_smith_31`. Family-grouped, ascending within family, now 14 models: added `smolvlm-256m`, `internvl-2b`, `internvl-8b`, `internvl-14b`, `qwen3.5-2b`. Downloaded Qwen3.5-2B (4.3 GB) so the Qwen3.5 rungs run 0.8B / 2B / 4B / 9B / 27B with no gap. All 14 verified to resolve from cache under `HF_HUB_OFFLINE=1`.
+
+**Why sorted rather than appended:** an index that maps onto a position on the scale ladder is worth more than index stability, since resume keys off the output filename and not the array index, so existing CSVs are untouched by renumbering. Cost: `qwen3.5-9b` moved from array index 7 to 12. `bash scripts/model_ladder.sh` prints the mapping.
+
+**Deliberate exclusions, now documented in the ladder file:** `qwen3-vl-32b` (no bf16 fit on one 48 GB L40S, 2026-07-23 entry), `tinyllava` (not imported, incompatible with current transformers), `levante-runtime` (wrapper, not a rung).
+
+**What was rejected:** `--models all` as the fix, since it pulls in `levante-runtime` and any uncached model and crashes under `HF_HUB_OFFLINE=1`; centralizing `run_grid_embedding_export.sbatch` and `WORD_MODELS`, which are deliberate subsets rather than ladders.
+
+## 2026-08-07, Edited cue-conflict triad sets reviewed, wired in, and run
+
+**What arrived:** two zips, `cc_triads` and `decomposition_triads`, 1,280 triads each, three 224×224 PNGs per triad, nothing missing. The 1,280 `reference.png` files are byte-identical across the two sets, so the sets differ only in what the two answer options are. Staged on `/scratch/users/samahabd/cue_conflict_triads`, symlinked into `previous-lit-stimuli/cue-conflict/` (gitignored), following the grid staging pattern.
+
+**Review, and why cc_triads is primary:** in `cc_triads` all three images are isolated objects on white. In `decomposition_triads` the options are the two source photographs, so reference and `shape_match` are both isolated objects on white while `texture_match` is a cluttered full-frame photo. A model preferring the matching image format will look shape-biased for reasons unrelated to shape. Its foils are also heavily reused: 160 unique shape options and 48 unique texture options across 1,280 triads, versus 850 and 830 in `cc_triads`, so foil identity should be a random effect. 80 of the 1,280 pairs are within-class (`dog1-dog2`), which are congruent rather than conflicting.
+
+**What was built:** no existing loader could read these folders, because every entry point either filters on `d.name.isdigit()` or sorts by `int(d.name)`. Added `load_stimuli_triad_dir()` in `eval_core.py` returning lazy path records like the grid loader, plus `--triad-dir` on `run_local.py` and `embedding_robust.py`. The folder name is parsed into `stl_id` and `texture_set`, so shape and texture identity reach the CSV and congruent trials stay identifiable. The embedding builder returns `(triplets, meta)` like `build_grid_triplets` and labels by Geirhos *class*, which turns on `retrieval_mesh_at1` / `retrieval_texset_at1` against a 1/16 baseline.
+
+**Scope agreed with Samah:** fixed 320-triad subset (20 per class, seed 0, manifest at `results/data/cueconflict_triad_subset_n320.csv`), identical ids in both sets so the two sets and all readouts pair trial for trial; congruent trials kept and labelled rather than excluded or oversampled (16 land in the subset, 5.0% against a 6.2% population rate, which is thin as a control); generation + logit + embeddings on all 14 models, plus the 5-model grid backfill. Rejected: the full 1,280 (~172 GPU-h versus ~43), and the Smith/Geirhos backfill and NPZ export, deferred.
+
+**Two bugs found on the way.** `run_full_grid_embedding_v1a.sbatch` pointed at `previous-lit-stimuli/geirhos_cueconflict`, but that directory moved under `cue-conflict/`; since the step is guarded by `if [[ -d "$CUE" ]]`, the next run would have silently skipped every cue-conflict embedding and still exited 0. And `load_completed_trial_keys` required a non-empty `word`, so the four no-word conditions were unresumable and a requeued task appended a second copy of every row instead of skipping. Verified the finished grid sessions have zero duplicates (those tasks never needed to resume), then fixed the guard to require only model / stim_id / ordering.
+
 ## 2026-08-02 (latest), Read-out power objection: concede the scope, build the probe, fix the retrieval control
 
 **What was decided:** Answer reviewer point 8 ("cosine is a fixed unweighted read-out") as an experiment rather than a caveat. Narrowed the encoder claim everywhere it was overstated, and built the linear-probe / read-out-power pipeline that decides it. Scope agreed with Samah: 4 models (qwen3.5-4b, qwen3.5-9b, qwen3-vl-8b, smolvlm), mode A only, code + claim revisions + response memo + the §4.1 numeric fixes.

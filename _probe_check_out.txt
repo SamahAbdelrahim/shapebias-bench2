@@ -1,0 +1,93 @@
+=== SQUEUE ===
+squeue: error: resolve_ctls_from_dns_srv: res_nsearch error: Host name lookup failure
+squeue: error: fetch_config: DNS SRV lookup failed
+squeue: error: _establish_config_source: failed to fetch config
+squeue: fatal: Could not establish a configuration source
+=== TAIL ===
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_vit_pooler.png/.pdf
+
+model            readout          meshP1  texP2  cos(cent)  learned  mesh@1
+qwen3-vl-8b      proj_mean         0.997  0.995     0.474    0.732   1.000
+qwen3-vl-8b      vit_last_mean     0.997  0.995     0.474    0.732   1.000
+qwen3-vl-8b      vit_penult_mean   1.000  0.999     0.453    0.959   1.000
+qwen3-vl-8b      vit_pooler        1.000  0.999     0.447    0.962   1.000
+qwen3.5-4b       proj_mean         0.999  0.996     0.456    0.682   1.000
+qwen3.5-4b       vit_last_mean     0.999  0.996     0.456    0.682   1.000
+qwen3.5-4b       vit_penult_mean   1.000  1.000     0.489    0.975   1.000
+qwen3.5-4b       vit_pooler        1.000  1.000     0.541    0.979   1.000
+qwen3.5-9b       proj_mean         1.000  0.997     0.496    0.783   1.000
+qwen3.5-9b       vit_last_mean     1.000  0.997     0.496    0.783   1.000
+qwen3.5-9b       vit_penult_mean   1.000  0.999     0.401    0.986   1.000
+qwen3.5-9b       vit_pooler        1.000  1.000     0.418    0.982   1.000
+
+Done. Figures in /home/users/samahabd/shapebias-bench2/results/figures/readout_power
+ALL DONE 2026-08-03T01:21:57-07:00
+-rw-r--r-- 1 samahabd operator 3804 Aug  3 00:45 results/probe.results/session_readout_power/probe_qwen3-vl-8b_proj_mean.json
+-rw-r--r-- 1 samahabd operator 3812 Aug  3 00:56 results/probe.results/session_readout_power/probe_qwen3-vl-8b_vit_last_mean.json
+-rw-r--r-- 1 samahabd operator 3674 Aug  3 01:04 results/probe.results/session_readout_power/probe_qwen3-vl-8b_vit_penult_mean.json
+-rw-r--r-- 1 samahabd operator 3661 Aug  3 01:21 results/probe.results/session_readout_power/probe_qwen3-vl-8b_vit_pooler.json
+-rw-r--r-- 1 samahabd operator 3767 Aug  2 23:18 results/probe.results/session_readout_power/probe_qwen3.5-4b_proj_mean.json
+-rw-r--r-- 1 samahabd operator 3775 Aug  2 23:30 results/probe.results/session_readout_power/probe_qwen3.5-4b_vit_last_mean.json
+-rw-r--r-- 1 samahabd operator 3627 Aug  2 23:36 results/probe.results/session_readout_power/probe_qwen3.5-4b_vit_penult_mean.json
+-rw-r--r-- 1 samahabd operator 3614 Aug  2 23:47 results/probe.results/session_readout_power/probe_qwen3.5-4b_vit_pooler.json
+-rw-r--r-- 1 samahabd operator 3727 Aug  2 23:58 results/probe.results/session_readout_power/probe_qwen3.5-9b_proj_mean.json
+-rw-r--r-- 1 samahabd operator 3735 Aug  3 00:09 results/probe.results/session_readout_power/probe_qwen3.5-9b_vit_last_mean.json
+-rw-r--r-- 1 samahabd operator 3676 Aug  3 00:16 results/probe.results/session_readout_power/probe_qwen3.5-9b_vit_penult_mean.json
+-rw-r--r-- 1 samahabd operator 3618 Aug  3 00:33 results/probe.results/session_readout_power/probe_qwen3.5-9b_vit_pooler.json
+=== FIGURE ===
+Loaded 12 probe results from results/probe.results/session_readout_power
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_proj_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_proj_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_vit_last_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_vit_last_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_vit_penult_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_vit_penult_mean.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figA_readout_power_ladder_vit_pooler.png/.pdf
+  wrote /home/users/samahabd/shapebias-bench2/results/figures/readout_power/figB_decodability_vit_pooler.png/.pdf
+
+model            readout          meshP1  texP2  cos(cent)  learned  mesh@1
+qwen3-vl-8b      proj_mean         0.997  0.995     0.474    0.732   1.000
+qwen3-vl-8b      vit_last_mean     0.997  0.995     0.474    0.732   1.000
+qwen3-vl-8b      vit_penult_mean   1.000  0.999     0.453    0.959   1.000
+qwen3-vl-8b      vit_pooler        1.000  0.999     0.447    0.962   1.000
+qwen3.5-4b       proj_mean         0.999  0.996     0.456    0.682   1.000
+qwen3.5-4b       vit_last_mean     0.999  0.996     0.456    0.682   1.000
+qwen3.5-4b       vit_penult_mean   1.000  1.000     0.489    0.975   1.000
+qwen3.5-4b       vit_pooler        1.000  1.000     0.541    0.979   1.000
+qwen3.5-9b       proj_mean         1.000  0.997     0.496    0.783   1.000
+qwen3.5-9b       vit_last_mean     1.000  0.997     0.496    0.783   1.000
+qwen3.5-9b       vit_penult_mean   1.000  0.999     0.401    0.986   1.000
+qwen3.5-9b       vit_pooler        1.000  1.000     0.418    0.982   1.000
+
+Done. Figures in /home/users/samahabd/shapebias-bench2/results/figures/readout_power
+=== FIGS DIR ===
+total 1310
+drwxr-xr-x 2 root root     18 Aug  3 01:21 .
+drwxr-xr-x 5 root root      5 Aug  3 01:21 ..
+-rw-r--r-- 1 root root  21746 Aug  3 01:48 figA_readout_power_ladder_proj_mean.pdf
+-rw-r--r-- 1 root root 184269 Aug  3 01:48 figA_readout_power_ladder_proj_mean.png
+-rw-r--r-- 1 root root  21516 Aug  3 01:48 figA_readout_power_ladder_vit_last_mean.pdf
+-rw-r--r-- 1 root root 184671 Aug  3 01:48 figA_readout_power_ladder_vit_last_mean.png
+-rw-r--r-- 1 root root  21411 Aug  3 01:48 figA_readout_power_ladder_vit_penult_mean.pdf
+-rw-r--r-- 1 root root 174846 Aug  3 01:48 figA_readout_power_ladder_vit_penult_mean.png
+-rw-r--r-- 1 root root  21410 Aug  3 01:48 figA_readout_power_ladder_vit_pooler.pdf
+-rw-r--r-- 1 root root 166245 Aug  3 01:48 figA_readout_power_ladder_vit_pooler.png
+-rw-r--r-- 1 root root  16409 Aug  3 01:48 figB_decodability_proj_mean.pdf
+-rw-r--r-- 1 root root  98586 Aug  3 01:48 figB_decodability_proj_mean.png
+-rw-r--r-- 1 root root  16176 Aug  3 01:48 figB_decodability_vit_last_mean.pdf
+-rw-r--r-- 1 root root  97518 Aug  3 01:48 figB_decodability_vit_last_mean.png
+-rw-r--r-- 1 root root  16130 Aug  3 01:48 figB_decodability_vit_penult_mean.pdf
+-rw-r--r-- 1 root root  97472 Aug  3 01:48 figB_decodability_vit_penult_mean.png
+-rw-r--r-- 1 root root  16108 Aug  3 01:48 figB_decodability_vit_pooler.pdf
+-rw-r--r-- 1 root root  96328 Aug  3 01:48 figB_decodability_vit_pooler.png
+=== SUMMARIES ===
+--- probe_qwen3-vl-8b_proj_mean.json ---
+top keys: ['source', 'name', 'dim', 'n_meshes', 'n_textures', 'retrieval', 'P1_mesh_identity', 'P2_texture_identity', 'ladder', 'P3_pixel_mesh', 'P3_pixel_texture']
+{"source": "results/probe.results/session_readout_power/embeddings_grid/qwen3-vl-8b_proj_mean.npz", "name": "qwen3-vl-8b_proj_mean", "dim": 1152, "n_meshes": 30, "n_textures": 38, "retrieval": {"exact_at1": 0.0, "exact_chance": 0.0008771929824561404, "mesh_at1": 1.0, "mesh_chance": 0.03333333333333333, "texture_at1": 0.0, "texture_chance": 0.02631578947368421, "n": 1140}, "P1_mesh_identity": {"target": "mesh", "held_out": "texture", "n_test": 1140, "n_classes": 30, "chance": 0.03333333333333333, "accuracy": 0.9973684210526316, "ci95": [0.993859649122807, 1.0], "per_fold": [0.9916666666666667, 1.0, 1.0, 0.9952380952380953, 1.0], "C": 0.01}, "P2_texture_identity": {"target": "texture", "held_out": "mesh", "n_test": 1140, "n_classes": 38, "chance": 0.02631578947368421, "accuracy": 0.9947368421052631, "ci95": [0.9903508771929824, 0.9982456140350877], "per_fold": [0.9912280701754386, 1.0, 0.9956140350877193, 0.9956140350877193, 0.9912280701754386], "C": 0.1}, "ladder": {"n_blocks": 25, "rungs": {"1_raw_cosine": {"shape_rate": 0.5140350877192983, "ci95": [0.4842105263157895, 0.5429824561403509], "n": 1140}, "2_centered_cosine": {"shape_rate": 0.47368421052631576, "ci95": [0.44471491228070176, 0.5026535087719297], "n": 1140}, "2b_centered_train": {"shape_rate": 0.4763157894736842, "ci95": [0.44649122807017544, 0.5052631578947369], "n": 1140}, "3_zca_cosine": {"shape_rate": 0.8008771929824562, "ci95": [0.7798026315789474, 0.8245614035087719], "n": 1140}, "4_pca128_cosine": {"shape_rate": 0.4649122807017544, "ci95": [0.4359649122807018, 0.493859649122807], "n": 1140}, "4_pca32_cosine": {"shape_rate": 0.45964912280701753, "ci95": [0.4307017543859649, 0.4885964912280702], "n": 1140}, "4_pca8_cosine": {"shape_rate": 0.45, "ci95": [0.4219298245614035, 0.4789692982456139], "n": 1140}, "5_learned_metric": {"shape_rate": 0.7324561403508771, "ci95": [0.7052412280701754, 0.7578947368421053], "n": 1140}, "6_ceiling_leaky": {"shape_rate": 0.9491228070175438, "ci95": [0.9359649122807018, 0.9614035087719298], "n": 1140}}, "mcnemar_centered_vs_learned": {"n01": 314, "n10": 19, "p": 5.0008374237339e-70}}, "P3_pixel_mesh": {"target": "mesh", "held_out": "texture", "n_test": 1140, "n_classes": 30, "chance": 0.03333333333333333, "accuracy": 0.9982456140350877, "ci95": [0.9956140350877193, 1.0], "per_fold": [0.9916666666666667, 1.0, 1.0, 1.0, 1.0], "C": 0.1}, "P3_pixel_texture": {"target": "texture", "held_out": "mesh", "n_test": 1140, "n_classes": 38, "chance": 0.02631578947368421, "accuracy": 0.14736842105263157, "ci95": [0.12631578947368421, 0.16842105263157894], "per_fold": [0.13596491228070176, 0.16666666666666666, 0.17982456140350878, 0.12719298245614036, 0.12719298245614036], "C": 1.0}}
+--- probe_qwen3.5-4b_proj_mean.json ---
+top keys: ['source', 'name', 'dim', 'n_meshes', 'n_textures', 'retrieval', 'P1_mesh_identity', 'P2_texture_identity', 'ladder', 'P3_pixel_mesh', 'P3_pixel_texture']
+{"source": "results/probe.results/session_readout_power/embeddings_grid/qwen3.5-4b_proj_mean.npz", "name": "qwen3.5-4b_proj_mean", "dim": 1024, "n_meshes": 30, "n_textures": 38, "retrieval": {"exact_at1": 0.0, "exact_chance": 0.0008771929824561404, "mesh_at1": 1.0, "mesh_chance": 0.03333333333333333, "texture_at1": 0.0, "texture_chance": 0.02631578947368421, "n": 1140}, "P1_mesh_identity": {"target": "mesh", "held_out": "texture", "n_test": 1140, "n_classes": 30, "chance": 0.03333333333333333, "accuracy": 0.9991228070175439, "ci95": [0.9973684210526316, 1.0], "per_fold": [1.0, 1.0, 1.0, 1.0, 0.9952380952380953], "C": 0.01}, "P2_texture_identity": {"target": "texture", "held_out": "mesh", "n_test": 1140, "n_classes": 38, "chance": 0.02631578947368421, "accuracy": 0.9964912280701754, "ci95": [0.9929824561403509, 0.9991228070175439], "per_fold": [1.0, 1.0, 1.0, 0.9912280701754386, 0.9912280701754386], "C": 0.1}, "ladder": {"n_blocks": 25, "rungs": {"1_raw_cosine": {"shape_rate": 0.4535087719298246, "ci95": [0.42280701754385963, 0.48333333333333334], "n": 1140}, "2_centered_cosine": {"shape_rate": 0.45614035087719296, "ci95": [0.4280701754385965, 0.48596491228070177], "n": 1140}, "2b_centered_train": {"shape_rate": 0.4614035087719298, "ci95": [0.43333333333333335, 0.48947368421052634], "n": 1140}, "3_zca_cosine": {"shape_rate": 0.8482456140350877, "ci95": [0.8280701754385965, 0.8692982456140351], "n": 1140}, "4_pca128_cosine": {"shape_rate": 0.437719298245614, "ci95": [0.40964912280701754, 0.46578947368421053], "n": 1140}, "4_pca32_cosine": {"shape_rate": 0.42719298245614035, "ci95": [0.4, 0.45526315789473687], "n": 1140}, "4_pca8_cosine": {"shape_rate": 0.40789473684210525, "ci95": [0.38067982456140353, 0.4359649122807018], "n": 1140}, "5_learned_metric": {"shape_rate": 0.6815789473684211, "ci95": [0.6526315789473685, 0.7096491228070175], "n": 1140}, "6_ceiling_leaky": {"shape_rate": 0.8710526315789474, "ci95": [0.8517543859649123, 0.8912280701754386], "n": 1140}}, "mcnemar_centered_vs_learned": {"n01": 287, "n10": 30, "p": 8.219492166449979e-54}}, "P3_pixel_mesh": {"target": "mesh", "held_out": "texture", "n_test": 1140, "n_classes": 30, "chance": 0.03333333333333333, "accuracy": 0.9982456140350877, "ci95": [0.9956140350877193, 1.0], "per_fold": [0.9916666666666667, 1.0, 1.0, 1.0, 1.0], "C": 0.1}, "P3_pixel_texture": {"target": "texture", "held_out": "mesh", "n_test": 1140, "n_classes": 38, "chance": 0.02631578947368421, "accuracy": 0.14736842105263157, "ci95": [0.12631578947368421, 0.16842105263157894], "per_fold": [0.13596491228070176, 0.16666666666666666, 0.17982456140350878, 0.12719298245614036, 0.12719298245614036], "C": 1.0}}
+--- probe_qwen3.5-9b_proj_mean.json ---
+top keys: ['source', 'name', 'dim', 'n_meshes', 'n_textures', 'retrieval', 'P1_mesh_identity', 'P2_texture_identity', 'ladder', 'P3_pixel_mesh', 'P3_pixel_texture']
+{"source": "results/probe.results/session_readout_power/embeddings_grid/qwen3.5-9b_proj_mean.npz", "name": "qwen3.5-9b_proj_mean", "dim": 1152, "n_meshes": 30, "n_textures": 38, "retrieval": {"exact_at1": 0.0, "exact_chance": 0.0008771929824561404, "mesh_at1": 1.0, "mesh_chance": 0.03333333333333333, "texture_at1": 0.0, "texture_chance": 0.02631578947368421, "n": 1140}, "P1_mesh_identity": {"target": "mesh", "held_out": "texture", "n_test": 1140, "n_classes": 30, "chance": 0.03333333333333333, "accuracy": 1.0, "ci95": [1.0, 1.0], "per_fold": [1.0, 1.0, 1.0, 1.0, 1.0], "C": 0.01}, "P2_texture_identity": {"target": "texture", "held_out": "mesh", "n_test": 1140, "n_classes": 38, "chance": 0.02631578947368421, "accuracy": 0.9973684210526316, "ci95": [0.993859649122807, 1.0], "per_fold": [1.0, 0.9956140350877193, 0.9956140350877193, 0.9956140350877193, 1.0], "C": 1.0}, "ladder": {"n_blocks": 25, "rungs": {"1_raw_cosine": {"shape_rate": 0.4087719298245614, "ci95": [0.3798026315789474, 0.437719298245614], "n": 1140}, "2_centered_cosine": {"shape_rate": 0.4956140350877193, "ci95": [0.4666666666666667, 0.5263157894736842], "n": 1140}, "2b_centered_train": {"shape_rate": 0.48947368421052634, "ci95": [0.4605263157894737, 0.5184210526315789], "n": 1140}, "3_zca_cosine": {"shape_rate": 0.7789473684210526, "ci95": [0.756140350877193, 0.8035307017543859], "n": 1140}, "4_pca128_cosine": {"shape_rate": 0.4614035087719298, "ci95": [0.4324342105263158, 0.4903508771929825], "n": 1140}, "4_pca32_cosine": {"shape_rate": 0.4421052631578947, "ci95": [0.41228070175438597, 0.4710745614035087], "n": 1140}, "4_pca8_cosine": {"shape_rate": 0.41842105263157897, "ci95": [0.38859649122807016, 0.4473684210526316], "n": 1140}, "5_learned_metric": {"shape_rate": 0.7833333333333333, "ci95": [0.7605043859649123, 0.8078947368421052], "n": 1140}, "6_ceiling_leaky": {"shape_rate": 0.9631578947368421, "ci95": [0.9517543859649122, 0.9736842105263158], "n": 1140}}, "mcnemar_centered_vs_learned": {"n01": 347, "n10": 19, "p": 3.655825407156141e-79}}, "P3_pixel_mesh": {"target": "mesh", "held_out": "texture", "n_test": 1140, "n_classes": 30, "chance": 0.03333333333333333, "accuracy": 0.9982456140350877, "ci95": [0.9956140350877193, 1.0], "per_fold": [0.9916666666666667, 1.0, 1.0, 1.0, 1.0], "C": 0.1}, "P3_pixel_texture": {"target": "texture", "held_out": "mesh", "n_test": 1140, "n_classes": 38, "chance": 0.02631578947368421, "accuracy": 0.14736842105263157, "ci95": [0.12631578947368421, 0.16842105263157894], "per_fold": [0.13596491228070176, 0.16666666666666666, 0.17982456140350878, 0.12719298245614036, 0.12719298245614036], "C": 1.0}}
+=== ALL DONE ===
