@@ -21,6 +21,10 @@ Usage:
     python scripts/run_local.py --models smolvlm --ordering shape_first \
         --decision-mode logit_forced --choice-texts 1 2
 
+    # Restrict to only pseudo-words (sudo) or only random words
+    python scripts/run_local.py --models smolvlm --ordering shape_first --word-type sudo
+    python scripts/run_local.py --models smolvlm --ordering shape_first --word-type random
+
     # Append results to existing CSV
     python scripts/run_local.py --models smolvlm --ordering shape_first -o results/model.results/run.csv
     python scripts/run_local.py --models smolvlm --ordering texture_first -o results/model.results/run.csv
@@ -158,6 +162,11 @@ def main():
     parser.add_argument("--word", default=None,
                         help="Restrict word-bearing prompts to one curated word (e.g. shiple). "
                              "Default: all 10 words. Ignored by no-word prompt conditions.")
+    parser.add_argument("--word-type", default="all", choices=["all", "sudo", "random"],
+                        help="Restrict word-bearing prompts to a subset of load_words() by type: "
+                             "'sudo' (pseudo-words only), 'random' (random words only), or "
+                             "'all' (default: both, i.e. current behavior). Ignored by no-word "
+                             "prompt conditions.")
     parser.add_argument("--grid-pkg", default=None,
                         help="Full texture-grid package under stimuli_pipe/ (e.g. stimuli_texture_grid_v1). "
                              "Trials are read from its manifest.csv and images opened one at a time.")
@@ -274,12 +283,24 @@ def main():
             "type": "none",
             "length": 0,
         }]
-    elif args.word:
-        words = [w for w in words if w["name"] == args.word]
-        if not words:
-            available = [w["name"] for w in load_words()]
-            print(f"Error: unknown word '{args.word}'. Available: {available}")
-            sys.exit(1)
+    else:
+        # --word-type narrows to a subset of load_words() by type (default
+        # "all" preserves the original full 5-sudo + 5-random list).
+        if args.word_type != "all":
+            words = [w for w in words if w["type"] == args.word_type]
+            if not words:
+                print(f"Error: no words of type '{args.word_type}' found in load_words().")
+                sys.exit(1)
+
+        if args.word:
+            words = [w for w in words if w["name"] == args.word]
+            if not words:
+                available_names = [
+                    w["name"] for w in load_words()
+                    if args.word_type == "all" or w["type"] == args.word_type
+                ]
+                print(f"Error: unknown word '{args.word}'. Available: {available_names}")
+                sys.exit(1)
 
     if args.geirhos_unaltered:
         geirhos_triplets = build_geirhos_unaltered_triplets(
@@ -373,7 +394,10 @@ def main():
         print(f"Stimuli:     {len(stimuli)} from {args.grid_pkg}/{stim_set_label}")
     else:
         print(f"Stimuli:     {len(stimuli)} from {BENCHMARK_STIM_PACKAGE}/{stim_set_label}")
-    print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
+    if args.word_type != "all" and words and words[0]["type"] != "none":
+        print(f"Words:       {len(words)} ({args.word_type} only)")
+    else:
+        print(f"Words:       {len(words)} ({len(words)//2} sudo + {len(words)//2} random)")
     ord_mult = 1 if args.decision_mode in {"binary_pair", "binary_pair_conservative"} else (2 if args.ordering == "both" else 1)
     trials_per = len(stimuli) * len(words) * args.repeats * ord_mult
     print(f"Trials per model: {len(stimuli)} x {len(words)} x {args.repeats} repeats x {ord_mult} orderings = {trials_per}")
