@@ -123,14 +123,21 @@ def table_html(rows: list[dict]) -> str:
 def fig_block() -> str:
     names = [
         ("fig1_validity_gates.png", "Validity gates (tracking)"),
-        ("fig2_shape_bias.png", "Shape bias"),
-        ("fig3_naming_effect.png", "Naming effect"),
-        ("fig4_label_format.png", "Label format 1/2 vs A/B"),
+        ("fig2_shape_bias.png", "Shape bias by framing (numeric labels; see fig4)"),
+        ("fig3_naming_effect.png", "Naming effect, double-gated pairs ordered by effect size"),
+        ("fig4_label_format.png", "Label format screen: 1/2 vs A/B on tracking and on P(shape)"),
         ("fig5_by_shape_texture.png", "By shape / texture"),
-        ("fig6_position_bias_correction.png", "PriDe / order-swap (similarity / category / noun)"),
-        ("fig7_vision_vs_behavior.png", "Vision vs behavior by framing (numeric)"),
+        ("fig6_position_bias_correction.png", "Generated answer vs logit argmax vs order-swap correction, numeric labels (similarity / category / noun)"),
+        ("fig6b_position_bias_correction_ab.png", "Same three bars as fig6, A/B labels only"),
+        ("fig6c_correction_by_label_format.png", "How far PriDe moves numeric vs A/B cells off the raw logit argmax"),
+        ("fig6d_generation_follows_logit_ab.png", "A/B: |generation − raw logit| vs |generation − swap-corrected|; shorter bar = closer agreement"),
+        ("fig7_vision_vs_behavior.png", "Vision vs behavior by framing (numeric, proj_mean)"),
         ("fig7b_sets_behavior.png", "Behavior across stimulus sets by framing (ours / Smith / cc_triads / decomposition)"),
         ("fig7b_sets_emb_vs_behavior.png", "Vision tower vs behavior across stimulus sets by framing"),
+        ("fig8_embedding_layers.png", "Embedding shape rate by distinct pooling layer, and the paired difference from proj_mean"),
+        ("fig9_logit_vs_generation.png", "Generated answers vs option logits: shape rate, the tracking gate on each path, and position bias"),
+        ("fig9b_logit_vs_generation_pride.png", "Same as fig9 with logit P(shape) genuinely PriDe-corrected on held-out trials; panel B shows the correction move; panel C is the raw position bias"),
+        ("fig10_human_model_items.png", "Item-level human-model agreement on the 114 shared grid triads"),
     ]
     parts = []
     for name, caption in names:

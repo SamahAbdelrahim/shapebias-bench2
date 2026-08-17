@@ -134,8 +134,23 @@ def _write_npz(path: Path, X: np.ndarray, rows: list[dict]) -> None:
     )
 
 
+def _pooled_name(rep: str) -> str:
+    """Filename suffix for the mean-pooled vector of a token read-out.
+
+    Matches the historical NPZ naming: token sets gain a _mean suffix, the
+    tower pooler keeps its bare name.
+    """
+    return rep if rep == "vit_pooler" else f"{rep}_mean"
+
+
 def export_model(
-    name: str, rows: list[dict], out_dir: Path, dedupe: bool = True
+    name: str,
+    rows: list[dict],
+    out_dir: Path,
+    dedupe: bool = True,
+    reps_filter: list[str] | None = None,
+    token_save: int = 0,
+    token_role: str = "reference",
 ) -> dict:
     import torch
 
@@ -156,7 +171,9 @@ def export_model(
     print(f"{name}: {len(rows)} rows, {n_unique} unique images "
           f"({len(rows) - n_unique} deduped)")
 
+    tok_rng = np.random.default_rng(0)
     by_rep: dict[str, dict[int, np.ndarray]] = {}
+    tokens: dict[int, np.ndarray] = {}  # per-token subsample of proj_lm
     errs: dict[str, str] = {}
     for count, i in enumerate(unique_idx, 1):
         img = Image.open(rows[i]["path"]).convert("RGB")
@@ -165,7 +182,16 @@ def export_model(
             if k.endswith("__err"):
                 errs[k] = v
                 continue
-            by_rep.setdefault(k, {})[i] = v.squeeze().float().cpu().numpy()
+            if reps_filter and k not in reps_filter:
+                continue
+            t = v.float().cpu()
+            if t.dim() == 1:
+                t = t.unsqueeze(0)
+            by_rep.setdefault(k, {})[i] = t.mean(dim=0).numpy()
+            if token_save and k == "proj_lm" and rows[i]["role"] == token_role:
+                nt = min(token_save, t.shape[0])
+                sel = tok_rng.choice(t.shape[0], size=nt, replace=False)
+                tokens[i] = t[np.sort(sel)].numpy()
         if count % 200 == 0:
             print(f"  {count}/{n_unique}", flush=True)
 
@@ -178,10 +204,36 @@ def export_model(
         X = np.zeros((len(rows), dim), dtype=np.float32)
         for i, d in enumerate(digests):
             X[i] = vecs[first_seen[d]]
-        path = out_dir / f"{name}_{rep}.npz"
+        path = out_dir / f"{name}_{_pooled_name(rep)}.npz"
         _write_npz(path, X, rows)
         written[rep] = {"path": str(path), "dim": dim, "n": len(rows)}
         print(f"  wrote {path.name}  X={X.shape}")
+
+    # The historical defect this export exists to fix: the LM-facing locus must
+    # not silently collapse onto the tower's last hidden state again.
+    if "proj_lm" in by_rep and "vit_last" in by_rep:
+        a = np.stack([by_rep["proj_lm"][i] for i in unique_idx[:50]])
+        b = np.stack([by_rep["vit_last"][i] for i in unique_idx[:50]])
+        if a.shape == b.shape and np.allclose(a, b, atol=1e-5):
+            print(f"  WARNING: {name} proj_lm identical to vit_last; "
+                  "the projector was not applied")
+
+    if token_save and tokens:
+        ids = sorted(tokens)
+        Xtok = np.concatenate([tokens[i] for i in ids])
+        img_index = np.concatenate([
+            np.full(len(tokens[i]), i, dtype=np.int32) for i in ids])
+        path = out_dir / f"{name}_proj_lm_tokens.npz"
+        np.savez_compressed(
+            path,
+            X=Xtok.astype(np.float16),
+            img_row=img_index,
+            role=np.array([rows[i]["role"] for i in img_index]),
+            stl_id=np.array([rows[i]["stl_id"] for i in img_index], dtype=np.int32),
+            texture_set=np.array([rows[i]["texture_set"] for i in img_index]),
+        )
+        print(f"  wrote {path.name}  X={Xtok.shape} "
+              f"({token_save} tokens per {token_role} image)")
 
     del wrapper
     gc.collect()
@@ -209,6 +261,13 @@ def main() -> int:
     ap.add_argument("--no-dedupe", action="store_true")
     ap.add_argument("--pixels-only", action="store_true",
                     help="write the pixel baseline and exit (no GPU needed)")
+    ap.add_argument("--reps", nargs="*", default=None,
+                    help="only write these read-outs (e.g. proj_lm)")
+    ap.add_argument("--token-save", type=int, default=0,
+                    help="also save this many proj_lm tokens per image "
+                         "(for concept-erasure fitting)")
+    ap.add_argument("--token-role", default="reference",
+                    help="role whose images get the per-token save")
     args = ap.parse_args()
 
     if args.flat_root:
@@ -256,7 +315,11 @@ def main() -> int:
     for name in args.models:
         print("\n" + "#" * 60 + f"\nMODEL: {name}\n" + "#" * 60)
         try:
-            info = export_model(name, rows, out_dir, dedupe=not args.no_dedupe)
+            info = export_model(
+                name, rows, out_dir, dedupe=not args.no_dedupe,
+                reps_filter=args.reps, token_save=args.token_save,
+                token_role=args.token_role,
+            )
             if info["errors"]:
                 print(f"  read-out errors: {sorted(info['errors'])}")
         except Exception as exc:  # noqa: BLE001

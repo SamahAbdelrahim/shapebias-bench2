@@ -43,7 +43,6 @@ import re
 import sys
 from pathlib import Path
 
-import ot
 import torch
 import torch.nn.functional as F
 from PIL import Image
@@ -96,6 +95,8 @@ def _sinkhorn_sim(A: torch.Tensor, B: torch.Tensor, reg: float = 0.075, num_iter
     Uniform weight per token; cost is 1 - cosine sim. reg=0.075 is a balanced
     default (lower = sharper matching but less numerically stable at small n).
     """
+    import ot  # optional dependency; only the sinkhorn metric needs it
+
     An = F.normalize(A, dim=-1)
     Bn = F.normalize(B, dim=-1)
     sim = An @ Bn.t()
@@ -131,18 +132,37 @@ def extract_reps(wrapper, img: Image.Image) -> dict[str, torch.Tensor]:
 
     reps: dict[str, torch.Tensor] = {}
 
-    # --- baseline: get_image_features (LM-projected token features) ---
+    # --- LM-facing projected tokens: get_image_features().pooler_output ---
+    # In the installed transformers, every supported family applies its
+    # projector inside get_image_features and stores the result on
+    # .pooler_output (Qwen visual merger, InternVL multi_modal_projector,
+    # SmolVLM connector), while .last_hidden_state stays pre-projector. The
+    # historical export took a path that returned the tower's last hidden
+    # state, which is why proj_mean == vit_last_mean on disk; this locus is
+    # the actual input stream to the language model.
     try:
+        import inspect
+
+        sig = inspect.signature(model.get_image_features)
+        kw = {}
+        if grid is not None and "image_grid_thw" in sig.parameters:
+            kw["image_grid_thw"] = grid
+        if "vision_feature_layer" in sig.parameters:
+            kw["vision_feature_layer"] = getattr(
+                model.config, "vision_feature_layer", -1)
+        if "vision_feature_select_strategy" in sig.parameters:
+            kw["vision_feature_select_strategy"] = getattr(
+                model.config, "vision_feature_select_strategy", "default")
         with torch.inference_mode():
-            feats = model.get_image_features(
-                pixel_values=pv, **({"image_grid_thw": grid} if grid is not None else {})
-            )
-        hs = feats.pooler_output if hasattr(feats, "pooler_output") else feats
+            feats = model.get_image_features(pixel_values=pv, **kw)
+        hs = getattr(feats, "pooler_output", None)
+        if hs is None:
+            hs = feats
         if isinstance(hs, (list, tuple)):
             hs = hs[0]
-        reps["proj"] = _flatten(hs).cpu()
+        reps["proj_lm"] = _flatten(hs).cpu()
     except Exception as exc:  # noqa: BLE001
-        reps["proj__err"] = f"{type(exc).__name__}: {exc}"  # type: ignore
+        reps["proj_lm__err"] = f"{type(exc).__name__}: {exc}"  # type: ignore
 
     # --- vision tower hidden states ---
     tower = _find_tower(model)

@@ -169,6 +169,20 @@ def main():
                              "stl_id and texture_set columns.")
     parser.add_argument("--smith-probe", default=None, help="Path to Linda Smith probe-shapematch-colormatch dataset")
     parser.add_argument("--geirhos-unaltered", default=None, help="Path to Geirhos unaltered dataset (cue_conflict/original/texture).")
+    parser.add_argument("--image-mode", default="normal",
+                        choices=["normal", "blank", "phase_scramble"],
+                        help="Blind baseline: replace every stimulus image with "
+                             "a mid-grey blank or an amplitude-preserving phase "
+                             "scramble. Grid packages only (--grid-pkg).")
+    parser.add_argument("--intervene-bank", default=None,
+                        help="Eraser bank NPZ from playgrounds/intervene.py; "
+                             "attaches a projector-output hook that erases or "
+                             "amplifies the fitted concept subspace.")
+    parser.add_argument("--intervene-arm", default="target",
+                        help="'target' (the bank's fitted concept, fold-aware) "
+                             "or 'random<seed>' for the rank-matched control.")
+    parser.add_argument("--intervene-alpha", type=float, default=0.0,
+                        help="0.0 erases the subspace; values > 1 amplify it.")
     parser.add_argument(
         "--levante-model-name",
         default="qwen35",
@@ -337,6 +351,9 @@ def main():
     # Both loaders return path records with stl_id / texture_set, so the triad
     # sets ride the same lazy-open and CSV-column path as the texture grid.
     grid_mode = bool(args.grid_pkg or args.triad_dir)
+    if args.image_mode != "normal" and not grid_mode:
+        parser.error("--image-mode blank/phase_scramble requires --grid-pkg "
+                     "or --triad-dir (path-based stimuli)")
     print(f"Models:      {model_names}")
     print(f"Device:      {args.device}")
     print(f"Ordering:    {args.ordering}")
@@ -391,6 +408,15 @@ def main():
         model = create_model(model_key, **create_kwargs)
         print(f"  Loaded: {model.name}")
 
+        itv = None
+        if args.intervene_bank:
+            from playgrounds.intervene import Intervention, attach
+
+            itv = Intervention(Path(args.intervene_bank),
+                               arm=args.intervene_arm,
+                               alpha=args.intervene_alpha)
+            attach(model._model, itv)
+
         def run_fn(images, prompt, _m=model, choice_texts=None):
             return run_local(_m, images, prompt, temperature=args.temperature, choice_texts=choice_texts)
 
@@ -422,7 +448,11 @@ def main():
                         continue
 
                     if stim is None:
-                        stim = materialize_stimulus(stim_rec)
+                        stim = materialize_stimulus(stim_rec,
+                                                    image_mode=args.image_mode)
+                    if itv is not None:
+                        itv.set_stimulus(stl_id=stim_rec.get("stl_id"),
+                                         texture_set=stim_rec.get("texture_set"))
 
                     print(f"  Stimulus {stim_rec['stim_id']:>3s} (word={word}, type={word_type}, len={word_length})")
                     if args.decision_mode in {"binary_pair", "binary_pair_conservative"}:
@@ -473,6 +503,7 @@ def main():
                         r["temperature"] = args.temperature
                         r["decision_mode"] = args.decision_mode
                         r["swap_correct"] = "true" if args.swap_correct else "false"
+                        r["image_mode"] = args.image_mode
                         r.update(csv_meta)
                         if grid_mode:
                             r["stl_id"] = stim_rec["stl_id"]
@@ -515,6 +546,11 @@ def main():
                             )
                         )
 
+        if itv is not None:
+            print(f"  Intervention hook fired {itv.n_calls} times")
+            if itv.n_calls == 0:
+                print("  ERROR: intervention hook never fired; results invalid")
+                sys.exit(1)
         model.unload()
         print(f"  Unloaded {model_key}")
 

@@ -2,6 +2,97 @@
 
 Local-only (gitignored). Read at the start of every session; add an entry after any significant decision. Newest entries first.
 
+## 2026-08-17 (per-set figures), fig1–fig6d and fig9/fig9b are built for every stimulus set
+
+**What was decided:** `full_grid_figures.py` gains a `use_stimulus_set()` context manager that rebinds the summary, PriDe, logit-validity, breakdown and output-directory globals, and a `--set` flag. fig1, fig2, fig3, fig4, fig5, fig6, fig6b, fig6c, fig6d, fig9 and fig9b are now written for the grid, Smith, cc_triads and decomposition, into `results/figures/{full_grid,smith,cc_triads,decomposition}/`. `logit_validity.py` was run on the Smith and cue-conflict logit sessions to produce the three missing `*_logit_validity.csv`. fig7, fig7b, fig7c, fig8 and fig10 stay grid-only.
+
+**Why:** Every claim so far rested on figures drawn from one stimulus set, with the other three visible only in fig7b's aggregate. The validity gate is the case that matters: on Smith, InternVL passes cells it fails on the grid, and the gate is what decides which cells any shape-rate claim is allowed to use. The set-local figures all read one set's own CSVs, so nothing but the file paths and the title needed to change; a context manager keeps a single copy of each plotting function rather than a per-set branch inside eleven of them.
+
+**What was rejected:** Passing a `stim_set` argument down through every figure function (eleven signatures for a change that is entirely about which file to open); building the other sets into `full_grid/` with suffixed names (mixes sets in one directory and breaks the report builders' globs); replicating fig7 / fig7b / fig8 per set, which is meaningless since they already put all four sets on one axis; replicating fig10, which needs human item means that exist for the grid only.
+
+## 2026-08-17 (fig6d), Generation follows raw vs swap-corrected logits under A/B
+
+**What was decided:** Add `fig6d_generation_follows_logit_ab` after fig6b. Same three A/B framings; bars are |generation − raw logit argmax| and |generation − swap-corrected rate|.
+
+**Why:** fig6b shows the three rates side by side but does not ask which logit measure generation tracks. fig9 / fig9b scatter the rates; they do not put the absolute distances on the same axis as fig6b. Under A/B, mean |gen−raw| = 0.108 and mean |gen−swap| = 0.101, with swap closer in 19/42 cells; the figure makes that cell-level.
+
+**What was rejected:** Adding a numeric twin (on numeric, generation already tracks raw at |Δ| = 0.009, so the contrast is uninformative); using PriDe instead of swap (fig6b's corrected bar is swap; keep the pair matched).
+
+## 2026-08-17 (later still), A/B gets its own prior-bias correction figures
+
+
+**What was decided:** Add `fig6b_position_bias_correction_ab` (same three decision-rate bars as fig6, A/B cells only) and `fig6c_correction_by_label_format` (mean |PriDe − raw argmax| and count of cells moved > 0.10, numeric against A/B). Add three `factor_screen` rows to `stats_tables.py` for the per-format correction move and the AB − numeric contrast. The PriDe / swap pipeline already covered all 84 cells; only the display was numeric-only.
+
+**Why:** Label format is null on the generation path but not on the logit path. A/B cells move farther under PriDe than numeric ones (mean |Δ| 0.073 vs 0.056; 14 vs 9 cells above 0.10), so dropping them from the correction figures hid the format where correction matters most.
+
+**What was rejected:** A 2×3 combined fig6 (too dense next to the existing numeric panel); re-running PriDe separately for A/B (the CSV already has both).
+
+## 2026-08-17 (later), Prior-bias correction audit: rates and mean probabilities are separated
+
+
+**What was decided:** Every corrected estimate is written twice, as a decision rate (`*_shape_rate`) and as a mean probability (`*_mean_p_shape`), and every comparison, figure and stats row reads the rate. The PriDe prior is fit on a seeded random 10% of stimuli instead of the head of the sorted ids. `full_grid_pride.py` gains a `prior_degenerate` flag at 0.02 and renames `gen_shape` to `logit_argmax_shape`. `eval_core.py` conditions each pass on its own option mass before averaging the two orders. `smith_ladder_pride.csv` and both `cueconflict_*_pride.csv` regenerated.
+
+**Why:** The audit found the same class of error the morning's fix had introduced. `swap_shape` was a mean probability and `pride_shape` a decision rate, and `full_grid_figures.py:949` and `stats_tables.py:187` subtracted them, so the reported PriDe-swap gap of 0.084 (max 0.283, 34/84 cells) was a scale difference. Read like for like the gap is 0.031 (max 0.111, 4/84). The claim that survives is the other one: correcting at all moves the raw logit decision rate by more than 0.10 in 23 of 84 cells, and that number does not change. The prior subset mattered less than feared (mean 0.020, max 0.115 against a random 10%) but `stim_id` is `<stl_id>/<texture>` and sorts by shape, so the head 10% was three shapes. `eval_core`'s unnormalised average would have let whichever pass put more mass on the option tokens dominate; no session ever ran with `swap_correct=true`, so nothing on disk was affected.
+
+**What was rejected:** Reporting PriDe as a mean probability to match swap (loses comparability with the generation shape rate, which is the anchor); keeping the lexicographic prior subset for reproducibility with the published numbers; leaving the three stale pride CSVs, since all three logit sessions are on disk; dropping the mean-probability columns, which are the honest read for the saturated SmolVLM cells where the rate amplifies a hair of tilt into 0.70.
+
+## 2026-08-17, fig9b uses genuine PriDe, not the mislabeled held-out swap
+
+**Superseded in part by the later 2026-08-17 entry:** the 0.084 / max 0.283 / 34-cell figures below compare a decision rate against a mean probability. Like for like the gap is 0.031 (max 0.111, 4 cells). The rest of the entry stands.
+
+
+**What was decided:** Replace `fig9b_logit_vs_generation_swap` with `fig9b_logit_vs_generation_pride`. `full_grid_pride.py` now estimates a geometric first-option prior on 10% of stimuli, divides each option probability on the held-out 90% by its option prior, renormalises, and scores the corrected decision. Panel A = generation vs PriDe; panel B = raw logit argmax vs PriDe; panel C = raw first-option rates. Tracking is not redrawn.
+
+**Why:** The previous `pride_shape` was not PriDe: lines 90–101 of `full_grid_pride.py` merely recomputed a held-out order average, which is why it differed from swap by only 0.0035. Genuine PriDe differs from swap by mean |Δ| = 0.084 (max 0.283; 34/84 cells above 0.10), so the earlier claim that PriDe and swap were interchangeable was an implementation artifact. Tracking is undefined after correcting and aggregating held-out single-order decisions, so panel B remains a correction-move scatter rather than a corrected gate.
+
+**What was rejected:** Relabeling the old `pride_shape` column as PriDe; forcing corrected values onto the original tracking axes.
+
+## 2026-08-16, A factor is screened once, then dropped from the rest of the figures
+
+**What was decided:** Each design factor is tested in one figure and removed from the others. `stats_tables.py` gains a `factor_screen` section (15 rows) that holds every one of these decisions. Label format is screened in fig4, which becomes a two-panel dumbbell figure carrying tracking and P(shape) with the paired difference and the gate agreement count on it; fig2 and fig3 then report numeric only. PriDe leaves fig6, which drops to three bars. `vit_last_mean` leaves both panels of fig8 and is named in the caption instead. fig3 is also restricted to pairs where both cells clear the gate, ordered by effect size, with the pooled test and the smallest detectable shift as a footnote.
+
+**Why:** Numeric and A/B agree on the generated answer: mean Δ = +0.022 on P(shape) (Wilcoxon p = 0.19) and +0.036 on tracking (p = 0.52), with the gate decision agreeing in 36 of 42 model × framing pairs. Carrying both formats through fig2 and fig3 doubled the points in every panel and bought nothing. Raw and centred cosine agree to +0.019 (p = 0.33). `vit_last_mean` minus `proj_mean` is exactly 0.000 in every model. **Superseded 2026-08-17:** the apparent 0.0035 PriDe–swap agreement came from a mislabeled held-out swap estimate, so PriDe is no longer part of this collapse decision.
+
+**What was kept and why:** Label format stays in fig1 and fig9, since it is not null on the logit path (P(shape) Δ = −0.069, p = 0.0004; tracking Δ = −0.131, p = 0.008) and the six pairs where the gate decision flips are all AB cells. Framing stays everywhere: it is the manipulation the project is about, and it changes which cells are valid (2, 5 and 4 cells passing under similarity, category and noun) even though the shape rate among passing cells barely moves (+0.012 category → noun, n = 4). With only two to four double-gated cells per framing there is no basis for calling framing null, so collapsing it would trade a simpler figure for an unsupported claim.
+
+**What was rejected:** Deleting the AB cells from the pipeline, which would lose the logit-path dissociation and the gate flips; collapsing framing in fig6 / fig7 / fig7b to one panel, which is the simplification with the weakest evidence behind it; keeping every factor in every panel on the grounds that more is more honest, when the screen rows carry the same information at a fraction of the reader's attention.
+
+## 2026-08-16, Logit path gets its own validity gate; option probabilities normalised
+
+**What was decided:** Add `analysis_pipe/logit_validity.py`, which recomputes tracking, shape rate, first-option rate and a swap-corrected P(shape) from the logit session using the same definitions as `full_grid_summary.py`, and writes `results/data/full_grid_logit_validity.csv`. P(shape) is divided by the mass on the two option tokens, and `option_mass` is reported as a column. `full_grid_pride.py` is left alone so the existing PriDe numbers stay reproducible; fig6 marks the cells where it cannot be trusted.
+
+**Why:** The gate was only ever computed on the generated text, so a cell could be called invalid from its generation while its option probabilities tracked image content, and nothing said so. Gating both paths gives 11 cells passing on both, 9 on generation only, 2 on logits only, 62 on neither, and all 11 discordant cells are AB cells. Normalising also closed section 7 item 3: the SmolVLM `swap_shape` of exactly 0.000 is what you get from averaging raw absolute probabilities when mean option mass is 0.0000, and the normalised estimate is 0.50, that is indifference, not a perfect texture bias.
+
+**What was rejected:** Rewriting `full_grid_pride.py` to normalise in place, which would have silently changed published-looking numbers in `full_grid_v1a_pride.csv` with no audit trail; treating the exact zeros as a real texture preference; dropping the SmolVLM rows.
+
+**Also settled:** section 7 item 2 was not a numeric conflict. `summary.shape_rate` is the generated answer and `pride.gen_shape` is the logit argmax of the same trials. On `qwen3.5-9b noun_label_AB` generation splits A/B 1273/1007 while the logit argmax splits 1968/280, with 0.999 of the mass on the option tokens and the AB prompt correctly scoring the "A"/"B" tokens, so the option logits carry a first-option bias the generated answer does not. Mean |logit − generation| is 0.108 over the 42 AB cells against 0.009 over the 42 numeric cells.
+
+## 2026-08-16, Embedding figures name their pooling layer; layer breakdown added
+
+**What was decided:** `_embed_proj` takes a `layer` argument, every embedding axis and suptitle in fig7 / fig7b names `proj_mean`, and `fig8_embedding_layers` shows all four layers per model plus the paired difference from `proj_mean`. `readout_power_figure.py` orders models by the ladder, reads its behavioural reference lines from `full_grid_v1a_summary.csv` rather than a hardcoded five-model dict, marks the centred-cosine rung, and prints n.
+
+**Why:** "embedding shape rate (centered cosine)" hid which of four read-outs produced it, and the answer moves: mean centred cosine is 0.419 at `proj_mean` against 0.484 at `vit_penult_mean`. The layer matters more for the learned metric (`vit_penult_mean` +0.117 over `proj_mean`, Wilcoxon p = 0.004) and most for the embedding-behaviour correlation, which is flat at `proj_mean` and strongly negative at `vit_penult_mean` (category r = −0.83, BH q = 0.007, n = 12). The hardcoded behavioural dict had gone stale once already, which is what made figA an n=3 demo after the 14-model probes landed.
+
+**What was rejected:** Faceting fig7 by layer, which would have quadrupled an already dense figure; collapsing the layers into one mean, which is the thing that hid the effect; leaving `proj_mean` implicit and only documenting it in prose.
+
+**Found while doing this:** `proj_mean` and `vit_last_mean` are identical in dimension and in every shape rate for all 12 models carrying both, so `get_image_features()` returns the tower's last hidden state and the ladder has three distinct loci rather than four. Also `embedding_grid.json` is n = 114 triads while the probe ladder is n = 1,140, and both were labelled "the novel grid". Both are recorded as open items 5 and 6 in REPORT section 7 rather than fixed here, since fixing the first means re-exporting embeddings.
+
+## 2026-08-16, Statistics moved out of figure captions into one table
+
+**What was decided:** `analysis_pipe/stats_tables.py` writes `results/data/stats_summary.csv` in long format (analysis, group, statistic, value, n, ci_lo, ci_hi, p_value, note): per-cell exact binomial tests against 0.5, the naming effect per double-gated pair and pooled, embedding-behaviour correlations per layer and framing with Benjamini-Hochberg q, layer means and paired layer contrasts, ladder means per rung, McNemar from the probes, generation against logits by label format with the gate 2x2, and item-level human-model correlations. `analysis_pipe/item_rates.py` writes per-triad model rates so the model side can join `human_item_means.csv`.
+
+**Why:** Every figure showed an estimate and at best a Wilson interval, so no claim in the prose had a row to point at. Pooling the naming contrasts over numeric and AB reproduces the ten pairs and +0.017 the report already quotes, and adding the Wilcoxon (p = 0.56) with the smallest detectable shift (0.046) turns that null from an assertion into a bound.
+
+**What was rejected:** Running the R pipeline (`src/inference.R` has the mixed logistic, but R is still not installed on this machine); one CSV per analysis, which would have scattered eight files for one table; annotating p values on the figures, which would have crowded panels that are already dense.
+
+**Reliability finding worth carrying:** item-level human-model correlations are r = 0.22 (category) and r = 0.21 (noun) on 114 shared triads, both attenuated because a model answers each triad twice and human item n runs 6 to 23. Corrected, the category framing is r ≈ 0.50. The noun framing is not estimable: human item reliability is 0.001 because adults sit at 0.963, so there is no reliable between-triad variance to track. fig10 therefore plots the pooled model mean rather than per-model points, which can only take the values 0, 0.5 and 1.
+
+## 2026-08-10, First matched_v2 human sample wired into fig2 / fig7b
+**What was decided:** Analyze `results/human.results/full_grid/samah.shape_bias_human_trials.csv` with a Python mirror of `human_analysis.R` (`scripts/summarize_human_matched_v2.py`), because R is still missing on this machine. Write `human_catch_by_participant.csv`, `human_summary_by_set.csv`, `human_item_means.csv`, `human_position_check.csv`, then regenerate full-grid figures so fig2 and fig7b use per-cell human anchors instead of the March pilot scalar.
+**Why:** The export is design=matched_v2, pool=v2, grid only. Quarto could not run. The figure loader already expected `human_summary_by_set.csv`.
+**What was rejected:** Overwriting `human_results.csv` (would drop the March pilot rows the Quarto pilot section still reads); installing R just for this export.
+**Sample after catch rule (max_errors=1):** 134 sessions logged; 8 excluded (all no_word_category; 5 failed all 4 checks, 3 failed 3); 126 retained. Shape rate grid/no_word_category = 0.930 [0.916, 0.941]; grid/noun_label = 0.962 [0.952, 0.970]. All 114 triads covered in both orderings in both conditions. Two odd sessions: one missing a test trial (kept; 4/4 catch), one with duplicate logged trials (excluded on catches).
+
 ## 2026-08-10, Cue-conflict dropped from the human experiment; grid-only, 31 trials
 
 **What was decided:** Humans run the novel texture grid alone. `cc_triads` comes out of the human protocol (models keep it). A session is now 27 grid trials plus 4 attention checks, 31 trials, close to the March pilot's 30. Sample target drops from 244 to 135 for k = 16 observations per triad per condition. Condition and ordering group stay as they were; the block-order counterbalance falls away with only one set. Same `design=matched_v2`, `pool_version=v2`, since no data had been collected under the two-set version.

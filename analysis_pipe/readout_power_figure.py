@@ -18,6 +18,7 @@ Run:  .venv/bin/python analysis_pipe/readout_power_figure.py \
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import sys
 from pathlib import Path
@@ -32,19 +33,50 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 FIG_DIR = REPO / "results" / "figures" / "readout_power"
+SUMMARY = REPO / "results" / "data" / "full_grid_v1a_summary.csv"
 
+# Keep in sync with scripts/model_ladder.sh and full_grid_figures.py.
+MODEL_ORDER = (
+    "smolvlm-256m", "smolvlm",
+    "internvl", "internvl-2b", "internvl-8b", "internvl-14b",
+    "qwen3-vl-2b", "qwen3-vl-4b", "qwen3-vl-8b",
+    "qwen3.5-0.8b", "qwen3.5-2b", "qwen3.5-4b", "qwen3.5-9b", "qwen3.5-27b",
+)
 MODEL_COLORS = {
-    "smolvlm": "#E69F00", "internvl": "#56B4E9", "qwen3-vl-2b": "#009E73",
-    "qwen3-vl-4b": "#F0E442", "qwen3-vl-8b": "#0072B2", "qwen3.5-0.8b": "#D55E00",
+    "smolvlm-256m": "#F0C75E", "smolvlm": "#E69F00",
+    "internvl": "#A6D8F0", "internvl-2b": "#56B4E9",
+    "internvl-8b": "#2B8CBF", "internvl-14b": "#08519C",
+    "qwen3-vl-2b": "#66C2A5", "qwen3-vl-4b": "#009E73", "qwen3-vl-8b": "#006D4C",
+    "qwen3.5-0.8b": "#FDBB84", "qwen3.5-2b": "#D55E00",
     "qwen3.5-4b": "#CC79A7", "qwen3.5-9b": "#999999", "qwen3.5-27b": "#000000",
 }
 
-# Gate-passing behavioural shape rates, noun-label numeric, from
-# results/data/full_grid_v1a_summary.csv. Reference lines only.
-BEHAVIOURAL = {
-    "qwen3.5-4b": 0.913, "qwen3.5-9b": 0.914, "qwen3-vl-8b": 0.757,
-    "qwen3-vl-4b": 0.823, "qwen3.5-27b": 0.895,
-}
+
+def _model_rank(model: str) -> int:
+    return MODEL_ORDER.index(model) if model in MODEL_ORDER else len(MODEL_ORDER)
+
+
+def load_behavioural(path: Path = SUMMARY, condition: str = "noun_label") -> dict[str, float]:
+    """Gate-passing behavioural shape rate per model, for the reference lines.
+
+    Read from the summary CSV rather than hardcoded, so the lines cannot go stale
+    against the ladder the way the previous five-model dict did.
+    """
+    if not path.is_file():
+        print(f"  no behavioural reference: missing {path}")
+        return {}
+    out: dict[str, float] = {}
+    with open(path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["prompt_condition"] != condition:
+                continue
+            if r["gate_pass"].strip().lower() not in ("true", "1"):
+                continue
+            try:
+                out[r["model"]] = float(r["shape_rate"])
+            except (TypeError, ValueError):
+                continue
+    return out
 
 RUNG_LABELS = {
     "1_raw_cosine": "raw\ncosine",
@@ -73,8 +105,8 @@ def save(fig: plt.Figure, name: str) -> None:
 def parse_name(stem: str) -> tuple[str, str]:
     """probe_qwen3.5-9b_proj_mean -> ('qwen3.5-9b', 'proj_mean')."""
     s = stem[len("probe_"):] if stem.startswith("probe_") else stem
-    for rep in ("proj_mean", "vit_last_mean", "vit_penult_mean", "vit_pooler",
-                "pixels32"):
+    for rep in ("proj_lm_mean", "proj_mean", "vit_last_mean", "vit_penult_mean",
+                "vit_pooler", "pixels32"):
         if s.endswith("_" + rep):
             return s[: -len(rep) - 1], rep
     return s, "unknown"
@@ -105,7 +137,8 @@ def _ordered_rungs(probes: list[dict]) -> list[str]:
     return sorted(seen)
 
 
-def figA_ladder(probes: list[dict], readout: str = "proj_mean") -> None:
+def figA_ladder(probes: list[dict], readout: str = "proj_mean",
+                behavioural: dict[str, float] | None = None) -> None:
     sel = [d for d in probes if d["_readout"] == readout]
     if not sel:
         print(f"  no probes for readout={readout}")
@@ -113,37 +146,46 @@ def figA_ladder(probes: list[dict], readout: str = "proj_mean") -> None:
     rungs = _ordered_rungs(sel)
     if not rungs:
         return
+    behavioural = behavioural or {}
 
-    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    fig, ax = plt.subplots(figsize=(8.4, 4.6))
     x = np.arange(len(rungs))
-    for d in sorted(sel, key=lambda z: z["_model"]):
+    n_trials = None
+    for d in sorted(sel, key=lambda z: _model_rank(z["_model"])):
         r = d["ladder"]["rungs"]
         y = [r[k]["shape_rate"] if k in r else np.nan for k in rungs]
         lo = [r[k]["ci95"][0] if k in r else np.nan for k in rungs]
         hi = [r[k]["ci95"][1] if k in r else np.nan for k in rungs]
+        n_trials = n_trials or r.get(rungs[0], {}).get("n")
         color = MODEL_COLORS.get(d["_model"], "#444444")
         ax.errorbar(
             x, y,
             yerr=[np.array(y) - np.array(lo), np.array(hi) - np.array(y)],
-            marker="o", ms=5, lw=1.6, capsize=3, color=color, label=d["_model"],
+            marker="o", ms=4.5, lw=1.3, capsize=2.5, color=color, label=d["_model"],
         )
-        b = BEHAVIOURAL.get(d["_model"])
+        b = behavioural.get(d["_model"])
         if b is not None:
-            ax.axhline(b, color=color, ls=":", lw=1.0, alpha=0.55)
+            ax.axhline(b, color=color, ls=":", lw=1.0, alpha=0.5)
 
     ax.axhline(0.5, color="black", ls="--", lw=1.0, alpha=0.6)
     ax.text(len(rungs) - 0.45, 0.505, "chance", fontsize=7, va="bottom", ha="right")
+    # The published encoder-level numbers sit at centred cosine, so mark it.
+    if "2_centered_cosine" in rungs:
+        ax.axvline(rungs.index("2_centered_cosine"), color="#B00", ls="-",
+                   lw=0.9, alpha=0.35)
     ax.set_xticks(x)
     ax.set_xticklabels([RUNG_LABELS.get(k, k) for k in rungs], fontsize=7.5)
     ax.set_ylim(0, 1)
     ax.set_ylabel("shape-match rate")
     ax.set_xlabel("read-out power  →")
+    n_txt = f", n = {n_trials} triads" if n_trials else ""
     ax.set_title(
-        f"Same held-out triads, increasing read-out power ({readout})\n"
-        "dotted lines: that model's behavioural shape rate",
+        f"Same held-out triads, increasing read-out power ({readout}{n_txt})\n"
+        f"{len(sel)} models; dotted lines: that model's behavioural shape rate "
+        "(noun-label, gate-passing)",
         fontsize=9,
     )
-    ax.legend(fontsize=7.5, ncol=2, loc="best")
+    ax.legend(fontsize=7, ncol=2, loc="center left", bbox_to_anchor=(1.01, 0.5))
     save(fig, f"figA_readout_power_ladder_{readout}")
 
 
@@ -151,12 +193,12 @@ def figB_decodability(probes: list[dict], readout: str = "proj_mean") -> None:
     sel = [d for d in probes if d["_readout"] == readout]
     if not sel:
         return
-    sel.sort(key=lambda z: z["_model"])
+    sel.sort(key=lambda z: _model_rank(z["_model"]))
     models = [d["_model"] for d in sel]
     x = np.arange(len(models))
     w = 0.35
 
-    fig, ax = plt.subplots(figsize=(6.8, 3.8))
+    fig, ax = plt.subplots(figsize=(8.4, 3.9))
     mesh = [d["P1_mesh_identity"]["accuracy"] for d in sel]
     tex = [d["P2_texture_identity"]["accuracy"] for d in sel]
     m_err = np.array([
@@ -193,12 +235,13 @@ def figB_decodability(probes: list[dict], readout: str = "proj_mean") -> None:
             label="pixel baseline")
 
     ax.set_xticks(x)
-    ax.set_xticklabels(models, rotation=20, ha="right")
-    ax.set_ylim(0, 1)
+    ax.set_xticklabels(models, rotation=35, ha="right", fontsize=7.5)
+    ax.set_ylim(0, 1.05)
     ax.set_ylabel("probe accuracy")
-    ax.set_title(f"Is identity linearly decodable from the encoder? ({readout})",
-                 fontsize=9)
-    ax.legend(fontsize=7.5, loc="upper right")
+    ax.set_title(
+        f"Is identity linearly decodable from the encoder? ({readout}, {len(sel)} models)",
+        fontsize=9)
+    ax.legend(fontsize=7, loc="lower right", ncol=3)
     save(fig, f"figB_decodability_{readout}")
 
 
@@ -238,11 +281,13 @@ def main() -> int:
         return 1
     print(f"Loaded {len(probes)} probe results from {args.probe_dir}")
 
+    behavioural = load_behavioural()
+    print(f"Behavioural reference lines for {len(behavioural)} gate-passing models")
     readouts = sorted({d["_readout"] for d in probes})
     for rep in readouts:
         if rep == "pixels32":
             continue
-        figA_ladder(probes, rep)
+        figA_ladder(probes, rep, behavioural)
         figB_decodability(probes, rep)
     print_table(probes)
     print(f"\nDone. Figures in {FIG_DIR}")

@@ -261,6 +261,7 @@ CSV_FIELDS = [
     "repeat", "temperature",
     "eval_mode", "stim_pkg", "stim_set", "human_word_seed", "stimulus_shuffle_condition",
     "word_mode", "word_min_len", "word_max_len", "sudo_threshold", "trial_limit",
+    "image_mode",
 ]
 
 # ---------------------------------------------------------------------------
@@ -613,14 +614,60 @@ def load_stimuli_triad_dir(root: str | Path,
     return records
 
 
-def materialize_stimulus(record: dict) -> dict:
-    """Open one grid record's three images into the dict ``run_trial`` expects."""
-    return {
-        "stim_id": record["stim_id"],
-        "reference": Image.open(record["reference_path"]).convert("RGB"),
-        "shape_match": Image.open(record["shape_match_path"]).convert("RGB"),
-        "texture_match": Image.open(record["texture_match_path"]).convert("RGB"),
-    }
+# ---------------------------------------------------------------------------
+# Blind-baseline image modes
+# ---------------------------------------------------------------------------
+# "blank" replaces every image with a mid-grey field; "phase_scramble" keeps
+# each image's amplitude spectrum but randomises the phases, destroying shape
+# and object structure while preserving global luminance and spatial-frequency
+# statistics. Both give the language-prior floor for a prompt cell: a cell
+# whose blind shape rate matches its sighted rate is not measuring vision.
+IMAGE_MODES = ("normal", "blank", "phase_scramble")
+
+
+def _phase_scramble_image(img: Image.Image, seed: int) -> Image.Image:
+    """Amplitude-preserving phase scramble, one random phase field shared
+    across RGB channels so the output has locally coherent colour."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    arr = np.asarray(img, dtype=np.float64) / 255.0
+    # The phase of a real-valued noise field has the conjugate symmetry a real
+    # inverse FFT needs; adding it to each channel's phase keeps the result real.
+    noise_phase = np.angle(np.fft.fft2(rng.random(arr.shape[:2])))
+    out = np.empty_like(arr)
+    for c in range(arr.shape[2]):
+        spec = np.fft.fft2(arr[..., c])
+        scrambled = np.abs(spec) * np.exp(1j * (np.angle(spec) + noise_phase))
+        out[..., c] = np.real(np.fft.ifft2(scrambled))
+    out = np.clip(out, 0.0, 1.0)
+    return Image.fromarray((out * 255).astype("uint8"), mode="RGB")
+
+
+def transform_stimulus_image(img: Image.Image, image_mode: str,
+                             seed: int) -> Image.Image:
+    if image_mode == "normal":
+        return img
+    if image_mode == "blank":
+        return Image.new("RGB", img.size, (128, 128, 128))
+    if image_mode == "phase_scramble":
+        return _phase_scramble_image(img, seed)
+    raise ValueError(f"unknown image_mode: {image_mode}")
+
+
+def materialize_stimulus(record: dict, image_mode: str = "normal") -> dict:
+    """Open one grid record's three images into the dict ``run_trial`` expects.
+
+    ``image_mode`` other than "normal" replaces the images with their blind
+    variants. The scramble seed is derived from stim_id and role, so a triad
+    gets the same scrambles under both option orders and across resumes.
+    """
+    out = {"stim_id": record["stim_id"]}
+    for role in ("reference", "shape_match", "texture_match"):
+        img = Image.open(record[f"{role}_path"]).convert("RGB")
+        seed = hash_string(f"{record['stim_id']}|{role}")
+        out[role] = transform_stimulus_image(img, image_mode, seed)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -1113,8 +1160,15 @@ def run_trial_logit_scoring(
             sw = run_score_fn([ref, img_b, img_a], prompt)
             sp1_abs, sp2_abs = sw["choice_probs_absolute"]  # 1->b, 2->a (relative to base semantics)
             sl1, sl2 = sw["choice_logits"]
-            decision_a_abs = 0.5 * (p1_abs + sp2_abs)
-            decision_b_abs = 0.5 * (p2_abs + sp1_abs)
+            # Condition each pass on its own option mass before averaging.
+            # Averaging the raw absolute probabilities lets whichever pass put
+            # more mass on the two option tokens dominate the correction.
+            base_mass = p1_abs + p2_abs
+            swap_mass = sp1_abs + sp2_abs
+            p1_rel = p1_abs / base_mass if base_mass > 0 else 0.5
+            sp2_rel = sp2_abs / swap_mass if swap_mass > 0 else 0.5
+            decision_a_abs = 0.5 * (p1_rel + sp2_rel)
+            decision_b_abs = 1.0 - decision_a_abs
             swap_corrected_a_abs = decision_a_abs
             swap_corrected_b_abs = decision_b_abs
             total_t += float(sw["generation_time_s"])

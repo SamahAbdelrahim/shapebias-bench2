@@ -53,6 +53,7 @@ import argparse
 import json
 import re
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -256,10 +257,11 @@ def mcnemar(a: np.ndarray, b: np.ndarray) -> dict:
 # --------------------------------------------------------------------------
 
 
-def _fit_logistic(Xtr, ytr, C: float) -> tuple[StandardScaler, LogisticRegression]:
+def _fit_logistic(Xtr, ytr, C: float,
+                  max_iter: int = 3000) -> tuple[StandardScaler, LogisticRegression]:
     scaler = StandardScaler().fit(Xtr)
     # sklearn >= 1.7 dropped multi_class; lbfgs is multinomial by default.
-    clf = LogisticRegression(C=C, max_iter=3000)
+    clf = LogisticRegression(C=C, max_iter=max_iter)
     clf.fit(scaler.transform(Xtr), ytr)
     return scaler, clf
 
@@ -497,6 +499,191 @@ def readout_ladder(
     return out
 
 
+def learning_curve_probe(
+    emb: GridEmbeddings,
+    target: str,
+    splits: dict,
+    sizes=(1, 2, 4, 8, 16),
+    n_seeds: int = 3,
+    c_grid=DEFAULT_C_GRID,
+    max_iter: int = 3000,
+) -> list[dict]:
+    """Identity probe accuracy as training set size per class shrinks.
+
+    At full sample every encoder and the pixel baseline sit at ceiling, so the
+    decodability panel cannot separate them. Sweeping the number of training
+    textures per mesh (or meshes per texture) down finds the regime where the
+    curves separate: representations in which identity is linearly compact stay
+    high at n=1-2 while the pixel baseline falls off.
+    """
+    all_m = [int(m) for m in emb.meshes]
+    all_t = [str(t) for t in emb.textures]
+    folds = splits["tex_family_folds"] if target == "mesh" else splits["mesh_folds"]
+    rng_master = np.random.default_rng(0)
+
+    C_used = None
+    out = []
+    for n in list(sizes) + ["full"]:
+        accs = []
+        for fold in folds:
+            if target == "mesh":
+                tr_groups = [t for t in all_t if t not in set(fold)]
+                Xte, mte, tte = emb.reference_block(all_m, fold)
+                yte = mte
+            else:
+                tr_groups = [m for m in all_m if m not in set(fold)]
+                Xte, mte, tte = emb.reference_block(fold, all_t)
+                yte = tte
+            if len(Xte) == 0:
+                continue
+            n_eff = len(tr_groups) if n == "full" else min(int(n), len(tr_groups))
+            seeds = 1 if n == "full" else n_seeds
+            for s in range(seeds):
+                rng = np.random.default_rng(rng_master.integers(1 << 30) + s)
+                sub = list(rng.choice(tr_groups, size=n_eff, replace=False))
+                if target == "mesh":
+                    Xtr, mtr, ttr = emb.reference_block(all_m, sub)
+                    ytr, gtr = mtr, ttr
+                else:
+                    Xtr, mtr, ttr = emb.reference_block(sub, all_t)
+                    ytr, gtr = ttr, mtr
+                if len(set(ytr)) < 2:
+                    continue
+                if C_used is None:
+                    C_used = _tune_C(Xtr, ytr, gtr, c_grid)
+                scaler, clf = _fit_logistic(Xtr, ytr, C_used, max_iter=max_iter)
+                accs.append(float(
+                    (clf.predict(scaler.transform(Xte)) == yte).mean()))
+        out.append({
+            "target": target,
+            "n_per_class": None if n == "full" else int(n),
+            "accuracy": float(np.mean(accs)) if accs else float("nan"),
+            "sd": float(np.std(accs)) if accs else float("nan"),
+            "n_fits": len(accs),
+            "C": C_used,
+        })
+    return out
+
+
+def hard_split_probe(emb: GridEmbeddings, splits: dict,
+                     c_grid=DEFAULT_C_GRID, max_iter: int = 3000) -> dict:
+    """Harder generalisation splits than the family-balanced folds.
+
+    Mesh identity: train on the textures of a single family only, test on every
+    texture from all other families. Texture identity: train on a single mesh
+    involution pair (2 meshes), test on the remaining 28.
+    """
+    all_m = [int(m) for m in emb.meshes]
+    all_t = [str(t) for t in emb.textures]
+
+    by_family: dict[str, list[str]] = {}
+    for t in all_t:
+        by_family.setdefault(texture_family(t), []).append(t)
+
+    C_used = None
+    mesh_per_family = {}
+    for fam, ts in sorted(by_family.items()):
+        if len(ts) < 2:
+            continue
+        te_t = [t for t in all_t if t not in set(ts)]
+        Xtr, mtr, ttr = emb.reference_block(all_m, ts)
+        Xte, mte, _ = emb.reference_block(all_m, te_t)
+        if len(set(mtr)) < 2 or len(Xte) == 0:
+            continue
+        if C_used is None:
+            C_used = _tune_C(Xtr, mtr, ttr, c_grid)
+        scaler, clf = _fit_logistic(Xtr, mtr, C_used, max_iter=max_iter)
+        mesh_per_family[fam] = {
+            "n_train_textures": len(ts),
+            "accuracy": float((clf.predict(scaler.transform(Xte)) == mte).mean()),
+        }
+
+    tex_per_pair = []
+    for pair in splits["mesh_pairs"]:
+        tr_m = [int(m) for m in pair]
+        if len(tr_m) < 2:
+            continue
+        te_m = [m for m in all_m if m not in set(tr_m)]
+        Xtr, mtr, ttr = emb.reference_block(tr_m, all_t)
+        Xte, _, tte = emb.reference_block(te_m, all_t)
+        if len(set(ttr)) < 2 or len(Xte) == 0:
+            continue
+        scaler, clf = _fit_logistic(Xtr, ttr, C_used or c_grid[0],
+                                    max_iter=max_iter)
+        tex_per_pair.append(float(
+            (clf.predict(scaler.transform(Xte)) == tte).mean()))
+
+    return {
+        "mesh_train_single_family": {
+            "per_family": mesh_per_family,
+            "mean": float(np.mean([v["accuracy"] for v in
+                                   mesh_per_family.values()]))
+            if mesh_per_family else float("nan"),
+            "chance": 1.0 / len(all_m),
+        },
+        "texture_train_single_mesh_pair": {
+            "mean": float(np.mean(tex_per_pair)) if tex_per_pair else float("nan"),
+            "sd": float(np.std(tex_per_pair)) if tex_per_pair else float("nan"),
+            "n_pairs": len(tex_per_pair),
+            "chance": 1.0 / len(all_t),
+        },
+        "C": C_used,
+    }
+
+
+def run_regimes(emb_path: Path, pixels_path: Path | None, out_path: Path) -> None:
+    """Compute both harder-regime analyses for one embedding file."""
+    emb = GridEmbeddings.load(emb_path)
+    splits = build_splits(emb)
+    assert_disjoint(splits, emb)
+    # Fixed C per target: re-tuning across the grid at full sample dominates
+    # runtime (dozens of multinomial fits over ~120 texture classes). The
+    # identity_probe JSONs tuned to 1e-3..1e-2 for mesh and mostly 1e-1 for
+    # texture; using one shared value per target keeps encoders and the pixel
+    # baseline comparable, which is the point of these panels. max_iter is
+    # capped: at these C values lbfgs converges well before 800 and the
+    # full-sample 120-class texture fits are otherwise minutes each.
+    mesh_c, tex_c, m_iter = (1e-2,), (1e-1,), 800
+
+    def timed(label, fn, *a, **kw):
+        t0 = time.time()
+        r = fn(*a, **kw)
+        print(f"  [{time.time() - t0:7.1f}s] {label}")
+        return r
+
+    results = {
+        "source": str(emb_path),
+        "name": emb.name,
+        "learning_curve_mesh": timed(
+            "learning_curve_mesh", learning_curve_probe,
+            emb, "mesh", splits, c_grid=mesh_c, max_iter=m_iter),
+        "learning_curve_texture": timed(
+            "learning_curve_texture", learning_curve_probe,
+            emb, "texture", splits, c_grid=tex_c, max_iter=m_iter),
+        "hard_split": timed(
+            "hard_split", hard_split_probe,
+            emb, splits, c_grid=mesh_c, max_iter=m_iter),
+    }
+    if pixels_path and pixels_path.exists():
+        pix = GridEmbeddings.load(pixels_path)
+        psplits = build_splits(pix)
+        results["pixel_learning_curve_mesh"] = timed(
+            "pixel_learning_curve_mesh", learning_curve_probe,
+            pix, "mesh", psplits, c_grid=mesh_c, max_iter=m_iter)
+        results["pixel_hard_split"] = timed(
+            "pixel_hard_split", hard_split_probe,
+            pix, psplits, c_grid=mesh_c, max_iter=m_iter)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(results, indent=2))
+    print(f"regimes JSON: {out_path}")
+    for row in results["learning_curve_mesh"]:
+        n = row["n_per_class"] if row["n_per_class"] is not None else "full"
+        print(f"  mesh LC n={n:>4}: acc={row['accuracy']:.3f}")
+    hs = results["hard_split"]
+    print(f"  hard mesh (single family train): {hs['mesh_train_single_family']['mean']:.3f}")
+    print(f"  hard texture (single pair train): {hs['texture_train_single_mesh_pair']['mean']:.3f}")
+
+
 def retrieval_metrics(emb: GridEmbeddings) -> dict:
     """Mesh-level and texture-level retrieval, the metric the grid run should use.
 
@@ -654,12 +841,24 @@ def main() -> int:
     ap.add_argument("--n-perm", type=int, default=0, help="label permutations for P1/P2")
     ap.add_argument("--pixels", type=Path, help="pixel-baseline .npz for P3")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument(
+        "--regimes", action="store_true",
+        help="low-sample learning curves + hard splits only; writes "
+             "<out or probe dir>/probe_<name>.regimes.json",
+    )
     args = ap.parse_args()
 
     if args.self_test:
         return run_self_test()
     if not args.emb:
         ap.error("one of --emb or --self-test is required")
+
+    if args.regimes:
+        out = args.out or (
+            args.emb.parents[1] / f"probe_{args.emb.stem}.regimes.json"
+        )
+        run_regimes(args.emb, args.pixels, out)
+        return 0
 
     emb = GridEmbeddings.load(args.emb)
     print(f"{emb.name}: X={emb.X.shape}, {len(emb.meshes)} meshes, "

@@ -283,6 +283,13 @@ def _aggregate(per_stim: list[dict]) -> dict:
         if ls_sf is not None and ls_tf is not None:
             swap_shape_vals.append((ls_sf + ls_tf) / 2)
     swap_shape_logit = (sum(swap_shape_vals) / len(swap_shape_vals)) if swap_shape_vals else float("nan")
+    # The mean above keeps confidence, so it sits nearer 0.5 than a rate whenever
+    # the model is undecided. gen_shape_rate is a rate, so anything comparing the
+    # two paths needs this second form.
+    swap_shape_rate_logit = (
+        sum(1.0 for p in swap_shape_vals if p > 0.5) / len(swap_shape_vals)
+        if swap_shape_vals else float("nan")
+    )
 
     gen_shape_all = []
     for r in per_stim:
@@ -306,6 +313,7 @@ def _aggregate(per_stim: list[dict]) -> dict:
         "log_tracking": log_tracking,
         "gen_shape_rate": gen_shape_rate,
         "swap_shape_logit": swap_shape_logit,
+        "swap_shape_rate_logit": swap_shape_rate_logit,
         "gen_first_rate": gen_first_rate,
         "log_first_rate": log_first_rate,
         "gate_pass": (not math.isnan(gen_tracking)) and gen_tracking >= TRACKING_GATE,
@@ -334,13 +342,16 @@ def _print_block(model, condition, lset, prompt, m):
     )
     if m["gate_pass"]:
         print(
-            f"SHAPE preference   gen={_fmt(m['gen_shape_rate'])}  "
-            f"logit(swap-corrected)={_fmt(m['swap_shape_logit'])}"
+            f"SHAPE preference   gen(rate)={_fmt(m['gen_shape_rate'])}  "
+            f"logit swap(rate)={_fmt(m['swap_shape_rate_logit'])}  "
+            f"logit swap(meanP)={_fmt(m['swap_shape_logit'])}"
         )
     else:
         print(
             f"SHAPE preference   [gated out: tracking<{TRACKING_GATE}]  "
-            f"(ungated gen={_fmt(m['gen_shape_rate'])}, logit_swap={_fmt(m['swap_shape_logit'])})"
+            f"(ungated gen(rate)={_fmt(m['gen_shape_rate'])}, "
+            f"logit swap(rate)={_fmt(m['swap_shape_rate_logit'])}, "
+            f"logit swap(meanP)={_fmt(m['swap_shape_logit'])})"
         )
 
 
@@ -350,7 +361,7 @@ def _print_final_table(res):
     print("=" * 72)
     hdr = (
         f"{'model':13} {'condition':16} {'lbl':4} {'parse':>5} {'gTrk':>5} "
-        f"{'lTrk':>5} {'gate':>4} {'gShp':>5} {'lShp':>5} {'gPosA':>5}"
+        f"{'lTrk':>5} {'gate':>4} {'gShp':>5} {'lShp':>5} {'lShpP':>5} {'gPosA':>5}"
     )
     print(hdr)
     for name, mo in res["models"].items():
@@ -364,7 +375,8 @@ def _print_final_table(res):
                 f"{name:13} {cond:16} {lset:4} {_fmt(m['parse_rate'])} "
                 f"{_fmt(m['gen_tracking'])} {_fmt(m['log_tracking'])} "
                 f"{'P' if m['gate_pass'] else 'F':>4} {_fmt(m['gen_shape_rate'])} "
-                f"{_fmt(m['swap_shape_logit'])} {_fmt(m['gen_first_rate'])}"
+                f"{_fmt(m['swap_shape_rate_logit'])} {_fmt(m['swap_shape_logit'])} "
+                f"{_fmt(m['gen_first_rate'])}"
             )
 
 
